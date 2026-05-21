@@ -6,9 +6,9 @@ exports.registerSchema = z.object({
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   village: z.string().min(2, 'Village is required'),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
-  currentLocation: z.string().optional(),
+  latitude: z.number().nullable().optional(),
+  longitude: z.number().nullable().optional(),
+  currentLocation: z.string().nullable().optional(),
 });
 
 exports.loginSchema = z.object({
@@ -28,9 +28,9 @@ exports.updateProfileSchema = z.object({
   village: z.string().min(2).optional(),
   state: z.string().optional(),
   pincode: z.string().optional(),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
-  currentLocation: z.string().optional(),
+  latitude: z.number().nullable().optional(),
+  longitude: z.number().nullable().optional(),
+  currentLocation: z.string().nullable().optional(),
 });
 
 exports.resendOtpSchema = z.object({
