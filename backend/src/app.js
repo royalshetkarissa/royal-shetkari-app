@@ -53,6 +53,15 @@ app.use(morgan('dev'));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // 3. Health Routes
+app.get('/', (req, res) => {
+  res.json({
+    status: 'success',
+    message: 'Welcome to the Royal Shetkari API!',
+    version: '1.0.0',
+    timestamp: new Date().toISOString()
+  });
+});
+
 app.get('/health', async (req, res) => {
   try {
     const dbStatus = await pool.query('SELECT 1');
