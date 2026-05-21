@@ -18,6 +18,7 @@ const timetableRoutes = require('./routes/v1/timetableRoutes');
 const shopRoutes = require('./routes/v1/shopRoutes');
 const hospitalRoutes = require('./routes/v1/hospitalRoutes');
 const analyticsRoutes = require('./routes/v1/analyticsRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 const { securityHeaders, apiLimiter, authLimiter } = require('./middleware/security');
 
@@ -94,6 +95,7 @@ app.use('/api/v1/timetable', timetableRoutes);
 app.use('/api/v1/shops', shopRoutes);
 app.use('/api/v1/hospitals', hospitalRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
+app.use('/api/users', userRoutes);
 
 // 4. Unhandled Routes
 app.all('*', (req, res, next) => {
