@@ -1,6 +1,6 @@
 class AppConfig {
-  static const String baseUrl = 'http://192.168.1.34:5000/api/v1';
-  static const String serverUrl = 'http://192.168.1.34:5000';
+  static const String baseUrl = 'https://royal-shetkari-app-production.up.railway.app/api/v1';
+  static const String serverUrl = 'https://royal-shetkari-app-production.up.railway.app';
   
   // You can add environment specific configurations here
   // For production, you would change these to your domain name
