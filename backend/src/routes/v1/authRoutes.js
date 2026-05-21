@@ -9,6 +9,14 @@ const { registerSchema, loginSchema, otpSchema, updateProfileSchema, resendOtpSc
 
 const { authLimiter } = require('../../middleware/security');
 
+router.get('/', (req, res) => {
+  res.json({
+    status: 'success',
+    message: 'Auth API is fully functional!',
+    timestamp: new Date().toISOString()
+  });
+});
+
 router.post('/register', validate(registerSchema), authController.register);
 router.post('/login', authLimiter, validate(loginSchema), authController.login);
 router.post('/verify-otp', validate(otpSchema), authController.verifyOtp);

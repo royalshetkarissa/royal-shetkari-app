@@ -85,6 +85,7 @@ app.get('/ready', (req, res) => {
   res.json({ status: 'ready', requestId: req.id });
 });
 
+app.use('/api/auth', authRoutes);
 app.use('/api/v1', authRoutes);
 app.use('/api/v1/posts', postRoutes);
 app.use('/api/v1/admin', adminRoutes);
