@@ -8,6 +8,37 @@ const logger = require('./logger');
  */
 class MigrationRunner {
   async init() {
+    // 1. Check if the 'users' table exists
+    const tableCheck = await pool.query(`
+      SELECT 1 FROM information_schema.tables 
+      WHERE table_schema = 'public' AND table_name = 'users'
+    `);
+
+    // 2. If 'users' table doesn't exist, run the base schema.sql and seed.sql
+    if (tableCheck.rows.length === 0) {
+      logger.info('Initializing base database schema and seeding...');
+      
+      const schemaPath = path.join(__dirname, '../database/schema.sql');
+      const seedPath = path.join(__dirname, '../database/seed.sql');
+
+      if (fs.existsSync(schemaPath)) {
+        const schemaSql = fs.readFileSync(schemaPath, 'utf8');
+        await pool.query(schemaSql);
+        logger.info('✅ Database schema.sql applied successfully.');
+      } else {
+        logger.warn('⚠️ schema.sql not found at: ' + schemaPath);
+      }
+
+      if (fs.existsSync(seedPath)) {
+        const seedSql = fs.readFileSync(seedPath, 'utf8');
+        await pool.query(seedSql);
+        logger.info('✅ Database seed.sql applied successfully.');
+      } else {
+        logger.warn('⚠️ seed.sql not found at: ' + seedPath);
+      }
+    }
+
+    // 3. Create the migrations_meta table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS migrations_meta (
         id SERIAL PRIMARY KEY,
