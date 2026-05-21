@@ -33,18 +33,11 @@ app.use(requestId);
 const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:3000', 'http://localhost:5000'];
 
 app.use(cors({
-  origin: function (origin, callback) {
-    // allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Idempotency-Key']
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Idempotency-Key', 'X-Requested-With']
 }));
+app.options('*', cors());
 app.use(securityHeaders);
 app.use('/api', apiLimiter);
 app.use(express.json());
@@ -87,15 +80,34 @@ app.get('/ready', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/v1', authRoutes);
+
+app.use('/api/posts', postRoutes);
 app.use('/api/v1/posts', postRoutes);
+
+app.use('/api/admin', adminRoutes);
 app.use('/api/v1/admin', adminRoutes);
+
+app.use('/api/bookings', bookingRoutes);
 app.use('/api/v1/bookings', bookingRoutes);
+
+app.use('/api/disease', diseaseRoutes);
 app.use('/api/v1/disease', diseaseRoutes);
+
+app.use('/api/market', marketRoutes);
 app.use('/api/v1/market', marketRoutes);
+
+app.use('/api/timetable', timetableRoutes);
 app.use('/api/v1/timetable', timetableRoutes);
+
+app.use('/api/shops', shopRoutes);
 app.use('/api/v1/shops', shopRoutes);
+
+app.use('/api/hospitals', hospitalRoutes);
 app.use('/api/v1/hospitals', hospitalRoutes);
+
+app.use('/api/analytics', analyticsRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
+
 app.use('/api/users', userRoutes);
 
 // 4. Unhandled Routes

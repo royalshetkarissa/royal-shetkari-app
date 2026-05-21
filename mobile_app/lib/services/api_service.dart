@@ -25,28 +25,28 @@ class ApiService {
 
   // AUTH
   Future<Map<String, dynamic>> login({required String mobile, required String password}) async {
-    final response = await _dio.post('/login', data: {'mobile': mobile, 'password': password});
+    final response = await _dio.post('/auth/login', data: {'mobile': mobile, 'password': password});
     return Map<String, dynamic>.from(_handleResponse(response));
   }
 
   Future<Map<String, dynamic>> register({required String fullName, required String mobile, required String email, required String password, required String village, required String state, required String pincode, double? latitude, double? longitude, String? currentLocation}) async {
-    final response = await _dio.post('/register', data: {'fullName': fullName, 'mobile': mobile, 'email': email, 'password': password, 'village': village, 'state': state, 'pincode': pincode, 'latitude': latitude, 'longitude': longitude, 'currentLocation': currentLocation});
+    final response = await _dio.post('/auth/register', data: {'fullName': fullName, 'mobile': mobile, 'email': email, 'password': password, 'village': village, 'state': state, 'pincode': pincode, 'latitude': latitude, 'longitude': longitude, 'currentLocation': currentLocation});
     return Map<String, dynamic>.from(_handleResponse(response));
   }
 
   Future<Map<String, dynamic>> verifyOtp({required String mobile, required String otp, String? purpose}) async {
-    final response = await _dio.post('/verify-otp', data: {'mobile': mobile, 'otp': otp, 'purpose': purpose});
+    final response = await _dio.post('/auth/verify-otp', data: {'mobile': mobile, 'otp': otp, 'purpose': purpose});
     return Map<String, dynamic>.from(_handleResponse(response));
   }
 
   Future<Map<String, dynamic>> resendOtp({required String mobile}) async {
-    final response = await _dio.post('/resend-otp', data: {'mobile': mobile});
+    final response = await _dio.post('/auth/resend-otp', data: {'mobile': mobile});
     return Map<String, dynamic>.from(_handleResponse(response));
   }
 
   // PROFILE
   Future<Map<String, dynamic>> updateProfile({required String fullName, required String email, required String village, required String state, required String pincode}) async {
-    final response = await _dio.put('/user/profile', data: {'fullName': fullName, 'email': email, 'village': village, 'state': state, 'pincode': pincode});
+    final response = await _dio.put('/auth/user/profile', data: {'fullName': fullName, 'email': email, 'village': village, 'state': state, 'pincode': pincode});
     return Map<String, dynamic>.from(_handleResponse(response));
   }
 
@@ -54,12 +54,12 @@ class ApiService {
     FormData formData = FormData.fromMap({
       'photo': await MultipartFile.fromFile(imagePath),
     });
-    final response = await _dio.post('/user/profile/photo', data: formData);
+    final response = await _dio.post('/auth/user/profile/photo', data: formData);
     return Map<String, dynamic>.from(_handleResponse(response));
   }
 
   Future<Map<String, dynamic>> getMe() async {
-    final response = await _dio.get('/user/me');
+    final response = await _dio.get('/auth/user/me');
     return Map<String, dynamic>.from(_handleResponse(response));
   }
 
@@ -166,18 +166,18 @@ class ApiService {
 
   // USER STATS & SAVES
   Future<Map<String, dynamic>> getUserSocialStats() async {
-    final response = await _dio.get('/user/social-stats');
+    final response = await _dio.get('/auth/user/social-stats');
     return Map<String, dynamic>.from(_handleResponse(response));
   }
 
   Future<List<Map<String, dynamic>>> getSavedPosts() async {
-    final response = await _dio.get('/user/saved-posts');
+    final response = await _dio.get('/auth/user/saved-posts');
     final data = _handleResponse(response);
     return List<Map<String, dynamic>>.from(data['posts']);
   }
 
   Future<List<Map<String, dynamic>>> getUserPosts() async {
-    final response = await _dio.get('/user/posts');
+    final response = await _dio.get('/auth/user/posts');
     final data = _handleResponse(response);
     return List<Map<String, dynamic>>.from(data['posts']);
   }

@@ -15,8 +15,8 @@ class DioClient {
     dio = Dio(
       BaseOptions(
         baseUrl: AppConfig.baseUrl,
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 15),
+        connectTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(seconds: 30),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -36,9 +36,29 @@ class DioClient {
           } else {
             debugPrint('⚠️ Auth Header MISSING: No token found in storage!');
           }
+
+          // Debug Logging
+          debugPrint('🌐 REQUEST: [${options.method}] ${options.baseUrl}${options.path}');
+          if (options.data != null) {
+            debugPrint('📦 Request Body: ${options.data}');
+          }
+
           return handler.next(options);
         },
+        onResponse: (response, handler) {
+          // Debug Logging
+          debugPrint('✅ RESPONSE: [${response.statusCode}] ${response.requestOptions.path}');
+          debugPrint('📝 Response Body: ${response.data}');
+          return handler.next(response);
+        },
         onError: (DioException e, handler) async {
+          // Debug Logging
+          debugPrint('❌ ERROR: [${e.response?.statusCode}] ${e.requestOptions.path}');
+          debugPrint('💬 Error Message: ${e.message}');
+          if (e.response?.data != null) {
+            debugPrint('📝 Error Response Body: ${e.response?.data}');
+          }
+
           if (e.response?.statusCode == 401) {
             // Attempt to refresh token
             final success = await _refreshToken();
@@ -71,7 +91,7 @@ class DioClient {
       final refreshToken = await _storage.read(key: 'refreshToken');
       if (refreshToken == null) return false;
 
-      final response = await dio.post('/refresh-token', data: {'refreshToken': refreshToken});
+      final response = await dio.post('/auth/refresh-token', data: {'refreshToken': refreshToken});
       if (response.statusCode == 200) {
         final newAccessToken = response.data['accessToken'];
         await _storage.write(key: 'accessToken', value: newAccessToken);
