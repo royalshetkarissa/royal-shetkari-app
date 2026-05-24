@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../core/providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../widgets/skeleton_loader.dart';
 
@@ -121,6 +123,7 @@ class _AdminAccessManagementScreenState extends State<AdminAccessManagementScree
   }
 
   Widget _buildUserAccessCard(Map<String, dynamic> user, int index) {
+    bool isSuper = user['mobile'] == '8605889356' || user['is_admin'] == true || user['role'] == 'admin';
     return FadeTransition(
       opacity: _listController,
       child: Container(
@@ -130,7 +133,27 @@ class _AdminAccessManagementScreenState extends State<AdminAccessManagementScree
           contentPadding: const EdgeInsets.all(16),
           leading: CircleAvatar(backgroundColor: const Color(0xFF1F2937), radius: 25, child: Text(user['full_name'][0].toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
           title: Text(user['full_name'], style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
-          subtitle: Text(user['mobile'], style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(user['mobile'], style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+              if (isSuper) ...[
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade50,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: Colors.amber.shade200, width: 0.8),
+                  ),
+                  child: Text(
+                    'Super User',
+                    style: TextStyle(color: Colors.amber.shade900, fontWeight: FontWeight.bold, fontSize: 9, letterSpacing: 0.5),
+                  ),
+                ),
+              ],
+            ],
+          ),
           trailing: _buildRoleChip(user['role'] ?? 'user'),
           onTap: () => _showAdvancedAccessPanel(user),
         ),
@@ -150,7 +173,17 @@ class _AdminAccessManagementScreenState extends State<AdminAccessManagementScree
   void _showAdvancedAccessPanel(Map<String, dynamic> user) {
     String role = user['role'] ?? 'user';
     bool isAdmin = user['is_admin'] == true;
-    Map<String, dynamic> perms = Map<String, dynamic>.from(user['permissions'] ?? {});
+    
+    Map<String, dynamic> perms = {
+      'can_view_bookings': false,
+      'can_manage_posts': false,
+      'can_view_analytics': false,
+    };
+    if (user['permissions'] != null && user['permissions'] is Map) {
+      user['permissions'].forEach((k, v) {
+        perms[k.toString()] = v == true;
+      });
+    }
 
     showModalBottomSheet(
       context: context,
@@ -188,14 +221,13 @@ class _AdminAccessManagementScreenState extends State<AdminAccessManagementScree
                 height: 60,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF111827), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
-                  onPressed: () async {
-                    try {
-                      await _api.updateUserAccess(targetUserId: user['id'], role: role, permissions: Map<String, bool>.from(perms), isAdmin: isAdmin);
-                      Navigator.pop(context);
-                      _fetchUsers();
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Update failed: $e')));
-                    }
+                  onPressed: () {
+                    _showReviewAndApplyDialog(
+                      user,
+                      role,
+                      isAdmin,
+                      Map<String, bool>.from(perms),
+                    );
                   },
                   child: const Text('APPLY SECURITY CHANGES', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
                 ),
@@ -203,6 +235,252 @@ class _AdminAccessManagementScreenState extends State<AdminAccessManagementScree
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showReviewAndApplyDialog(Map<String, dynamic> user, String newRole, bool newIsAdmin, Map<String, bool> newPerms) {
+    List<Widget> changeWidgets = [];
+
+    // Role check
+    String oldRole = user['role'] ?? 'user';
+    if (oldRole != newRole) {
+      changeWidgets.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8.0),
+          child: Row(
+            children: [
+              const Icon(Icons.arrow_right_alt, color: Colors.blueAccent),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Change Role: ${oldRole.toUpperCase()} ➔ ${newRole.toUpperCase()}',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Admin Status check
+    bool oldIsAdmin = user['is_admin'] == true;
+    if (oldIsAdmin != newIsAdmin) {
+      changeWidgets.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8.0),
+          child: Row(
+            children: [
+              Icon(
+                newIsAdmin ? Icons.add_circle : Icons.remove_circle,
+                color: newIsAdmin ? Colors.green : Colors.red,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  newIsAdmin ? 'Grant Super Admin Status' : 'Revoke Super Admin Status',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: newIsAdmin ? Colors.green[800] : Colors.red[800],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Permissions check
+    Map<String, dynamic> oldPerms = {};
+    if (user['permissions'] != null && user['permissions'] is Map) {
+      user['permissions'].forEach((k, v) {
+        oldPerms[k.toString()] = v == true;
+      });
+    }
+    
+    List<String> permKeys = ['can_view_bookings', 'can_manage_posts', 'can_view_analytics'];
+    Map<String, String> readableKeys = {
+      'can_view_bookings': 'Booking Control',
+      'can_manage_posts': 'Inventory & Posts',
+      'can_view_analytics': 'Enterprise Analytics',
+    };
+
+    for (var key in permKeys) {
+      bool oldVal = oldPerms[key] == true;
+      bool newVal = newPerms[key] == true;
+      if (oldVal != newVal) {
+        String name = readableKeys[key] ?? key;
+        changeWidgets.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8.0),
+            child: Row(
+              children: [
+                Icon(
+                  newVal ? Icons.check_circle : Icons.cancel,
+                  color: newVal ? Colors.green : Colors.red,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    newVal ? 'Enable $name Access' : 'Disable $name Access',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      color: newVal ? Colors.green[800] : Colors.red[800],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    }
+
+    if (changeWidgets.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (c) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('No Changes Detected'),
+          content: const Text('No modifications were made to the permissions or role.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(c),
+              child: const Text('OK', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (c) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: const [
+            Icon(Icons.shield, color: Colors.blue),
+            SizedBox(width: 12),
+            Text('Review Security Changes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'You are modifying system access for ${user['full_name']}. Please review the following updates:',
+                style: const TextStyle(fontSize: 13, color: Colors.black87),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Column(
+                  children: changeWidgets,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Are you sure you want to apply these changes?',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c),
+            child: const Text('CANCEL', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF111827),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () async {
+              Navigator.pop(c); // close confirmation dialog
+              // Show loading dialog
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (loadingCtx) => const Center(child: CircularProgressIndicator(color: Colors.white)),
+              );
+
+              try {
+                await _api.updateUserAccess(
+                  targetUserId: user['id'],
+                  role: newRole,
+                  permissions: newPerms,
+                  isAdmin: newIsAdmin,
+                );
+                
+                // Close loading dialog
+                if (mounted) Navigator.pop(context);
+                // Close bottom sheet panel
+                if (mounted) Navigator.pop(context);
+                
+                // Fetch updated user list
+                _fetchUsers();
+
+                // Refresh the current session user details in case they modified their own permissions
+                if (mounted) {
+                  await Provider.of<AuthProvider>(context, listen: false).refreshUser();
+                }
+
+                // Show Success Dialog
+                if (mounted) {
+                  showDialog(
+                    context: context,
+                    builder: (successCtx) => AlertDialog(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      title: Row(
+                        children: const [
+                          Icon(Icons.check_circle, color: Colors.green),
+                          SizedBox(width: 12),
+                          Text('Success / यशस्वी', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                      content: const Text(
+                        'Security access updated successfully in PostgreSQL database and logged in moderation history!',
+                        style: TextStyle(fontSize: 13, height: 1.4),
+                      ),
+                      actions: [
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          onPressed: () => Navigator.pop(successCtx),
+                          child: const Text('OK', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+              } catch (e) {
+                // Close loading dialog
+                if (mounted) Navigator.pop(context);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Update failed: $e'), backgroundColor: Colors.red),
+                  );
+                }
+              }
+            },
+            child: const Text('CONFIRM & APPLY', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
     );
   }

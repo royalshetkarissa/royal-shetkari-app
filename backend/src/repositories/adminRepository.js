@@ -11,7 +11,7 @@ class AdminRepository {
 
   async getAllUsers() {
     const result = await pool.query(`
-      SELECT u.id, u.full_name, u.mobile, u.village, u.app_opens, u.last_activity,
+      SELECT u.id, u.full_name, u.mobile, u.village, u.app_opens, u.last_activity, u.role, u.is_admin, u.permissions,
              (SELECT COUNT(*) FROM posts WHERE user_id = u.id) as total_posts,
              (SELECT COUNT(*) FROM call_bookings WHERE user_id = u.id) as total_bookings
       FROM users u ORDER BY u.last_activity DESC NULLS LAST`);

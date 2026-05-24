@@ -51,7 +51,14 @@ class _AdminUserDetailScreenState extends State<AdminUserDetailScreen> with Sing
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: Text(widget.userSummary['full_name'], style: const TextStyle(fontWeight: FontWeight.w900)),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(widget.userSummary['full_name'], style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+            if (widget.userSummary['mobile'] == '8605889356' || widget.userSummary['is_admin'] == true || widget.userSummary['role'] == 'admin')
+              const Text('This is Super User', style: TextStyle(color: Colors.amberAccent, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+          ],
+        ),
         backgroundColor: Colors.black, foregroundColor: Colors.white,
         bottom: TabBar(
           controller: _tabController,
