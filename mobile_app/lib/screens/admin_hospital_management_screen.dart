@@ -283,7 +283,12 @@ class _AdminHospitalManagementScreenState extends State<AdminHospitalManagementS
         ),
         // Active Hospitals List
         _isLoadingHospitals
-            ? ShimmerSkeleton()
+            ? const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: Center(child: ShimmerSkeleton()),
+                ),
+              )
             : _hospitals.isEmpty
                 ? const SliverToBoxAdapter(
                     child: Padding(
