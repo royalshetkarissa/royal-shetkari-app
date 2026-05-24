@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:royal_shetkari/widgets/shimmer_skeleton.dart';
 import '../core/providers/post_provider.dart';
 import '../models/post_model.dart';
 import 'create_post_screen.dart';
 import 'post_detail_screen.dart';
 
 class CommunityScreen extends StatefulWidget {
-  const CommunityScreen({super.key});
+  final VoidCallback? onBackToHome;
+  const CommunityScreen({super.key, this.onBackToHome});
 
   @override
   State<CommunityScreen> createState() => _CommunityScreenState();
@@ -268,7 +270,13 @@ class _CommunityScreenState extends State<CommunityScreen> {
         elevation: 0.5,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.pop(context);
+            } else if (widget.onBackToHome != null) {
+              widget.onBackToHome!();
+            }
+          },
         ),
         actions: [
           IconButton(
@@ -328,7 +336,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
             const Divider(height: 1),
             Expanded(
               child: postProvider.isLoading
-                  ? const Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32)))
+                  ? Center(child: ShimmerSkeleton())
                   : postProvider.posts.isEmpty
                       ? _buildEmptyState()
                       : ListView.builder(

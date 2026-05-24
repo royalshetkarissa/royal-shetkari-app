@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:royal_shetkari/widgets/shimmer_skeleton.dart';
 import 'package:image_picker/image_picker.dart';
 import '../core/providers/auth_provider.dart';
 import '../core/providers/booking_provider.dart';
@@ -106,7 +107,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                     children: [
                       _buildProfileHeader(user, auth),
                       const SizedBox(height: 24),
-                      _buildSocialStatsGrid(user),
+                      _isStatsLoading ? _buildStatsSkeleton() : _buildSocialStatsGrid(user),
                       const SizedBox(height: 32),
                       _buildModernCard([
                         _buildField(Icons.person_outline, 'Full Name', _nameController),
@@ -225,17 +226,25 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   }
 
   Widget _buildSocialStatsGrid(dynamic user) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        _buildStatItem(Icons.favorite, 'Likes', _socialStats['total_likes'].toString()),
-        _buildStatItem(Icons.visibility, 'Views', _socialStats['total_views'].toString()),
-        _buildStatItem(Icons.bookmark, 'Saved', _savedPosts.length.toString()),
-        GestureDetector(
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const CoinBenefitsScreen())),
-          child: _buildStatItem(Icons.monetization_on, 'Coins', user?['coins']?.toString() ?? '0'),
-        ),
-      ],
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.18)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildStatItem(Icons.favorite, 'Likes', _socialStats['total_likes'].toString()),
+          _buildStatItem(Icons.visibility, 'Views', _socialStats['total_views'].toString()),
+          _buildStatItem(Icons.bookmark, 'Saved', _savedPosts.length.toString()),
+          GestureDetector(
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const CoinBenefitsScreen())),
+            child: _buildStatItem(Icons.monetization_on, 'Coins', user?['coins']?.toString() ?? '0'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -247,6 +256,13 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
         Text(label, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
       ],
+    );
+  }
+
+  Widget _buildStatsSkeleton() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: List.generate(4, (_) => ShimmerSkeleton(width: 70, height: 50, borderRadius: 12)),
     );
   }
 
@@ -282,24 +298,95 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   }
 
   Widget _buildModernCard(List<Widget> children) {
-    return Container(padding: const EdgeInsets.all(24), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(32), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 30, offset: const Offset(0, 15))]), child: Form(key: _formKey, child: Column(children: children)));
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          children: children,
+        ),
+      ),
+    );
   }
 
   Widget _buildField(IconData icon, String label, TextEditingController controller) {
-    return Padding(padding: const EdgeInsets.only(bottom: 24), child: TextFormField(controller: controller, enabled: _isEditing, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), decoration: InputDecoration(prefixIcon: Icon(icon, color: const Color(0xFF2E7D32), size: 22), labelText: label, labelStyle: TextStyle(color: Colors.grey[400], fontWeight: FontWeight.w500, fontSize: 14), border: const UnderlineInputBorder(), enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey[200]!)), focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF2E7D32), width: 2)))));
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: TextFormField(
+        controller: controller,
+        enabled: _isEditing,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 15,
+          color: _isEditing ? Colors.black87 : Colors.black54,
+        ),
+        decoration: InputDecoration(
+          prefixIcon: Icon(icon, color: const Color(0xFF2E7D32), size: 20),
+          labelText: label,
+          labelStyle: TextStyle(
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+            fontSize: 13,
+          ),
+          filled: true,
+          fillColor: _isEditing ? const Color(0xFF2E7D32).withOpacity(0.03) : Colors.grey[50],
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 2),
+          ),
+          disabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey.shade100, width: 1),
+          ),
+        ),
+      ),
+    );
   }
 
-      Widget _buildActionList(dynamic user) {
+  Widget _buildActionList(dynamic user) {
     bool isAdmin = user?['is_admin'] == true || user?['mobile'] == '8605889356';
-    return Column(children: [
-      _buildActionTile(Icons.history_rounded, 'My Posts', const Color(0xFF2E7D32), () => Navigator.push(context, MaterialPageRoute(builder: (c) => const MyPostsScreen()))), 
-      const SizedBox(height: 12), 
-      _buildActionTile(Icons.stars, 'Coins & Health Benefits (नाणी व आरोग्य लाभ)', const Color(0xFF2E7D32), () => Navigator.push(context, MaterialPageRoute(builder: (c) => const CoinBenefitsScreen()))), 
-      const SizedBox(height: 12), 
-      if (isAdmin) _buildActionTile(Icons.admin_panel_settings_rounded, 'Owner Control Panel', Colors.black, () => Navigator.push(context, MaterialPageRoute(builder: (c) => const AdminDashboardScreen())), isSpecial: true), 
-      const SizedBox(height: 12), 
-      _buildActionTile(Icons.logout_rounded, 'Sign Out Account', Colors.redAccent, _confirmLogout)
-    ]);
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildActionTile(Icons.history_rounded, 'My Posts', const Color(0xFF2E7D32), () => Navigator.push(context, MaterialPageRoute(builder: (c) => const MyPostsScreen())), showDivider: true),
+          _buildActionTile(Icons.stars, 'Coins & Health Benefits (नाणी व आरोग्य लाभ)', const Color(0xFF2E7D32), () => Navigator.push(context, MaterialPageRoute(builder: (c) => const CoinBenefitsScreen())), showDivider: isAdmin),
+          if (isAdmin)
+            _buildActionTile(Icons.admin_panel_settings_rounded, 'Owner Control Panel', Colors.black, () => Navigator.push(context, MaterialPageRoute(builder: (c) => const AdminDashboardScreen())), isSpecial: true, showDivider: true),
+          _buildActionTile(Icons.logout_rounded, 'Sign Out Account', Colors.redAccent, _confirmLogout, showDivider: false),
+        ],
+      ),
+    );
   }
 
   Future<void> _confirmLogout() async {
@@ -344,7 +431,36 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     }
   }
 
-  Widget _buildActionTile(IconData icon, String label, Color color, VoidCallback onTap, {bool isSpecial = false}) {
-    return Container(decoration: BoxDecoration(color: isSpecial ? color.withOpacity(0.05) : Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [if (!isSpecial) BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))]), child: ListTile(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)), leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(16)), child: Icon(icon, color: color, size: 22)), title: Text(label, style: TextStyle(fontWeight: FontWeight.w900, color: color, fontSize: 15)), trailing: const Icon(Icons.arrow_forward_ios, size: 14), onTap: onTap));
+  Widget _buildActionTile(IconData icon, String label, Color color, VoidCallback onTap, {bool isSpecial = false, bool showDivider = true}) {
+    return Column(
+      children: [
+        ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+          leading: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: isSpecial ? color.withOpacity(0.15) : color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, color: color, size: 22),
+          ),
+          title: Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: isSpecial ? Colors.black87 : color,
+              fontSize: 14,
+            ),
+          ),
+          trailing: Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey[400]),
+          onTap: onTap,
+        ),
+        if (showDivider)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Divider(color: Colors.grey[100], height: 1),
+          ),
+      ],
+    );
   }
 }

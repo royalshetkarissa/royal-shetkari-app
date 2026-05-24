@@ -25,6 +25,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
+  String? _fullNameError;
+  String? _mobileError;
+  String? _passwordError;
+  String? _confirmPasswordError;
+  String? _villageError;
+  String? _pincodeError;
+
   @override
   void dispose() {
     _fullNameController.dispose();
@@ -39,30 +46,54 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _register() async {
-    if (_fullNameController.text.isEmpty) {
-      _showSnackBar('Please enter full name');
-      return;
+    setState(() {
+      _fullNameError = null;
+      _mobileError = null;
+      _passwordError = null;
+      _confirmPasswordError = null;
+      _villageError = null;
+      _pincodeError = null;
+    });
+
+    bool isValid = true;
+    if (_fullNameController.text.trim().isEmpty) {
+      setState(() => _fullNameError = 'Full name is required');
+      isValid = false;
     }
-    if (_mobileController.text.length != 10) {
-      _showSnackBar('Please enter valid 10-digit mobile number');
-      return;
+    if (_mobileController.text.trim().isEmpty) {
+      setState(() => _mobileError = 'Mobile number is required');
+      isValid = false;
+    } else if (_mobileController.text.trim().length != 10) {
+      setState(() => _mobileError = 'Enter a valid 10-digit mobile number');
+      isValid = false;
     }
-    if (_passwordController.text.length < 6) {
-      _showSnackBar('Password must be at least 6 characters');
-      return;
+    if (_passwordController.text.isEmpty) {
+      setState(() => _passwordError = 'Password is required');
+      isValid = false;
+    } else if (_passwordController.text.length < 6) {
+      setState(() => _passwordError = 'Password must be at least 6 characters');
+      isValid = false;
     }
-    if (_passwordController.text != _confirmPasswordController.text) {
-      _showSnackBar('Passwords do not match');
-      return;
+    if (_confirmPasswordController.text.isEmpty) {
+      setState(() => _confirmPasswordError = 'Please confirm your password');
+      isValid = false;
+    } else if (_passwordController.text != _confirmPasswordController.text) {
+      setState(() => _confirmPasswordError = 'Passwords do not match');
+      isValid = false;
     }
-    if (_villageController.text.isEmpty) {
-      _showSnackBar('Please enter your village name');
-      return;
+    if (_villageController.text.trim().isEmpty) {
+      setState(() => _villageError = 'Village name is required');
+      isValid = false;
     }
-    if (_pincodeController.text.isEmpty) {
-      _showSnackBar('Please enter your pincode');
-      return;
+    if (_pincodeController.text.trim().isEmpty) {
+      setState(() => _pincodeError = 'Pincode is required');
+      isValid = false;
+    } else if (_pincodeController.text.trim().length != 6) {
+      setState(() => _pincodeError = 'Pincode must be 6 digits');
+      isValid = false;
     }
+
+    if (!isValid) return;
 
     Position? position;
     try {
@@ -146,6 +177,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
               label: 'Full Name',
               hint: 'Enter your full name',
               icon: Icons.person_outline,
+              errorText: _fullNameError,
+              isRequired: true,
+              onChanged: (val) {
+                if (_fullNameError != null) {
+                  setState(() => _fullNameError = null);
+                }
+              },
             ),
             const SizedBox(height: 16),
             CustomTextField(
@@ -155,6 +193,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
               icon: Icons.phone_android,
               keyboardType: TextInputType.phone,
               maxLength: 10,
+              errorText: _mobileError,
+              isRequired: true,
+              onChanged: (val) {
+                if (_mobileError != null) {
+                  setState(() => _mobileError = null);
+                }
+              },
             ),
             const SizedBox(height: 16),
             CustomTextField(
@@ -171,6 +216,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
               hint: 'Minimum 6 characters',
               icon: Icons.lock_outline,
               obscureText: _obscurePassword,
+              errorText: _passwordError,
+              isRequired: true,
+              onChanged: (val) {
+                if (_passwordError != null) {
+                  setState(() => _passwordError = null);
+                }
+              },
               suffixIcon: IconButton(
                 icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
                 onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
@@ -183,6 +235,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
               hint: 'Re-enter your password',
               icon: Icons.verified_user_outlined,
               obscureText: _obscureConfirmPassword,
+              errorText: _confirmPasswordError,
+              isRequired: true,
+              onChanged: (val) {
+                if (_confirmPasswordError != null) {
+                  setState(() => _confirmPasswordError = null);
+                }
+              },
               suffixIcon: IconButton(
                 icon: Icon(_obscureConfirmPassword ? Icons.visibility_off : Icons.visibility),
                 onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
@@ -194,6 +253,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
               label: 'Village',
               hint: 'Enter your village name',
               icon: Icons.location_on_outlined,
+              errorText: _villageError,
+              isRequired: true,
+              onChanged: (val) {
+                if (_villageError != null) {
+                  setState(() => _villageError = null);
+                }
+              },
             ),
             const SizedBox(height: 16),
             CustomTextField(
@@ -210,6 +276,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
               icon: Icons.pin_drop_outlined,
               keyboardType: TextInputType.number,
               maxLength: 6,
+              errorText: _pincodeError,
+              isRequired: true,
+              onChanged: (val) {
+                if (_pincodeError != null) {
+                  setState(() => _pincodeError = null);
+                }
+              },
             ),
             const SizedBox(height: 32),
             AnimatedButton(

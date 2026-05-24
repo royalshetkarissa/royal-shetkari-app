@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:royal_shetkari/widgets/shimmer_skeleton.dart';
 import 'package:intl/intl.dart';
 import '../services/api_service.dart';
 
@@ -282,7 +283,7 @@ class _AdminHospitalManagementScreenState extends State<AdminHospitalManagementS
         ),
         // Active Hospitals List
         _isLoadingHospitals
-            ? const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+            ? ShimmerSkeleton()
             : _hospitals.isEmpty
                 ? const SliverToBoxAdapter(
                     child: Padding(
@@ -324,7 +325,7 @@ class _AdminHospitalManagementScreenState extends State<AdminHospitalManagementS
 
   Widget _buildClaimsTab() {
     if (_isLoadingClaims) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(child: ShimmerSkeleton());
     }
 
     if (_claims.isEmpty) {

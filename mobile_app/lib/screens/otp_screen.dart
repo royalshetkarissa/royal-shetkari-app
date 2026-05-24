@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'dart:async';
 import '../core/providers/auth_provider.dart';
 import '../widgets/animated_button.dart';
 
@@ -15,9 +16,34 @@ class _OtpScreenState extends State<OtpScreen> {
   final List<TextEditingController> _otpControllers = List.generate(6, (index) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(6, (index) => FocusNode());
   String _error = '';
+  Timer? _timer;
+  int _secondsRemaining = 60;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    setState(() {
+      _secondsRemaining = 60;
+    });
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_secondsRemaining > 0) {
+        setState(() {
+          _secondsRemaining--;
+        });
+      } else {
+        _timer?.cancel();
+      }
+    });
+  }
 
   @override
   void dispose() {
+    _timer?.cancel();
     for (var controller in _otpControllers) {
       controller.dispose();
     }
@@ -67,12 +93,14 @@ class _OtpScreenState extends State<OtpScreen> {
   }
 
   Future<void> _resendOtp() async {
+    if (_secondsRemaining > 0) return;
     final auth = context.read<AuthProvider>();
     final success = await auth.resendOtp();
 
     if (!mounted) return;
 
     if (success) {
+      _startTimer();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(auth.devOtp != null ? 'OTP resent: ${auth.devOtp}' : 'OTP resent successfully!'),
@@ -174,10 +202,16 @@ class _OtpScreenState extends State<OtpScreen> {
             ),
             const SizedBox(height: 16),
             TextButton(
-              onPressed: _resendOtp,
-              child: const Text(
-                'Resend OTP',
-                style: TextStyle(color: Color(0xFF42A5F5), fontSize: 16),
+              onPressed: _secondsRemaining == 0 ? _resendOtp : null,
+              child: Text(
+                _secondsRemaining > 0 
+                    ? 'Resend OTP in ${_secondsRemaining}s' 
+                    : 'Resend OTP',
+                style: TextStyle(
+                  color: _secondsRemaining > 0 ? Colors.grey : const Color(0xFF42A5F5), 
+                  fontSize: 16,
+                  fontWeight: _secondsRemaining > 0 ? FontWeight.normal : FontWeight.bold,
+                ),
               ),
             ),
           ],

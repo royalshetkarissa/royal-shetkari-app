@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:royal_shetkari/widgets/shimmer_skeleton.dart';
 import 'package:intl/intl.dart';
 import '../models/shop_model.dart';
 import '../services/api_service.dart';
@@ -47,7 +48,7 @@ class _AdminShopDetailClicksScreenState extends State<AdminShopDetailClicksScree
         title: '${widget.shop.name} - Engagement',
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF1B5E20)))
+          ? Center(child: ShimmerSkeleton())
           : RefreshIndicator(
               onRefresh: _loadClicks,
               color: const Color(0xFF1B5E20),

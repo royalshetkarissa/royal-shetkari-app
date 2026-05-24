@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
+import 'package:royal_shetkari/widgets/shimmer_skeleton.dart';
 import '../core/providers/auth_provider.dart';
 import '../models/crop_model.dart';
 import '../models/post_model.dart';
@@ -180,7 +180,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32)))
+          ? Center(child: ShimmerSkeleton())
           : TabBarView(
               controller: _tabController,
               children: [

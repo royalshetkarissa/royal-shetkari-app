@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:royal_shetkari/widgets/shimmer_skeleton.dart';
 import 'package:provider/provider.dart';
 import '../core/providers/auth_provider.dart';
 import '../widgets/animated_button.dart';
@@ -11,12 +12,14 @@ import 'community_screen.dart';
 import 'market_screen.dart';
 import 'book_call_screen.dart';
 import 'timetable_screen.dart';
+import 'organic_tips_screen.dart';
 import 'notification_screen.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:dio/dio.dart';
 import 'dart:async';
 import '../models/post_model.dart';
 import 'post_detail_screen.dart';
+import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -87,8 +90,8 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Scaffold(
         body: [
           DashboardScreen(onTabChange: (i) => setState(() => _currentIndex = i)),
-          const CommunityScreen(),
-          const MarketScreen(),
+          CommunityScreen(onBackToHome: () => setState(() => _currentIndex = 0)),
+          MarketScreen(onBackToHome: () => setState(() => _currentIndex = 0)),
           ProfileScreen(onBackToHome: () => setState(() => _currentIndex = 0)),
         ][_currentIndex],
         bottomNavigationBar: BottomNavigationBar(
@@ -501,7 +504,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: _fetchData,
-        child: _isLoadingData ? const Center(child: CircularProgressIndicator()) : SingleChildScrollView(
+        child: _isLoadingData ? ShimmerSkeleton() : SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -518,7 +521,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       radius: 30,
                       backgroundColor: Colors.white,
                       child: Text(
-                       user?['full_name']?[0] ?? 'F',
+                        user?['full_name']?[0] ?? 'F',
                         style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF2E7D32)),
                       ),
                     ),
@@ -537,152 +540,272 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Colors.blue.shade900,
-                      Colors.blue.shade600,
+              // Row of Menu items: Time table, Organic Fertilizer, Fertilizer Calculator
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildTopMenuButton(
+                      icon: Icons.calendar_month,
+                      label: 'Time table',
+                      onTap: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (c) => const TimetableScreen()),
+                        );
+                        if (result == true) _fetchData();
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildTopMenuButton(
+                      icon: Icons.spa,
+                      label: 'Organic Fertilizer',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (c) => const OrganicTipsScreen()),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildTopMenuButton(
+                      icon: Icons.calculate,
+                      label: 'Fertilizer Calculator',
+                      onTap: _showFertilizerCalculator,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              // Community Card (Cow cartoon and vegetable/crop photos)
+              GestureDetector(
+                onTap: () => widget.onTabChange?.call(1),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE0F2F1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: const [
+                          Text(
+                            'Community',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          Icon(Icons.arrow_forward, color: Colors.black87),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: Image.network(
+                                'https://img.freepik.com/free-vector/cute-cow-cartoon-vector-illustration_138676-2009.jpg',
+                                height: 80,
+                                fit: BoxFit.cover,
+                                errorBuilder: (c, e, s) => Container(
+                                  height: 80,
+                                  color: Colors.amber.shade100,
+                                  child: const Icon(Icons.pets, color: Colors.amber),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: Image.network(
+                                'https://images.unsplash.com/photo-1566385278603-605b637d3ab4?w=500',
+                                height: 80,
+                                fit: BoxFit.cover,
+                                errorBuilder: (c, e, s) => Container(
+                                  height: 80,
+                                  color: Colors.green.shade100,
+                                  child: const Icon(Icons.grass, color: Colors.green),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: Image.network(
+                                'https://images.unsplash.com/photo-1595855759920-86582396756a?w=500',
+                                height: 80,
+                                fit: BoxFit.cover,
+                                errorBuilder: (c, e, s) => Container(
+                                  height: 80,
+                                  color: Colors.red.shade100,
+                                  child: const Icon(Icons.eco, color: Colors.red),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Weather Card (light blue with sun peeking cloud in middle)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: _getWeatherGradient(_weatherCode),
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.blue.withOpacity(0.3),
-                      blurRadius: 15,
-                      offset: const Offset(0, 8),
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Today\'s Weather / आजचे हवामान',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.white70,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Text(
-                                      '${_getWeatherEmoji(_weatherCode)} $_temperature°C',
-                                      style: const TextStyle(
-                                        fontSize: 28,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  _condition,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.white.withOpacity(0.9),
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
+                    // Location & Date
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.location_on, color: Colors.white, size: 18),
+                            const SizedBox(width: 6),
+                            Text(
+                              user?['village'] ?? 'Pune',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
+                          ],
+                        ),
+                        Text(
+                          DateFormat('EEEE, d MMM').format(DateTime.now()),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.white.withOpacity(0.85),
+                            fontWeight: FontWeight.w500,
                           ),
-                          Icon(
-                            _getWeatherIconData(_weatherCode),
-                            size: 64,
-                            color: Colors.yellow.shade400,
-                          ),
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _buildWeatherMetric('Wind / वारा', '${_windSpeed.toStringAsFixed(1)} km/h', Icons.air),
-                          _buildWeatherMetric('Humidity / आर्द्रता', '${_humidity.toStringAsFixed(0)}%', Icons.water_drop),
-                          _buildWeatherMetric('Rain / पाऊस', _weatherCode >= 50 ? 'Yes' : 'No', Icons.cloudy_snowing),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
-                    Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: _isGoodForSpray
-                            ? Colors.green.shade900.withOpacity(0.85)
-                            : Colors.red.shade900.withOpacity(0.85),
-                        borderRadius: const BorderRadius.vertical(
-                          bottom: Radius.circular(24),
-                        ),
-                      ),
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
+                    // Temp & Condition & Weather Art
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                _isGoodForSpray ? Icons.check_circle : Icons.warning,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  _isGoodForSpray
-                                      ? 'फवारणीसाठी योग्य / Good for Spraying'
-                                      : 'फवारणीसाठी अयोग्य / Not Recommended for Spraying',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '$_temperature',
+                                    style: const TextStyle(
+                                      fontSize: 58,
+                                      fontWeight: FontWeight.w300,
+                                      color: Colors.white,
+                                      height: 1.0,
+                                    ),
                                   ),
+                                  const Text(
+                                    '°C',
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w400,
+                                      color: Colors.white,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _condition,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Feels like ${_temperature - 1}°C • ${_temperature - 2}°C / ${_temperature + 3}°C',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white.withOpacity(0.85),
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _sprayRecommendationMr,
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              height: 1.4,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _sprayRecommendationEn,
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.7),
-                              fontSize: 11,
-                              fontStyle: FontStyle.italic,
-                              height: 1.3,
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                        // Weather Icon/Illustration
+                        _buildWeatherIllustration(_weatherCode),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Divider(color: Colors.white.withOpacity(0.24), height: 1),
+                    const SizedBox(height: 16),
+                    // Row of details (Humidity, Wind Speed, Spray Suitability)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildWeatherDetailItem(
+                          icon: Icons.water_drop_outlined,
+                          label: 'Humidity',
+                          value: '${_humidity.round()}%',
+                          bgColor: Colors.white.withOpacity(0.15),
+                          textColor: Colors.white,
+                          subTextColor: Colors.white.withOpacity(0.85),
+                        ),
+                        _buildWeatherDetailItem(
+                          icon: Icons.air,
+                          label: 'Wind Speed',
+                          value: '${_windSpeed.toStringAsFixed(1)} km/h',
+                          bgColor: Colors.white.withOpacity(0.15),
+                          textColor: Colors.white,
+                          subTextColor: Colors.white.withOpacity(0.85),
+                        ),
+                        _buildWeatherDetailItem(
+                          icon: _isGoodForSpray ? Icons.check_circle_outline : Icons.warning_amber_outlined,
+                          label: 'Spraying',
+                          value: _isGoodForSpray ? 'Favourable' : 'Unfavourable',
+                          bgColor: _isGoodForSpray 
+                              ? Colors.greenAccent.withOpacity(0.2) 
+                              : Colors.redAccent.withOpacity(0.2),
+                          textColor: Colors.white,
+                          subTextColor: Colors.white.withOpacity(0.85),
+                          isHighlight: true,
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 20),
+              // Book Call with Expert
               GestureDetector(
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BookCallScreen())),
                 child: Container(
@@ -711,6 +834,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
               const SizedBox(height: 20),
+              // Disease Prediction Model (Scan Crop Disease)
               GestureDetector(
                 onTap: _scanDisease,
                 child: Container(
@@ -820,41 +944,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 const SizedBox(height: 20),
               ],
-              const Text('Quick Actions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(child: _buildQuickActionCard(icon: Icons.post_add, title: 'New Post', color: const Color(0xFF42A5F5), onTap: () => Navigator.pushNamed(context, '/create-post'))),
-                  const SizedBox(width: 12),
-                  Expanded(child: _buildQuickActionCard(icon: Icons.storefront, title: 'Shops', color: Colors.deepOrange, onTap: () => widget.onTabChange?.call(2))),
-                  const SizedBox(width: 12),
-                  Expanded(child: _buildQuickActionCard(icon: Icons.calendar_month, title: 'Timetables', color: Colors.purple, onTap: () async {
-                    final result = await Navigator.push(context, MaterialPageRoute(builder: (c) => const TimetableScreen()));
-                    if (result == true) _fetchData();
-                  })),
-                ],
-              ),
-              const SizedBox(height: 20),
+
               _buildDynamicRecentSection(),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickActionCard({required IconData icon, required String title, required Color color, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: color.withOpacity(0.3))),
-        child: Column(
-          children: [
-            Icon(icon, size: 32, color: color),
-            const SizedBox(height: 8),
-            Text(title, style: TextStyle(color: color, fontWeight: FontWeight.w500)),
-          ],
         ),
       ),
     );
@@ -1194,31 +1287,480 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  Widget _buildWeatherMetric(String label, String value, IconData icon) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, color: Colors.white70, size: 18),
-        const SizedBox(width: 6),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(color: Colors.white60, fontSize: 10),
+  LinearGradient _getWeatherGradient(int code) {
+    if (code == 0) { // Clear sky
+      return const LinearGradient(
+        colors: [Color(0xFF1E88E5), Color(0xFF4FC3F7)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      );
+    } else if (code >= 1 && code <= 3) { // Partly Cloudy
+      return const LinearGradient(
+        colors: [Color(0xFF3949AB), Color(0xFF5C6BC0)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      );
+    } else if (code >= 51 && code <= 65 || code >= 80 && code <= 82) { // Rainy
+      return const LinearGradient(
+        colors: [Color(0xFF263238), Color(0xFF4F5B66)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      );
+    } else if (code >= 95 && code <= 99) { // Thunderstorm
+      return const LinearGradient(
+        colors: [Color(0xFF1A237E), Color(0xFF283593)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      );
+    } else { // Cloudy/Fog/Other
+      return const LinearGradient(
+        colors: [Color(0xFF546E7A), Color(0xFF78909C)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      );
+    }
+  }
+
+  Widget _buildWeatherIllustration(int code) {
+    if (code == 0) {
+      // Sunny
+      return Container(
+        width: 80,
+        height: 80,
+        decoration: const BoxDecoration(
+          color: Colors.yellow,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.orangeAccent,
+              blurRadius: 25,
+              spreadRadius: 5,
             ),
-            Text(
-              value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
+          ],
+        ),
+        child: const Icon(Icons.wb_sunny, size: 48, color: Colors.orange),
+      );
+    } else if (code >= 1 && code <= 3) {
+      // Partly Cloudy (Sun peeking behind cloud)
+      return SizedBox(
+        width: 90,
+        height: 80,
+        child: Stack(
+          children: [
+            Positioned(
+              top: 5,
+              right: 15,
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: const BoxDecoration(
+                  color: Colors.amber,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.orangeAccent,
+                      blurRadius: 15,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 5,
+              left: 5,
+              child: Icon(
+                Icons.cloud,
+                size: 65,
+                color: Colors.white.withOpacity(0.95),
               ),
             ),
           ],
         ),
+      );
+    } else if (code >= 51 && code <= 65 || code >= 80 && code <= 82) {
+      // Rainy
+      return SizedBox(
+        width: 80,
+        height: 80,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Positioned(
+              top: 5,
+              child: Icon(
+                Icons.cloud,
+                size: 60,
+                color: Colors.white,
+              ),
+            ),
+            Positioned(
+              bottom: 5,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.opacity, size: 16, color: Colors.blueAccent),
+                  SizedBox(width: 4),
+                  Icon(Icons.opacity, size: 16, color: Colors.blueAccent),
+                  SizedBox(width: 4),
+                  Icon(Icons.opacity, size: 16, color: Colors.blueAccent),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    } else if (code >= 95 && code <= 99) {
+      // Thunderstorm
+      return SizedBox(
+        width: 80,
+        height: 80,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Positioned(
+              top: 5,
+              child: Icon(
+                Icons.thunderstorm,
+                size: 60,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      // General Cloudy / Foggy
+      return SizedBox(
+        width: 80,
+        height: 80,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Icon(
+              Icons.cloud,
+              size: 65,
+              color: Colors.white.withOpacity(0.85),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  Widget _buildWeatherDetailItem({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color bgColor,
+    required Color textColor,
+    required Color subTextColor,
+    bool isHighlight = false,
+  }) {
+    return Expanded(
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.1),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 22, color: textColor),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                color: subTextColor,
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: isHighlight 
+                  ? (value == 'Favourable' ? Colors.greenAccent.shade400 : Colors.redAccent.shade100)
+                  : textColor,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showFertilizerCalculator() {
+    double guntha = 1.0;
+    final controller = TextEditingController(text: '1.0');
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final double dapRequired = guntha * 1.25;
+            final double bagsRequired = dapRequired / 50.0;
+            final double nitrogen = dapRequired * 0.18;
+            final double phosphorus = dapRequired * 0.46;
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                ),
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 50,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.calculate, color: Colors.green.shade800, size: 28),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Text(
+                                'Fertilizer Calculator',
+                                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+                              ),
+                              Text(
+                                'खत कॅल्क्युलेटर (DAP Requirement)',
+                                style: TextStyle(fontSize: 13, color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 32),
+                    const Text(
+                      'Farm Size in Guntha / एकूण क्षेत्र (गुंठा):',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: controller,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoration: InputDecoration(
+                              hintText: 'Enter guntha',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+                              filled: true,
+                              fillColor: Colors.grey.shade50,
+                              prefixIcon: const Icon(Icons.grid_on, color: Colors.green),
+                              suffixText: 'Guntha',
+                            ),
+                            onChanged: (val) {
+                              setModalState(() {
+                                guntha = double.tryParse(val) ?? 0.0;
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Slider(
+                      value: guntha.clamp(0.0, 100.0),
+                      min: 0,
+                      max: 100,
+                      divisions: 100,
+                      activeColor: Colors.green.shade700,
+                      inactiveColor: Colors.green.shade100,
+                      label: '${guntha.toStringAsFixed(1)} Guntha',
+                      onChanged: (val) {
+                        setModalState(() {
+                          guntha = val;
+                          controller.text = guntha.toStringAsFixed(1);
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    // DAP Requirement Card
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.green.shade800, Colors.green.shade500],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.green.withOpacity(0.2),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'DAP REQUIRED / आवश्यक डी.ए.पी.',
+                                style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1),
+                              ),
+                              Icon(Icons.shopping_bag, color: Colors.white.withOpacity(0.8)),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            '${dapRequired.toStringAsFixed(2)} kg',
+                            style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '~ ${bagsRequired.toStringAsFixed(2)} Bags (of 50 kg each)',
+                            style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14, fontWeight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Nutrient Breakdown / पोषक घटक विभागणी:',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildNutrientRow('Nitrogen (N) - 18%', nitrogen, 0.18, Colors.blue),
+                    const SizedBox(height: 12),
+                    _buildNutrientRow('Phosphorus (P₂O₅) - 46%', phosphorus, 0.46, Colors.orange),
+                    const SizedBox(height: 24),
+                    // Tips
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.amber.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, color: Colors.amber.shade800, size: 20),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Text(
+                              'Tip: Apply DAP as basal dose during sowing/planting for optimum root growth.',
+                              style: TextStyle(fontSize: 12, color: Colors.black87),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildNutrientRow(String label, double value, double pct, Color color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+            Text('${value.toStringAsFixed(2)} kg', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        const SizedBox(height: 6),
+        LinearProgressIndicator(
+          value: pct,
+          backgroundColor: Colors.grey.shade200,
+          valueColor: AlwaysStoppedAnimation<Color>(color),
+          minHeight: 8,
+          borderRadius: BorderRadius.circular(4),
+        ),
       ],
+    );
+  }
+
+  Widget _buildTopMenuButton({required IconData icon, required String label, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE8F0FE),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.blue.shade50, width: 1),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircleAvatar(
+              radius: 24,
+              backgroundColor: Colors.white,
+              child: Icon(icon, color: Colors.blueGrey.shade800, size: 24),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

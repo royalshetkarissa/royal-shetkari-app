@@ -9,6 +9,9 @@ class CustomTextField extends StatelessWidget {
   final TextInputType keyboardType;
   final int maxLength;
   final Widget? suffixIcon;
+  final String? errorText;
+  final bool isRequired;
+  final ValueChanged<String>? onChanged;
 
   const CustomTextField({
     super.key,
@@ -20,6 +23,9 @@ class CustomTextField extends StatelessWidget {
     this.keyboardType = TextInputType.text,
     this.maxLength = 100,
     this.suffixIcon,
+    this.errorText,
+    this.isRequired = false,
+    this.onChanged,
   });
 
   @override
@@ -29,15 +35,38 @@ class CustomTextField extends StatelessWidget {
       obscureText: obscureText,
       keyboardType: keyboardType,
       maxLength: maxLength,
+      onChanged: onChanged,
       decoration: InputDecoration(
-        labelText: label,
+        label: isRequired
+            ? RichText(
+                text: TextSpan(
+                  text: label,
+                  style: const TextStyle(color: Colors.black54, fontSize: 14),
+                  children: const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              )
+            : Text(label),
         hintText: hint,
         prefixIcon: Icon(icon, color: const Color(0xFF2E7D32)),
         suffixIcon: suffixIcon,
+        errorText: errorText,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 1.5),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 2),
         ),
         counterText: '',
       ),

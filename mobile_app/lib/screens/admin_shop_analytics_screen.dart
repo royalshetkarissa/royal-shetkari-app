@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'package:intl/intl.dart';
+import 'package:royal_shetkari/widgets/shimmer_skeleton.dart';
 
 class AdminShopAnalyticsScreen extends StatefulWidget {
   const AdminShopAnalyticsScreen({super.key});
@@ -42,7 +43,7 @@ class _AdminShopAnalyticsScreenState extends State<AdminShopAnalyticsScreen> {
         foregroundColor: Colors.white,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: ShimmerSkeleton())
           : _stats.isEmpty
               ? const Center(child: Text('No clicks tracked yet'))
               : ListView.builder(

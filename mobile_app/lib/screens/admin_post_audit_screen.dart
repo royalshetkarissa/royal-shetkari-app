@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:royal_shetkari/widgets/shimmer_skeleton.dart';
 import '../services/api_service.dart';
 
 class AdminPostAuditScreen extends StatefulWidget {
@@ -53,7 +54,7 @@ class _AdminPostAuditScreenState extends State<AdminPostAuditScreen> {
       backgroundColor: const Color(0xFFF4F7FE),
       appBar: AppBar(title: const Text('Post Audit Command', style: TextStyle(fontWeight: FontWeight.w900)), backgroundColor: Colors.black, foregroundColor: Colors.white),
       body: _isLoading 
-          ? const Center(child: CircularProgressIndicator(color: Colors.black))
+          ? Center(child: ShimmerSkeleton())
           : CustomScrollView(
               slivers: [
                 _buildHeroHeader(post),

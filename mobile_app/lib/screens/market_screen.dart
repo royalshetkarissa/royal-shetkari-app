@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:royal_shetkari/widgets/shimmer_skeleton.dart';
 import '../services/api_service.dart';
 import '../models/shop_model.dart';
 import '../widgets/royal_app_bar.dart';
@@ -7,7 +8,8 @@ import 'shop_details_screen.dart';
 import 'organic_tips_screen.dart';
 
 class MarketScreen extends StatefulWidget {
-  const MarketScreen({super.key});
+  final VoidCallback? onBackToHome;
+  const MarketScreen({super.key, this.onBackToHome});
 
   @override
   State<MarketScreen> createState() => _MarketScreenState();
@@ -137,14 +139,27 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
+    final bool canPop = Navigator.of(context).canPop();
     return WillPopScope(
-      onWillPop: _onWillPop,
+      onWillPop: () async {
+        if (canPop) {
+          return await _onWillPop();
+        }
+        if (widget.onBackToHome != null) {
+          widget.onBackToHome!();
+        }
+        return false;
+      },
       child: Scaffold(
         appBar: RoyalAppBar(
           title: 'रॉयल शेतकरी मार्केट / Market',
           onBackPressed: () async {
-            if (await _onWillPop()) {
-              if (mounted) Navigator.of(context).pop();
+            if (canPop) {
+              if (await _onWillPop()) {
+                if (mounted) Navigator.of(context).pop();
+              }
+            } else if (widget.onBackToHome != null) {
+              widget.onBackToHome!();
             }
           },
           actions: [
@@ -179,7 +194,7 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
           ),
         ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF1B5E20)))
+          ? Center(child: ShimmerSkeleton())
           : TabBarView(
               controller: _tabController,
               children: _tabs.map((tab) {

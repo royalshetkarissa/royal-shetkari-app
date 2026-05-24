@@ -16,6 +16,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _mobileController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  String? _mobileError;
+  String? _passwordError;
 
   @override
   void dispose() {
@@ -25,14 +27,26 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
-    if (_mobileController.text.length != 10) {
-      _showSnackBar('Please enter valid 10-digit mobile number');
-      return;
+    setState(() {
+      _mobileError = null;
+      _passwordError = null;
+    });
+
+    bool isValid = true;
+    if (_mobileController.text.trim().isEmpty) {
+      setState(() => _mobileError = 'Mobile number is required');
+      isValid = false;
+    } else if (_mobileController.text.trim().length != 10) {
+      setState(() => _mobileError = 'Please enter valid 10-digit mobile number');
+      isValid = false;
     }
+
     if (_passwordController.text.isEmpty) {
-      _showSnackBar('Please enter password');
-      return;
+      setState(() => _passwordError = 'Password is required');
+      isValid = false;
     }
+
+    if (!isValid) return;
 
     final auth = context.read<AuthProvider>();
     final success = await auth.login(
@@ -46,7 +60,18 @@ class _LoginScreenState extends State<LoginScreen> {
       _showSnackBar('OTP sent to your WhatsApp!', isError: false);
       Navigator.pushNamed(context, '/otp');
     } else {
-      _showSnackBar(auth.error ?? 'Login failed');
+      final errorMsg = auth.error ?? 'Login failed';
+      if (errorMsg.toLowerCase().contains('password')) {
+        setState(() {
+          _passwordError = 'Password is incorrect';
+        });
+      } else if (errorMsg.toLowerCase().contains('user') || errorMsg.toLowerCase().contains('mobile') || errorMsg.toLowerCase().contains('found')) {
+        setState(() {
+          _mobileError = 'Mobile number is not registered';
+        });
+      } else {
+        _showSnackBar(errorMsg);
+      }
     }
   }
 
@@ -95,6 +120,13 @@ class _LoginScreenState extends State<LoginScreen> {
               icon: Icons.phone_android,
               keyboardType: TextInputType.phone,
               maxLength: 10,
+              errorText: _mobileError,
+              isRequired: true,
+              onChanged: (val) {
+                if (_mobileError != null) {
+                  setState(() => _mobileError = null);
+                }
+              },
             ),
             const SizedBox(height: 16),
             CustomTextField(
@@ -103,6 +135,13 @@ class _LoginScreenState extends State<LoginScreen> {
               hint: 'Enter your password',
               icon: Icons.lock_outline,
               obscureText: _obscurePassword,
+              errorText: _passwordError,
+              isRequired: true,
+              onChanged: (val) {
+                if (_passwordError != null) {
+                  setState(() => _passwordError = null);
+                }
+              },
               suffixIcon: IconButton(
                 icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
                 onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
