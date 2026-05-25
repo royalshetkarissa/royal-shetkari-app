@@ -126,24 +126,10 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                       Center(
                         child: Column(
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.04),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Image.asset(
-                                'assets/images/logo.png',
-                                width: 140,
-                                fit: BoxFit.contain,
-                              ),
+                            Image.asset(
+                              'assets/images/logo.png',
+                              width: 140,
+                              fit: BoxFit.contain,
                             ),
                             const SizedBox(height: 8),
                             const Text(
