@@ -87,8 +87,8 @@ class PostService {
     return comment;
   }
 
-  async softDeletePost(userId, postId) {
-    const post = await postRepository.updateStatus(postId, userId, 'deleted');
+  async softDeletePost(userId, userMobile, postId) {
+    const post = await postRepository.updateStatus(postId, userId, userMobile, 'deleted');
     if (post) {
       await cache.del(`post:detail:${postId}`);
       await cache.invalidatePattern(`posts:list:*`);
@@ -96,11 +96,11 @@ class PostService {
     return post;
   }
 
-  async updatePost(postId, userId, data) {
+  async updatePost(postId, userId, userMobile, data) {
     const currentPost = await postRepository.findById(postId);
-    if (!currentPost || currentPost.user_id !== userId) return null;
+    if (!currentPost || (currentPost.user_id !== userId && currentPost.contact_mobile !== userMobile)) return null;
     
-    const post = await postRepository.update(postId, userId, {
+    const post = await postRepository.update(postId, userId, userMobile, {
       ...data,
       oldPrice: currentPost.price
     });

@@ -117,7 +117,7 @@ exports.addComment = async (req, res, next) => {
 
 exports.deletePost = async (req, res, next) => {
   try {
-    const post = await postService.softDeletePost(req.userId, req.params.id);
+    const post = await postService.softDeletePost(req.userId, req.userMobile, req.params.id);
     if (!post) return next(new AppError('Post not found or unauthorized', 404));
     
     await logActivity(req.userId, 'DELETE_POST', 'post', req.params.id, { title: post.title }, req.id);
@@ -129,7 +129,7 @@ exports.deletePost = async (req, res, next) => {
 
 exports.updatePost = async (req, res, next) => {
   try {
-    const post = await postService.updatePost(req.params.id, req.userId, req.body);
+    const post = await postService.updatePost(req.params.id, req.userId, req.userMobile, req.body);
     if (!post) return next(new AppError('Post not found or unauthorized', 404));
     
     await logActivity(req.userId, 'POST_EDITED', 'post', req.params.id, { title: post.title }, req.id);

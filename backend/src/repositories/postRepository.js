@@ -168,12 +168,12 @@ class PostRepository {
     return result.rows[0];
   }
 
-  async updateStatus(postId, userId, status) {
+  async updateStatus(postId, userId, userMobile, status) {
     if (status === 'deleted') {
       // 1. Fetch current post details
       const postRes = await pool.queryWithRetry(
-        'SELECT * FROM posts WHERE id = $1 AND user_id = $2',
-        [postId, userId]
+        'SELECT * FROM posts WHERE id = $1 AND (user_id = $2 OR contact_mobile = $3)',
+        [postId, userId, userMobile]
       );
       const post = postRes.rows[0];
       
@@ -228,27 +228,27 @@ class PostRepository {
       
       // Update status and set deleted_at to NOW()
       const result = await pool.queryWithRetry(
-        "UPDATE posts SET status = $1, deleted_at = NOW() WHERE id = $2 AND user_id = $3 RETURNING *",
-        [status, postId, userId]
+        "UPDATE posts SET status = $1, deleted_at = NOW() WHERE id = $2 AND (user_id = $3 OR contact_mobile = $4) RETURNING *",
+        [status, postId, userId, userMobile]
       );
       return result.rows[0];
     } else {
       const result = await pool.queryWithRetry(
-        "UPDATE posts SET status = $1 WHERE id = $2 AND user_id = $3 RETURNING *",
-        [status, postId, userId]
+        "UPDATE posts SET status = $1 WHERE id = $2 AND (user_id = $3 OR contact_mobile = $4) RETURNING *",
+        [status, postId, userId, userMobile]
       );
       return result.rows[0];
     }
   }
 
-  async update(postId, userId, data) {
+  async update(postId, userId, userMobile, data) {
     const { category, title, description, price, location, contact_mobile, oldPrice, latitude, longitude, animal_type, lactation, milk_per_day } = data;
     const result = await pool.queryWithRetry(
       `UPDATE posts SET category = $1, title = $2, description = $3, price = $4, location = $5, 
        contact_mobile = $6, edit_count = edit_count + 1, old_price = $7, status = 'active',
        latitude = COALESCE($8, latitude), longitude = COALESCE($9, longitude), animal_type = $10, lactation = $11, milk_per_day = $12
-       WHERE id = $13 AND user_id = $14 RETURNING *`,
-      [category, title, description, price, location, contact_mobile, oldPrice, latitude || null, longitude || null, animal_type || null, lactation || null, milk_per_day || null, postId, userId]
+       WHERE id = $13 AND (user_id = $14 OR contact_mobile = $15) RETURNING *`,
+      [category, title, description, price, location, contact_mobile, oldPrice, latitude || null, longitude || null, animal_type || null, lactation || null, milk_per_day || null, postId, userId, userMobile]
     );
     return result.rows[0];
   }
