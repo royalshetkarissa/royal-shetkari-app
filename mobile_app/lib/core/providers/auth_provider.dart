@@ -235,6 +235,23 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> resetPassword({required String mobile, required String newPassword}) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await _api.resetPassword(mobile: mobile, newPassword: newPassword);
+      return true;
+    } catch (e) {
+      _error = _formatError(e);
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   String _formatError(dynamic e) {
     if (e is DioException) {
       if (e.response?.data != null && e.response?.data is Map) {

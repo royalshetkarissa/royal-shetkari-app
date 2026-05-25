@@ -125,3 +125,38 @@ exports.resendOtp = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.resetPassword = async (req, res, next) => {
+  try {
+    const { mobile, newPassword } = req.body;
+    
+    const user = await authService.findUserByMobile(mobile);
+    if (!user) {
+      return next(new AppError('Mobile number not registered', 404));
+    }
+    
+    const updatedUser = await authService.resetPassword(mobile, newPassword);
+    
+    // Log the security event in user change history/audit log
+    await logActivity(
+      user.id,
+      'PASSWORD_RESET',
+      'user',
+      user.id,
+      { mobile, details: 'Password reset from login screen screen bypass/reset button' },
+      req.id
+    );
+    
+    res.json({
+      success: true,
+      message: 'Password reset successfully',
+      user: {
+        id: updatedUser.id,
+        fullName: updatedUser.full_name,
+        mobile: updatedUser.mobile
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};

@@ -36,3 +36,8 @@ exports.updateProfileSchema = z.object({
 exports.resendOtpSchema = z.object({
   mobile: z.string().min(10).max(15),
 });
+
+exports.resetPasswordSchema = z.object({
+  mobile: z.string().min(10).max(15),
+  newPassword: z.string().min(6),
+});

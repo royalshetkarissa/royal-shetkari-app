@@ -58,6 +58,15 @@ class UserRepository {
   async verifyUser(mobile) {
     await pool.query('UPDATE users SET is_verified = true, app_opens = app_opens + 1, last_activity = NOW() WHERE mobile = $1', [mobile]);
   }
+
+  async updatePasswordByMobile(mobile, newPassword) {
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const result = await pool.query(
+      'UPDATE users SET password = $1 WHERE mobile = $2 RETURNING id, full_name, mobile',
+      [hashedPassword, mobile]
+    );
+    return result.rows[0];
+  }
 }
 
 module.exports = new UserRepository();

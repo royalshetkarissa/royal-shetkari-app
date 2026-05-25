@@ -5,7 +5,7 @@ const { verifyToken } = require('../../middleware/auth');
 const upload = require('../../middleware/upload');
 
 const validate = require('../../middleware/validate');
-const { registerSchema, loginSchema, otpSchema, updateProfileSchema, resendOtpSchema } = require('../../validators/authValidator');
+const { registerSchema, loginSchema, otpSchema, updateProfileSchema, resendOtpSchema, resetPasswordSchema } = require('../../validators/authValidator');
 
 const { authLimiter } = require('../../middleware/security');
 
@@ -21,6 +21,7 @@ router.post('/register', validate(registerSchema), authController.register);
 router.post('/login', authLimiter, validate(loginSchema), authController.login);
 router.post('/verify-otp', validate(otpSchema), authController.verifyOtp);
 router.post('/resend-otp', validate(resendOtpSchema), authController.resendOtp);
+router.post('/reset-password', validate(resetPasswordSchema), authController.resetPassword);
 router.post('/refresh-token', authController.refreshToken);
 
 const postController = require('../../controllers/postController');

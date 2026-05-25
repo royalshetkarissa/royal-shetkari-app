@@ -59,6 +59,10 @@ class AuthService {
     const accessToken = jwtHelper.signAccessToken(payload);
     return { accessToken };
   }
+
+  async resetPassword(mobile, newPassword) {
+    return await userRepository.updatePasswordByMobile(mobile, newPassword);
+  }
 }
 
 module.exports = new AuthService();
