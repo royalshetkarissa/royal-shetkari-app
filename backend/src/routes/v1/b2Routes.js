@@ -1,0 +1,75 @@
+const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const { PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+const s3Client = require('../../config/b2');
+const { verifyToken } = require('../../middleware/auth');
+const pool = require('../../config/db');
+
+const router = express.Router();
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+// POST /upload - Uploads image to Backblaze B2 and saves record to PostgreSQL posts table
+router.post('/upload', verifyToken, upload.single('image'), async (req, res, next) => {
+  try {
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ error: 'No image file uploaded' });
+    }
+
+    const { caption } = req.body;
+    
+    // Generate unique key
+    const extension = path.extname(file.originalname) || '.jpg';
+    const fileKey = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}${extension}`;
+
+    // Upload to Backblaze B2
+    const uploadCommand = new PutObjectCommand({
+      Bucket: process.env.B2_BUCKET || 'rsitapp-images',
+      Key: fileKey,
+      Body: file.buffer,
+      ContentType: file.mimetype,
+    });
+
+    await s3Client.send(uploadCommand);
+
+    // Save record to PostgreSQL posts table
+    // Storing in custom columns file_key, caption, and compatibility columns (title, description)
+    const result = await pool.query(
+      `INSERT INTO posts (user_id, file_key, caption, title, description, category, status, created_at)
+       VALUES ($1, $2, $3, $4, $5, 'general', 'active', NOW()) RETURNING *`,
+      [req.userId, fileKey, caption || '', caption || 'Upload', caption || 'Backblaze B2 Upload']
+    );
+
+    res.status(201).json({
+      success: true,
+      message: 'Image uploaded and post saved successfully',
+      post: result.rows[0],
+      fileKey,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /image/:key - Generates a temporary getSignedUrl and redirects the request
+router.get('/image/:key', async (req, res, next) => {
+  try {
+    const { key } = req.params;
+    const command = new GetObjectCommand({
+      Bucket: process.env.B2_BUCKET || 'rsitapp-images',
+      Key: key,
+    });
+
+    const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+    
+    // Redirect the browser/app to the signed url
+    res.redirect(signedUrl);
+  } catch (error) {
+    next(error);
+  }
+});
+
+module.exports = router;

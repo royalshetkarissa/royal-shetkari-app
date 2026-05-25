@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../core/providers/post_provider.dart';
 import '../models/post_model.dart';
 import 'edit_post_screen.dart';
+import '../services/api_service.dart';
 
 class MyPostsScreen extends StatefulWidget {
   const MyPostsScreen({super.key});
@@ -136,7 +137,7 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: (post.images != null && post.images!.isNotEmpty)
-                      ? Image.network(post.images!.first, width: 60, height: 60, fit: BoxFit.cover)
+                      ? Image.network(ApiService().getImageUrl(post.images!.first), width: 60, height: 60, fit: BoxFit.cover)
                       : Container(width: 60, height: 60, color: Colors.grey[100], child: const Icon(Icons.image, size: 30)),
                 ),
                 if (isDeleted)
