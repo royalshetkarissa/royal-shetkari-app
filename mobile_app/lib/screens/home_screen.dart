@@ -463,7 +463,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Royal Shetkari'),
+        title: Image.asset(
+          'assets/images/logo.png',
+          height: 38,
+          fit: BoxFit.contain,
+        ),
+        centerTitle: false,
         backgroundColor: const Color(0xFF2E7D32),
         elevation: 0,
         actions: [
@@ -488,18 +493,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               );
             },
           ),
-          Container(
-            margin: const EdgeInsets.only(right: 16, top: 10, bottom: 10),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Image.asset(
-              'assets/images/logo.png',
-              fit: BoxFit.contain,
-            ),
-          ),
+          const SizedBox(width: 8),
         ],
       ),
       body: RefreshIndicator(
