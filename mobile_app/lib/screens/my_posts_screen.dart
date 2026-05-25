@@ -151,14 +151,39 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
                   ),
               ],
             ),
-            title: Text(
-              post.title ?? '',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                decoration: isDeleted ? TextDecoration.lineThrough : null,
-                color: isDeleted ? Colors.grey[600] : Colors.black,
-              ),
+            title: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    post.title ?? '',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      decoration: isDeleted ? TextDecoration.lineThrough : null,
+                      color: isDeleted ? Colors.grey[600] : Colors.black,
+                    ),
+                  ),
+                ),
+                if (isDeleted) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.red[700],
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'DELETED',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -221,7 +246,7 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      isDeleted ? 'Deleted from Public Feed' : (post.status == 'inactive' ? 'Inactive (Hidden)' : 'Active on Public Feed'),
+                      isDeleted ? 'REMARK: Deleted & Archived in DB' : (post.status == 'inactive' ? 'Inactive (Hidden)' : 'Active on Public Feed'),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
@@ -282,8 +307,8 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
                 borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
               ),
               child: const Text(
-                'ACTIVITY: Post hidden from public but archived for developer review.',
-                style: TextStyle(fontSize: 9, fontStyle: FontStyle.italic, color: Colors.red),
+                'REMARK: This post has been marked as DELETED in the database and hidden from the public feed.',
+                style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.red),
               ),
             ),
         ],
@@ -292,21 +317,27 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
   }
 
   void _confirmDelete(int postId) {
+    final postProvider = Provider.of<PostProvider>(context, listen: false);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: const Text('Delete Post?'),
         content: const Text('This post will be removed from the public feed but kept in your history.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCEL')),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('CANCEL'),
+          ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
-              final postProvider = Provider.of<PostProvider>(context, listen: false);
+              Navigator.pop(dialogCtx);
               final success = await postProvider.deletePost(postId);
               if (success) {
-                postProvider.fetchUserPosts();
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Post deleted successfully')));
+                scaffoldMessenger.showSnackBar(
+                  const SnackBar(content: Text('Post deleted successfully')),
+                );
               }
             },
             child: const Text('DELETE', style: TextStyle(color: Colors.red)),
