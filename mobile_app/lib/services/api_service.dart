@@ -129,6 +129,15 @@ class ApiService {
     return Map<String, dynamic>.from(_handleResponse(response));
   }
 
+  Future<Map<String, dynamic>> uploadB2Image({required String imagePath, required String caption}) async {
+    FormData formData = FormData.fromMap({
+      'caption': caption,
+      'image': await MultipartFile.fromFile(imagePath),
+    });
+    final response = await _dio.post('/upload', data: formData);
+    return Map<String, dynamic>.from(_handleResponse(response));
+  }
+
   Future<Map<String, dynamic>> getPostDetails(int id) async {
     final response = await _dio.get('/posts/$id');
     return Map<String, dynamic>.from(_handleResponse(response));

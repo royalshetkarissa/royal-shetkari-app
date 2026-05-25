@@ -122,6 +122,23 @@ class PostProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> uploadB2Image(String imagePath, String caption) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      await _api.uploadB2Image(imagePath: imagePath, caption: caption);
+      await fetchPosts();
+      return true;
+    } catch (e) {
+      _error = 'Failed to upload B2 image';
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<bool> deletePost(int postId) async {
     try {
       await _api.deletePost(postId);
