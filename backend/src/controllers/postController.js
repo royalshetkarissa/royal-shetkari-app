@@ -3,13 +3,44 @@ const { logActivity } = require('../utils/logger');
 const AppError = require('../utils/AppError');
 const { addPostJob } = require('../jobs/postQueue');
 
+const fs = require('fs').promises;
+const { PutObjectCommand } = require('@aws-sdk/client-s3');
+const s3Client = require('../config/b2');
+
 exports.createPost = async (req, res, next) => {
   try {
     const { category, title, description, price, location, contact_mobile, latitude, longitude, animal_type, lactation, milk_per_day } = req.body;
     let imageUrls = [];
     
     if (req.files && req.files.length > 0) {
-      imageUrls = req.files.map(file => `/uploads/${file.filename}`);
+      for (const file of req.files) {
+        try {
+          // If Backblaze credentials are configured, upload there
+          if (process.env.B2_KEY_ID && process.env.B2_KEY_ID !== 'YOUR_KEY_ID') {
+            const fileKey = `posts/${Date.now()}-${Math.random().toString(36).substring(2, 10)}-${file.filename}`;
+            const fileBuffer = await fs.readFile(file.path);
+            
+            const uploadCommand = new PutObjectCommand({
+              Bucket: process.env.B2_BUCKET || 'rsitapp-images',
+              Key: fileKey,
+              Body: fileBuffer,
+              ContentType: file.mimetype,
+            });
+            await s3Client.send(uploadCommand);
+            
+            // Reference the secure proxy image URL
+            imageUrls.push(`/api/image/${fileKey}`);
+            
+            // Delete local file to free up space
+            await fs.unlink(file.path);
+          } else {
+            imageUrls.push(`/uploads/${file.filename}`);
+          }
+        } catch (uploadError) {
+          console.error('Failed to upload image to B2, falling back to local:', uploadError);
+          imageUrls.push(`/uploads/${file.filename}`);
+        }
+      }
     }
     
     const post = await postService.createPost({
@@ -29,10 +60,14 @@ exports.createPost = async (req, res, next) => {
       milk_per_day
     });
     
-    // Background Jobs
-    await addPostJob('process-images', { postId: post.id, images: imageUrls });
-    await addPostJob('send-notifications', { postId: post.id, title: post.title });
-
+    // Background Jobs (Wrapped to prevent queue failures from blocking success response)
+    try {
+      await addPostJob('process-images', { postId: post.id, images: imageUrls });
+      await addPostJob('send-notifications', { postId: post.id, title: post.title });
+    } catch (queueError) {
+      console.error('Failed to add post background jobs to queue:', queueError.message);
+    }
+ 
     await logActivity(req.userId, 'CREATE_POST', 'post', post.id, { title, category }, req.id);
     res.status(201).json({ success: true, post, requestId: req.id });
   } catch (error) {
