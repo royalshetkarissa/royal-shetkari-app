@@ -1,6 +1,7 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const AppError = require('../utils/AppError');
 
 const uploadDir = path.join(__dirname, '../../uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -13,10 +14,56 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + '-' + file.originalname);
+    // Sanitize filename: prevent path traversal and remove special chars
+    const baseName = path.basename(file.originalname);
+    const sanitizedName = baseName.replace(/[^a-zA-Z0-9.-]/g, '_');
+    cb(null, uniqueSuffix + '-' + sanitizedName);
   },
 });
 
-const upload = multer({ storage: storage });
+const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+
+const dangerousExtensions = [
+  '.exe',
+  '.bat',
+  '.sh',
+  '.js',
+  '.php',
+  '.apk',
+  '.bin',
+  '.cmd',
+  '.com',
+  '.msi',
+];
+
+const fileFilter = (req, file, cb) => {
+  // 1. Verify MIME type
+  if (!allowedMimeTypes.includes(file.mimetype)) {
+    return cb(
+      new AppError(
+        'Invalid file type. Only JPEG, PNG, WEBP images and PDF documents are allowed.',
+        400
+      ),
+      false
+    );
+  }
+
+  // 2. Verify file extension to prevent bypasses/obfuscation
+  const ext = path.extname(file.originalname).toLowerCase();
+  if (dangerousExtensions.includes(ext) || !ext) {
+    return cb(new AppError('Dangerous or unsupported file extension rejected.', 400), false);
+  }
+
+  cb(null, true);
+};
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 8 * 1024 * 1024, // 8 MB
+    files: 5,
+  },
+  fileFilter: fileFilter,
+});
 
 module.exports = upload;

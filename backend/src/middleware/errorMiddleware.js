@@ -4,6 +4,20 @@ const logger = require('../utils/logger');
  * Global Error Handler Middleware
  */
 const errorMiddleware = (err, req, res, next) => {
+  // Handle Multer upload errors
+  if (err.name === 'MulterError') {
+    err.statusCode = 400;
+    err.status = 'fail';
+    err.isOperational = true;
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      err.message = 'File size limit exceeded. Maximum file size allowed is 8MB.';
+    } else if (err.code === 'LIMIT_FILE_COUNT') {
+      err.message = 'Too many files uploaded. Maximum files allowed per request is 5.';
+    } else {
+      err.message = `Upload error: ${err.message}`;
+    }
+  }
+
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
 
