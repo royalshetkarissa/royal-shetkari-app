@@ -45,7 +45,10 @@ app.use(
         allowedOrigins.includes(origin) ||
         allowedOrigins.includes('*') ||
         origin.endsWith('.railway.app') ||
-        /\.railway\.app$/.test(origin);
+        /\.railway\.app$/.test(origin) ||
+        /^https?:\/\/localhost(:\d+)?$/.test(origin) ||
+        /^https?:\/\/127\.0\.0\.1(:\d+)?$/.test(origin) ||
+        /^https?:\/\/192\.168\.\d+\.\d+(:\d+)?$/.test(origin);
       if (isAllowed) {
         return callback(null, true);
       }
