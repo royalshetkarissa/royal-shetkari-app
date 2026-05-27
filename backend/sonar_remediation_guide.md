@@ -1,81 +1,93 @@
 # SonarCloud Integration & Remediation Guide
 
-This guide describes how to resolve the `Project not found` scanner error (Exit Code 3) and establishes secure, production-ready integration between GitHub Actions and SonarCloud for the **Royal Shetkari** project.
+This guide describes how to resolve the `Project not found` and `Failed to check if project is bound` errors (Exit Code 3) and establishes secure, production-ready integration between GitHub Actions and SonarCloud for the **Royal Shetkari** project.
 
 ---
 
-## 1. Why Did This Error Happen?
-When SonarScanner runs inside GitHub Actions, it contacts the SonarCloud APIs. During this scan, the logs show:
-1. `Load project settings for component key: 'royalshetkarissa_royal-shetkari-backend' (done)`
-2. `Check ALM binding of project 'royalshetkarissa_royal-shetkari-backend' ... BOUND`
-3. `Create analysis ... ERROR Project not found`
-
-This sequence means that:
-* The scanner successfully performed a **read-only** call to fetch settings for the project key `royalshetkarissa_royal-shetkari-backend`.
-* The GitHub repository and SonarCloud project are linked (**BOUND**).
-* **The analysis creation failed** because the `SONAR_TOKEN` provided to the runner lacks the **Execute Analysis** permission on this project/organization, or the token has expired or been revoked. SonarCloud returns a generic `Project not found` error rather than a permission error to prevent disclosing the existence of private resources to unauthorized users.
+## 1. Why Does “Project not found” or "Failed to check if project is bound" Still Occur?
+Even when a project exists on SonarCloud with the correct key (`royalshetkarissa_royal-shetkari-backend`), the scanner can still fail with these errors. This happens because:
+* **Token Scope & Permissions (Read/Write Mismatch)**: The SonarScanner needs to make authenticated calls to SonarCloud. If the token is valid but doesn't have permissions to write analysis or check bindings, SonarCloud returns a `404 Not Found` (disguised as `Project not found`) or reports that it failed to check if the project is bound. This is a security measure to prevent unauthorized users from discovering private project keys.
+* **Stale ALM / Repository Binding**: If the connection between GitHub and SonarCloud is disrupted (e.g., due to updated GitHub organization member access, expired GitHub OAuth permissions, or incorrect SonarCloud App permissions), the project binding check will fail.
+* **Private Project Settings**: If the project is private on SonarCloud, a standard public/unprivileged token cannot see it, resulting in the scanner reporting the project as "not found".
 
 ---
 
-## 2. How to Verify Organization Key
+## 2. Reconnecting GitHub Repository Binding in SonarCloud
+If your repository binding has become stale or disconnected:
 1. Log in to [SonarCloud](https://sonarcloud.io/).
-2. Navigate to your organization dashboard (e.g. click on your avatar in the top-right and select your organization).
-3. Look at the URL or the organization page header:
-   * The **Organization Key** is the identifier shown in the URL: `https://sonarcloud.io/organizations/<organization-key>/projects`.
-   * For this project, it is: **`royalshetkarissa`**.
-4. Double-check that it matches exactly in `backend/sonar-project.properties`:
-   ```properties
-   sonar.organization=royalshetkarissa
-   ```
+2. Navigate to your organization: **royalshetkarissa**.
+3. Go to **Organization Settings** > **Organization binding** (in the left navigation panel).
+4. You will see your GitHub organization binding. If there is a warning or disconnect message, click **Rebind** or **Update connection**.
+5. You will be redirected to GitHub to authenticate. Make sure to approve all permissions requested by the SonarCloud integration.
+6. Verify that the repository `royalshetkarissa/royal-shetkari-app` is selected under the allowed repositories list for the SonarCloud GitHub App installation.
 
 ---
 
-## 3. How to Verify Project Key
-1. Inside your SonarCloud organization, click on your project **royal-shetkari-app**.
-2. On the project home page, look at the bottom-right corner under **Project Information**:
-   * You will find the **Project Key**.
-   * It should be exactly: **`royalshetkarissa_royal-shetkari-backend`**.
-3. Verify that it matches exactly in `backend/sonar-project.properties`:
-   ```properties
-   sonar.projectKey=royalshetkarissa_royal-shetkari-backend
-   ```
+## 3. Verifying Repository & Organization Permissions
+To allow SonarCloud to analyze your repository:
+* **GitHub Repository Permissions**:
+  1. Go to your GitHub repository > **Settings** > **Integrations** > **Installed GitHub Apps**.
+  2. Verify that **SonarCloud** is listed and has permission to access your repository.
+* **SonarCloud Organization Permissions**:
+  1. Go to **SonarCloud** > Select your organization **royalshetkarissa**.
+  2. Click on **Members** (or **Administer Organization**).
+  3. Ensure that the user generating the `SONAR_TOKEN` has the **Administer** permission on the organization, or at least the **Execute Analysis** permission.
 
 ---
 
-## 4. How to Regenerate a High-Permission SONAR_TOKEN
-A token with "Execute Analysis" permission is required to upload reports.
-1. In SonarCloud, click on your profile picture in the upper right-hand corner and select **My Account**.
+## 4. Verifying SONAR_TOKEN Access to Private Projects
+If your repository/project is private:
+1. In SonarCloud, select the project **royal-shetkari-backend**.
+2. Go to **Project Settings** > **Permissions**.
+3. Under the permissions table, check the role assigned to the user or token you are using:
+   * The role **must** have **Execute Analysis** and **Provision Projects** checked.
+   * If using a project-specific analysis token, ensure it is generated from the project's own settings page under **Administration** > **Analysis Tokens**.
+
+---
+
+## 5. Regenerating a Secure SONAR_TOKEN
+If the token is expired, corrupted, or has insufficient scopes, regenerate it:
+1. Click on your profile picture in the top-right corner of SonarCloud and select **My Account**.
 2. Go to the **Security** tab.
-3. Under **Generate Tokens**:
-   * Enter a name (e.g., `GitHub Actions CI Token`).
+3. In the **Generate Tokens** field:
+   * Type a descriptive name (e.g. `GitHub_Actions_Royal_Shetkari`).
    * Click **Generate**.
-4. **Copy the token immediately** (you will not be able to see it again).
-5. Ensure your user account is an Administrator or has **Execute Analysis** permission in the organization:
-   * Go to **Organization > Members** and verify your permissions.
-   * Or go to **Project Settings > Permissions** and ensure your role has **Execute Analysis** checked.
+4. **Copy the token immediately** (it will not be shown again).
 
 ---
 
-## 5. How to Reconnect GitHub Repository with SonarCloud
-If your binding becomes stale:
-1. In SonarCloud, go to **Organization Settings > Organization binding**.
-2. Click **Rebind** or update permissions to refresh the GitHub App connection.
-3. Ensure the SonarCloud GitHub App has permission to access the `royalshetkarissa/royal-shetkari-app` repository.
+## 6. Configuring the Token in GitHub Secrets
+To make the token available securely to your GitHub Actions:
+1. Go to your GitHub repository: `https://github.com/royalshetkarissa/royal-shetkari-app`.
+2. Navigate to **Settings** > **Secrets and variables** > **Actions**.
+3. Click **New repository secret** (or update the existing `SONAR_TOKEN` secret):
+   * **Name**: `SONAR_TOKEN`
+   * **Value**: Paste the generated token.
+4. Click **Add secret** / **Update secret**.
 
 ---
 
-## 6. How to Set Up the Secret in GitHub
-1. Navigate to your GitHub repository: `https://github.com/royalshetkarissa/royal-shetkari-app`.
-2. Go to **Settings > Secrets and variables > Actions**.
-3. Under **Repository secrets**:
-   * Find `SONAR_TOKEN`.
-   * Click the edit icon (or click **New repository secret** if it doesn't exist).
-   * Paste your newly generated SonarCloud token.
-   * Click **Update secret** / **Add secret**.
+## 7. How to Verify ALM Binding Status
+To verify if your project is successfully bound:
+1. In SonarCloud, navigate to your project **royal-shetkari-backend**.
+2. Look at the top-left corner under the project name:
+   * You should see a small **GitHub icon** next to the project name.
+   * If it is unbound, a warning or "Unbound" badge will appear, and you will be prompted to link it to its corresponding GitHub repository.
 
 ---
 
-## 7. Configuration Files Reference
+## 8. Verification Checklist Before Push
+Before committing your configuration, make sure you checked:
+- [ ] Is `sonar.projectKey` set to exactly `royalshetkarissa_royal-shetkari-backend` in `backend/sonar-project.properties`?
+- [ ] Is `sonar.organization` set to exactly `royalshetkarissa` in `backend/sonar-project.properties`?
+- [ ] Is `sonar.host.url` set to `https://sonarcloud.io` in `backend/sonar-project.properties`?
+- [ ] Does `.github/workflows/ci.yml` run the Sonar step with `uses: SonarSource/sonarqube-scan-action@v6`?
+- [ ] Does the GitHub workflow step pass the `projectBaseDir: ./backend` parameter?
+- [ ] Did you update the `SONAR_TOKEN` in the repository secrets on GitHub?
+
+---
+
+## 9. Configuration Files Reference
 
 ### A. sonar-project.properties
 Path: `backend/sonar-project.properties`
@@ -117,7 +129,7 @@ Path: `.github/workflows/ci.yml` (Excerpt)
 
 ---
 
-## 8. How to Test SonarCloud Access Locally
+## 10. How to Test SonarCloud Access Locally
 Before committing or pushing your changes, you can verify your configuration and credentials locally.
 
 ### Method A: Using Docker (Recommended)
@@ -139,4 +151,3 @@ docker run --rm \
      -Dsonar.token="your_regenerated_sonar_token" \
      -Dsonar.projectBaseDir=./backend
    ```
-If the token and configurations are correct, the scan will complete successfully locally and upload the report to SonarCloud.
