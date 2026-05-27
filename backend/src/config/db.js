@@ -15,7 +15,7 @@ if (
 ) {
   poolConfig = {
     connectionString: databaseUrl,
-    ssl: isProd ? { rejectUnauthorized: env.DB_SSL_REJECT_UNAUTHORIZED } : false,
+    ssl: isProd ? { rejectUnauthorized: env.DB_SSL_REJECT_UNAUTHORIZED === 'true' } : false,
     max: 50,
     min: 10,
     idleTimeoutMillis: 30000,
