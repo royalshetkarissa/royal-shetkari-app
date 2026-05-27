@@ -14,7 +14,7 @@ exports.securityHeaders = helmet({
             scriptSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'"],
             imgSrc: ["'self'", 'data:', 'https:'],
-            connectSrc: ["'self'"],
+            connectSrc: ["'self'", 'https:'],
           },
         }
       : false,

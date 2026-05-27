@@ -41,7 +41,12 @@ app.use(
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps, curl, etc.)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+      const isAllowed =
+        allowedOrigins.includes(origin) ||
+        allowedOrigins.includes('*') ||
+        origin.endsWith('.railway.app') ||
+        /\.railway\.app$/.test(origin);
+      if (isAllowed) {
         return callback(null, true);
       }
       return callback(new Error('Not allowed by CORS'));
