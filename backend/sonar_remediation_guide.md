@@ -115,27 +115,9 @@ sonar.javascript.environments=node
 sonar.javascript.lcov.reportPaths=coverage/lcov.info
 ```
 
-### B. GitHub Actions SonarCloud Workflow
-Path: `.github/workflows/sonar.yml`
+### B. GitHub Actions CI Workflow
+Path: `.github/workflows/ci.yml` (Excerpt)
 ```yaml
-name: SonarCloud Scan
-
-on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
-
-jobs:
-  sonarcloud:
-    name: SonarCloud Analysis
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:

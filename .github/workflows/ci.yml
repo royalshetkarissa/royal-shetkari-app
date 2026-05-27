@@ -74,3 +74,10 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres_password@localhost:5432/test_db
           DB_SSL_REJECT_UNAUTHORIZED: false
 
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectBaseDir: ./backend
