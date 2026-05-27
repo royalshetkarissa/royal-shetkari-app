@@ -6,12 +6,12 @@ This guide describes how to resolve the `Project not found` scanner error (Exit 
 
 ## 1. Why Did This Error Happen?
 When SonarScanner runs inside GitHub Actions, it contacts the SonarCloud APIs. During this scan, the logs show:
-1. `Load project settings for component key: 'royalshetkarissa_royal-shetkari-app' (done)`
-2. `Check ALM binding of project 'royalshetkarissa_royal-shetkari-app' ... BOUND`
+1. `Load project settings for component key: 'royalshetkarissa_royal-shetkari-backend' (done)`
+2. `Check ALM binding of project 'royalshetkarissa_royal-shetkari-backend' ... BOUND`
 3. `Create analysis ... ERROR Project not found`
 
 This sequence means that:
-* The scanner successfully performed a **read-only** call to fetch settings for the project key `royalshetkarissa_royal-shetkari-app`.
+* The scanner successfully performed a **read-only** call to fetch settings for the project key `royalshetkarissa_royal-shetkari-backend`.
 * The GitHub repository and SonarCloud project are linked (**BOUND**).
 * **The analysis creation failed** because the `SONAR_TOKEN` provided to the runner lacks the **Execute Analysis** permission on this project/organization, or the token has expired or been revoked. SonarCloud returns a generic `Project not found` error rather than a permission error to prevent disclosing the existence of private resources to unauthorized users.
 
@@ -34,10 +34,10 @@ This sequence means that:
 1. Inside your SonarCloud organization, click on your project **royal-shetkari-app**.
 2. On the project home page, look at the bottom-right corner under **Project Information**:
    * You will find the **Project Key**.
-   * It should be exactly: **`royalshetkarissa_royal-shetkari-app`**.
+   * It should be exactly: **`royalshetkarissa_royal-shetkari-backend`**.
 3. Verify that it matches exactly in `backend/sonar-project.properties`:
    ```properties
-   sonar.projectKey=royalshetkarissa_royal-shetkari-app
+   sonar.projectKey=royalshetkarissa_royal-shetkari-backend
    ```
 
 ---
@@ -82,8 +82,8 @@ Path: `backend/sonar-project.properties`
 ```properties
 # SonarCloud Organization and Project Keys (Must match exactly with SonarCloud dashboard)
 sonar.organization=royalshetkarissa
-sonar.projectKey=royalshetkarissa_royal-shetkari-app
-sonar.projectName=royal-shetkari-app
+sonar.projectKey=royalshetkarissa_royal-shetkari-backend
+sonar.projectName=royal-shetkari-backend
 sonar.projectVersion=1.0.0
 sonar.host.url=https://sonarcloud.io
 
