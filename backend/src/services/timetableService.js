@@ -9,15 +9,15 @@ class TimetableService {
   async startCropJourney(userId, cropId, plantingDate) {
     // 1. Create the journey
     const journey = await timetableRepository.createUserCropJourney(userId, cropId, plantingDate);
-    
+
     // 2. Get templates for this crop
     const templates = await timetableRepository.getCropTemplates(cropId);
-    
+
     // 3. Generate tasks based on planting date
-    const tasks = templates.map(t => {
+    const tasks = templates.map((t) => {
       const dueDate = new Date(plantingDate);
       dueDate.setDate(dueDate.getDate() + t.day_offset);
-      
+
       return {
         userCropId: journey.id,
         templateId: t.id,
@@ -28,7 +28,7 @@ class TimetableService {
         chemicalDetails: t.chemical_details,
         rationaleEnglish: t.rationale_english,
         rationaleMarathi: t.rationale_marathi,
-        nutrientContent: t.nutrient_content
+        nutrientContent: t.nutrient_content,
       };
     });
 
@@ -36,19 +36,22 @@ class TimetableService {
       await timetableRepository.createUserCropTasks(tasks);
     }
 
-    await logger.logActivity(userId, 'START_CROP_JOURNEY', 'crop_journey', journey.id, { cropId, plantingDate });
-    
+    await logger.logActivity(userId, 'START_CROP_JOURNEY', 'crop_journey', journey.id, {
+      cropId,
+      plantingDate,
+    });
+
     return journey;
   }
 
   async getMyCropJourneys(userId) {
     const journeys = await timetableRepository.getUserCropJourneys(userId);
-    
+
     // Enrichment
     for (const journey of journeys) {
       journey.tasks = await timetableRepository.getTasksForJourney(journey.id);
     }
-    
+
     return journeys;
   }
 
@@ -57,9 +60,11 @@ class TimetableService {
     if (!task) {
       throw new Error('Task already completed or not found.');
     }
-    
-    await logger.logActivity(userId, 'COMPLETE_CROP_TASK', 'crop_task', taskId, { taskName: task.task_name });
-    
+
+    await logger.logActivity(userId, 'COMPLETE_CROP_TASK', 'crop_task', taskId, {
+      taskName: task.task_name,
+    });
+
     return task;
   }
 

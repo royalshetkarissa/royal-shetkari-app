@@ -15,7 +15,7 @@ require('./jobs/postWorker');
 
 const server = app.listen(PORT, async () => {
   logger.info(`🚀 Production Server running on port ${PORT}`);
-  
+
   // Run Database Migrations
   try {
     await migrationRunner.up();
@@ -28,7 +28,10 @@ const server = app.listen(PORT, async () => {
  * Handle Unhandled Rejections (Async)
  */
 process.on('unhandledRejection', (err) => {
-  logger.error('💥 UNHANDLED REJECTION! Shutting down...', { error: err.message, stack: err.stack });
+  logger.error('💥 UNHANDLED REJECTION! Shutting down...', {
+    error: err.message,
+    stack: err.stack,
+  });
   server.close(() => {
     process.exit(1);
   });
@@ -47,20 +50,20 @@ process.on('uncaughtException', (err) => {
  */
 const gracefulShutdown = (signal) => {
   logger.info(`\n🛑 ${signal} received. Starting graceful shutdown...`);
-  
+
   // 1. Stop accepting new connections
   server.close(async () => {
     logger.info('HTTP server closed. Cleaning up resources...');
-    
+
     try {
       // 2. Close DB pool
       await pool.end();
       logger.info('✅ Database pool closed.');
-      
+
       // 3. Close Redis connection
       await redis.quit();
       logger.info('✅ Redis connection closed.');
-      
+
       process.exit(0);
     } catch (err) {
       logger.error('❌ Error during cleanup:', { error: err.message });

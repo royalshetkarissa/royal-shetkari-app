@@ -20,7 +20,7 @@ router.post('/upload', verifyToken, upload.single('image'), async (req, res, nex
     }
 
     const { caption } = req.body;
-    
+
     // Generate unique key
     const extension = path.extname(file.originalname) || '.jpg';
     const fileKey = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}${extension}`;
@@ -64,7 +64,7 @@ router.get('/image/:key', async (req, res, next) => {
     });
 
     const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
-    
+
     // Redirect the browser/app to the signed url
     res.redirect(signedUrl);
   } catch (error) {

@@ -83,7 +83,7 @@ exports.up = async (client) => {
     ['Mango', 'आंबा', 'Fruit', 'favorite'],
     ['Banana', 'केळी', 'Fruit', 'straighten'],
     ['Orange', 'संत्री', 'Fruit', 'brightness_high'],
-    ['Strawberry', 'स्ट्रॉबेरी', 'Fruit', 'favorite_border']
+    ['Strawberry', 'स्ट्रॉबेरी', 'Fruit', 'favorite_border'],
   ];
 
   for (const crop of crops) {
@@ -102,7 +102,13 @@ exports.up = async (client) => {
       [onionId, 15, 'First Top Dressing', 'पहिली खत मात्रा', 'Urea - 25kg'],
       [onionId, 30, 'Second Top Dressing', 'दुसरी खत मात्रा', 'Urea - 25kg + MOP - 20kg'],
       [onionId, 45, 'Micronutrient Spray', 'सूक्ष्म अन्नद्रव्य फवारणी', 'Grade 2 Micronutrients'],
-      [onionId, 60, 'Bulb Development Dose', 'कांदा फुगवणीसाठी खत', '0:0:50 - 5kg through fertigation']
+      [
+        onionId,
+        60,
+        'Bulb Development Dose',
+        'कांदा फुगवणीसाठी खत',
+        '0:0:50 - 5kg through fertigation',
+      ],
     ];
     for (const t of templates) {
       await client.query(

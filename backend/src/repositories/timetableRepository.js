@@ -28,7 +28,18 @@ class TimetableRepository {
       await pool.queryWithRetry(
         `INSERT INTO user_crop_tasks (user_crop_id, template_id, task_name, task_marathi, due_date, organic_details, chemical_details, rationale_english, rationale_marathi, nutrient_content) 
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT DO NOTHING`,
-        [task.userCropId, task.templateId, task.taskName, task.taskMarathi, task.dueDate, task.organicDetails, task.chemicalDetails, task.rationaleEnglish, task.rationaleMarathi, task.nutrientContent]
+        [
+          task.userCropId,
+          task.templateId,
+          task.taskName,
+          task.taskMarathi,
+          task.dueDate,
+          task.organicDetails,
+          task.chemicalDetails,
+          task.rationaleEnglish,
+          task.rationaleMarathi,
+          task.nutrientContent,
+        ]
       );
     }
   }
@@ -58,7 +69,7 @@ class TimetableRepository {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      
+
       // 1. Mark task as completed if not already
       const taskResult = await client.query(
         `UPDATE user_crop_tasks 
@@ -74,10 +85,7 @@ class TimetableRepository {
       }
 
       // 2. Award coin to user
-      await client.query(
-        `UPDATE users SET coins = coins + 1 WHERE id = $1`,
-        [userId]
-      );
+      await client.query(`UPDATE users SET coins = coins + 1 WHERE id = $1`, [userId]);
 
       await client.query('COMMIT');
       return taskResult.rows[0];

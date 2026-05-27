@@ -12,5 +12,7 @@ exports.up = async (client) => {
 };
 
 exports.down = async (client) => {
-  await client.query(`ALTER TABLE user_crop_tasks DROP COLUMN IF EXISTS organic_details, DROP COLUMN IF EXISTS chemical_details`);
+  await client.query(
+    `ALTER TABLE user_crop_tasks DROP COLUMN IF EXISTS organic_details, DROP COLUMN IF EXISTS chemical_details`
+  );
 };

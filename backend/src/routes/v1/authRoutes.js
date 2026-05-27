@@ -5,7 +5,14 @@ const { verifyToken } = require('../../middleware/auth');
 const upload = require('../../middleware/upload');
 
 const validate = require('../../middleware/validate');
-const { registerSchema, loginSchema, otpSchema, updateProfileSchema, resendOtpSchema, resetPasswordSchema } = require('../../validators/authValidator');
+const {
+  registerSchema,
+  loginSchema,
+  otpSchema,
+  updateProfileSchema,
+  resendOtpSchema,
+  resetPasswordSchema,
+} = require('../../validators/authValidator');
 
 const { authLimiter } = require('../../middleware/security');
 
@@ -13,7 +20,7 @@ router.get('/', (req, res) => {
   res.json({
     status: 'success',
     message: 'Auth API is fully functional!',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -26,8 +33,18 @@ router.post('/refresh-token', authController.refreshToken);
 
 const postController = require('../../controllers/postController');
 
-router.put('/user/profile', verifyToken, validate(updateProfileSchema), authController.updateProfile);
-router.post('/user/profile/photo', verifyToken, upload.single('photo'), authController.updateProfilePhoto);
+router.put(
+  '/user/profile',
+  verifyToken,
+  validate(updateProfileSchema),
+  authController.updateProfile
+);
+router.post(
+  '/user/profile/photo',
+  verifyToken,
+  upload.single('photo'),
+  authController.updateProfilePhoto
+);
 router.get('/user/me', verifyToken, authController.getMe);
 
 router.get('/user/posts', verifyToken, postController.getUserPosts);

@@ -43,18 +43,24 @@ postWorker.on('completed', (job) => {
 
 postWorker.on('failed', async (job, err) => {
   logger.error(`Job ${job.id} failed with error: ${err.message}`);
-  
+
   // Dead Letter Queue: Log to database for admin review
   try {
     await pool.query(
       'INSERT INTO activity_logs (user_id, action_type, resource_type, resource_id, details) VALUES ($1, $2, $3, $4, $5)',
-      [job.data.userId || 0, 'JOB_FAILED', 'job', job.id, JSON.stringify({
-        name: job.name,
-        data: job.data,
-        error: err.message,
-        attempts: job.attemptsMade,
-        failedAt: new Date().toISOString()
-      })]
+      [
+        job.data.userId || 0,
+        'JOB_FAILED',
+        'job',
+        job.id,
+        JSON.stringify({
+          name: job.name,
+          data: job.data,
+          error: err.message,
+          attempts: job.attemptsMade,
+          failedAt: new Date().toISOString(),
+        }),
+      ]
     );
   } catch (dbErr) {
     logger.error('Failed to log failed job to database', dbErr);

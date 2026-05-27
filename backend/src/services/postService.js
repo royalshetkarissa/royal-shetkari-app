@@ -98,13 +98,18 @@ class PostService {
 
   async updatePost(postId, userId, userMobile, data) {
     const currentPost = await postRepository.findById(postId);
-    if (!currentPost || (currentPost.user_id !== userId && currentPost.contact_mobile !== userMobile)) return null;
-    
+    if (
+      !currentPost ||
+      (currentPost.user_id !== userId && currentPost.contact_mobile !== userMobile)
+    ) {
+      return null;
+    }
+
     const post = await postRepository.update(postId, userId, userMobile, {
       ...data,
-      oldPrice: currentPost.price
+      oldPrice: currentPost.price,
     });
-    
+
     if (post) {
       await cache.del(`post:detail:${postId}`);
       await cache.invalidatePattern(`posts:list:*`);

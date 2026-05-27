@@ -4,7 +4,7 @@ const AppError = require('../utils/AppError');
 exports.logImpression = async (req, res, next) => {
   try {
     const { activeType, activeId, startTime, endTime, durationSeconds } = req.body;
-    
+
     if (!activeType || !activeId || !startTime || !endTime || durationSeconds === undefined) {
       return next(new AppError('All impression metrics are required', 400));
     }

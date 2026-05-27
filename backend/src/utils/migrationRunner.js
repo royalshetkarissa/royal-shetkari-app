@@ -17,7 +17,7 @@ class MigrationRunner {
     // 2. If 'users' table doesn't exist, run the base schema.sql and seed.sql
     if (tableCheck.rows.length === 0) {
       logger.info('Initializing base database schema and seeding...');
-      
+
       const schemaPath = path.join(__dirname, '../database/schema.sql');
       const seedPath = path.join(__dirname, '../database/seed.sql');
 
@@ -54,23 +54,27 @@ class MigrationRunner {
     const migrationsDir = path.join(__dirname, '../migrations');
     if (!fs.existsSync(migrationsDir)) fs.mkdirSync(migrationsDir);
 
-    const files = fs.readdirSync(migrationsDir)
-      .filter(f => f.endsWith('.js'))
+    const files = fs
+      .readdirSync(migrationsDir)
+      .filter((f) => f.endsWith('.js'))
       .sort();
 
     for (const file of files) {
       const version = file.split('_')[0];
       const check = await pool.query('SELECT 1 FROM migrations_meta WHERE version = $1', [version]);
-      
+
       if (check.rows.length === 0) {
         logger.info(`Applying migration: ${file}`);
         const migration = require(path.join(migrationsDir, file));
-        
+
         const client = await pool.connect();
         try {
           await client.query('BEGIN');
           await migration.up(client);
-          await client.query('INSERT INTO migrations_meta (version, name) VALUES ($1, $2)', [version, file]);
+          await client.query('INSERT INTO migrations_meta (version, name) VALUES ($1, $2)', [
+            version,
+            file,
+          ]);
           await client.query('COMMIT');
           logger.info(`✅ Successfully applied: ${file}`);
         } catch (err) {
@@ -86,8 +90,9 @@ class MigrationRunner {
 
   async down(version) {
     const migrationsDir = path.join(__dirname, '../migrations');
-    const files = fs.readdirSync(migrationsDir)
-      .filter(f => f.startsWith(version) && f.endsWith('.js'));
+    const files = fs
+      .readdirSync(migrationsDir)
+      .filter((f) => f.startsWith(version) && f.endsWith('.js'));
 
     if (files.length === 0) throw new Error(`Migration version ${version} not found.`);
 

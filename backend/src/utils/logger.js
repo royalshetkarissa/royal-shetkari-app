@@ -17,29 +17,35 @@ const logger = winston.createLogger({
       filename: path.join(__dirname, '../../logs/error-%DATE%.log'),
       datePattern: 'YYYY-MM-DD',
       level: 'error',
-      maxFiles: '30d'
+      maxFiles: '30d',
     }),
     new winston.transports.DailyRotateFile({
       filename: path.join(__dirname, '../../logs/combined-%DATE%.log'),
       datePattern: 'YYYY-MM-DD',
-      maxFiles: '14d'
-    })
-  ]
+      maxFiles: '14d',
+    }),
+  ],
 });
 
 if (process.env.NODE_ENV !== 'production') {
-  logger.add(new winston.transports.Console({
-    format: winston.format.combine(
-      winston.format.colorize(),
-      winston.format.simple()
-    )
-  }));
+  logger.add(
+    new winston.transports.Console({
+      format: winston.format.combine(winston.format.colorize(), winston.format.simple()),
+    })
+  );
 }
 
 /**
  * Helper to log structured activity to BOTH File and Database.
  */
-logger.logActivity = async (userId, action, resourceType, resourceId, details = {}, requestId = null) => {
+logger.logActivity = async (
+  userId,
+  action,
+  resourceType,
+  resourceId,
+  details = {},
+  requestId = null
+) => {
   logger.info({
     requestId,
     userId,
@@ -47,7 +53,7 @@ logger.logActivity = async (userId, action, resourceType, resourceId, details = 
     resourceType,
     resourceId,
     details,
-    message: `Activity: ${action} on ${resourceType} (${resourceId}) by User ${userId}`
+    message: `Activity: ${action} on ${resourceType} (${resourceId}) by User ${userId}`,
   });
 
   try {

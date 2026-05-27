@@ -6,7 +6,13 @@ const upload = require('../../middleware/upload');
 
 // Admin Routes
 router.post('/shops', verifyToken, verifyAdmin, marketController.addShop);
-router.post('/products', verifyToken, verifyAdmin, upload.single('image'), marketController.addProduct);
+router.post(
+  '/products',
+  verifyToken,
+  verifyAdmin,
+  upload.single('image'),
+  marketController.addProduct
+);
 
 // Public/User Routes
 router.get('/shops/nearby', verifyToken, marketController.getNearbyShops);

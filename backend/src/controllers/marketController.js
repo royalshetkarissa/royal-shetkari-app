@@ -20,7 +20,7 @@ exports.addProduct = async (req, res, next) => {
     const productData = {
       ...req.body,
       imageUrl,
-      isOrganic: req.body.isOrganic === 'true' || req.body.isOrganic === true
+      isOrganic: req.body.isOrganic === 'true' || req.body.isOrganic === true,
     };
 
     const product = await marketService.addProduct(productData);
@@ -36,7 +36,11 @@ exports.getNearbyShops = async (req, res, next) => {
     if (!lat || !lng) {
       return next(new AppError('Latitude and longitude are required to find nearby shops', 400));
     }
-    const shops = await marketService.getNearbyShops(parseFloat(lat), parseFloat(lng), radius ? parseFloat(radius) : 50);
+    const shops = await marketService.getNearbyShops(
+      parseFloat(lat),
+      parseFloat(lng),
+      radius ? parseFloat(radius) : 50
+    );
     res.json({ success: true, shops });
   } catch (error) {
     next(error);

@@ -6,7 +6,7 @@ const verifyToken = (req, res, next) => {
   if (!authHeader) {
     return res.status(401).json({ error: 'No token provided' });
   }
-  
+
   try {
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, env.JWT_SECRET);
@@ -32,7 +32,7 @@ const verifyAdmin = (req, res, next) => {
 const verifySuperUser = (req, res, next) => {
   verifyToken(req, res, () => {
     // ONLY THIS NUMBER HAS SUPER ACCESS
-    if (req.userMobile !== '8605889356') {
+    if (req.userMobile !== env.SUPER_USER_MOBILE) {
       return res.status(403).json({ error: 'Super User access required' });
     }
     next();
@@ -42,5 +42,5 @@ const verifySuperUser = (req, res, next) => {
 module.exports = {
   verifyToken,
   verifyAdmin,
-  verifySuperUser
+  verifySuperUser,
 };

@@ -5,13 +5,23 @@ const { verifyToken } = require('../../middleware/auth');
 const upload = require('../../middleware/upload');
 
 const validate = require('../../middleware/validate');
-const { createPostSchema, updatePostSchema, commentSchema } = require('../../validators/postValidator');
+const {
+  createPostSchema,
+  updatePostSchema,
+  commentSchema,
+} = require('../../validators/postValidator');
 
 router.get('/', postController.getPosts);
 router.get('/:id', postController.getPostDetails);
 router.get('/:id/comments', postController.getComments);
 
-router.post('/', verifyToken, upload.array('images', 5), validate(createPostSchema), postController.createPost);
+router.post(
+  '/',
+  verifyToken,
+  upload.array('images', 5),
+  validate(createPostSchema),
+  postController.createPost
+);
 router.post('/:id/like', verifyToken, postController.likePost);
 router.post('/:id/save', verifyToken, postController.savePost);
 router.post('/:id/comments', verifyToken, validate(commentSchema), postController.addComment);

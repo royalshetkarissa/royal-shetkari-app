@@ -1,24 +1,26 @@
 const IORedis = require('ioredis');
 const logger = require('../utils/logger');
 
-const redisConfig = process.env.REDIS_URL ? {
-  maxRetriesPerRequest: null, // Required by BullMQ
-  retryStrategy: (times) => {
-    // Exponential backoff
-    return Math.min(times * 50, 2000);
-  }
-} : {
-  host: process.env.REDIS_HOST || 'localhost',
-  port: parseInt(process.env.REDIS_PORT) || 6379,
-  password: process.env.REDIS_PASSWORD || undefined,
-  maxRetriesPerRequest: null, // Required by BullMQ
-  retryStrategy: (times) => {
-    // Exponential backoff
-    return Math.min(times * 50, 2000);
-  }
-};
+const redisConfig = process.env.REDIS_URL
+  ? {
+      maxRetriesPerRequest: null, // Required by BullMQ
+      retryStrategy: (times) => {
+        // Exponential backoff
+        return Math.min(times * 50, 2000);
+      },
+    }
+  : {
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT) || 6379,
+      password: process.env.REDIS_PASSWORD || undefined,
+      maxRetriesPerRequest: null, // Required by BullMQ
+      retryStrategy: (times) => {
+        // Exponential backoff
+        return Math.min(times * 50, 2000);
+      },
+    };
 
-const connection = process.env.REDIS_URL 
+const connection = process.env.REDIS_URL
   ? new IORedis(process.env.REDIS_URL, redisConfig)
   : new IORedis(redisConfig);
 
@@ -32,5 +34,5 @@ connection.on('error', (err) => {
 
 module.exports = {
   connection,
-  redisConfig
+  redisConfig,
 };

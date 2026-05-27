@@ -19,7 +19,7 @@ class BookingRepository {
       'SELECT booking_time FROM call_bookings WHERE booking_date = $1',
       [date]
     );
-    return result.rows.map(row => row.booking_time.toString().substring(0, 5));
+    return result.rows.map((row) => row.booking_time.toString().substring(0, 5));
   }
 }
 

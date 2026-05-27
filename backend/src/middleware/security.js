@@ -6,27 +6,30 @@ const env = require('../config/env');
  * Configure Helmet security headers.
  */
 exports.securityHeaders = helmet({
-  contentSecurityPolicy: env.NODE_ENV === 'production' ? {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'"],
-    }
-  } : false,
+  contentSecurityPolicy:
+    env.NODE_ENV === 'production'
+      ? {
+          directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            imgSrc: ["'self'", 'data:', 'https:'],
+            connectSrc: ["'self'"],
+          },
+        }
+      : false,
   crossOriginEmbedderPolicy: true,
   crossOriginOpenerPolicy: true,
-  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
   dnsPrefetchControl: { allow: false },
-  frameguard: { action: "deny" },
+  frameguard: { action: 'deny' },
   hidePoweredBy: true,
   hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
   ieNoOpen: true,
   noSniff: true,
   originAgentCluster: true,
-  permittedCrossDomainPolicies: { policy: "none" },
-  referrerPolicy: { policy: "no-referrer" },
+  permittedCrossDomainPolicies: { policy: 'none' },
+  referrerPolicy: { policy: 'no-referrer' },
   xssFilter: true,
 });
 
@@ -52,9 +55,9 @@ exports.authenticatedLimiter = rateLimit({
   message: { status: 'fail', message: 'High traffic detected. Please slow down.' },
   standardHeaders: true,
   legacyHeaders: false,
-  validate: { 
+  validate: {
     xForwardedForHeader: false,
-    keyGeneratorIpFallback: false
+    keyGeneratorIpFallback: false,
   },
 });
 

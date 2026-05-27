@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const userRepository = require('../repositories/userRepository');
 const jwtHelper = require('../utils/jwtHelper');
+const generateOtp = require('../utils/generateOtp');
 
 class AuthService {
   async findUserByMobile(mobile) {
@@ -24,10 +25,10 @@ class AuthService {
   }
 
   async createOTP(mobile) {
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = generateOtp();
     const expiry = new Date();
     expiry.setMinutes(expiry.getMinutes() + 10);
-    
+
     await userRepository.createOTP(mobile, otp, expiry);
     return otp;
   }
@@ -35,10 +36,10 @@ class AuthService {
   async verifyOTP(mobile, otp) {
     const otpRecord = await userRepository.findValidOTP(mobile, otp);
     if (!otpRecord) return null;
-    
+
     await userRepository.useOTP(otpRecord.id);
     await userRepository.verifyUser(mobile);
-    
+
     return otpRecord;
   }
 
@@ -47,13 +48,13 @@ class AuthService {
   }
 
   generateTokens(user) {
-    const payload = { 
-      id: user.id, 
-      mobile: user.mobile, 
-      name: user.full_name, 
+    const payload = {
+      id: user.id,
+      mobile: user.mobile,
+      name: user.full_name,
       isAdmin: user.is_admin,
       role: user.role,
-      permissions: user.permissions
+      permissions: user.permissions,
     };
 
     const accessToken = jwtHelper.signAccessToken(payload);

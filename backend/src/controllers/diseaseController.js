@@ -30,7 +30,7 @@ exports.deleteHistory = async (req, res, next) => {
   try {
     const record = await diseaseService.softDelete(req.params.id, req.userId);
     if (!record) return next(new AppError('Record not found or unauthorized', 404));
-    
+
     res.json({ success: true, message: 'Record removed from history' });
   } catch (error) {
     next(error);

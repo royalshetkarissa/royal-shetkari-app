@@ -16,23 +16,25 @@ const coerceToOptionalString = z.preprocess((val) => {
   return String(val);
 }, z.string().optional().nullable());
 
-exports.createPostSchema = z.object({
-  category: z.string().min(1, 'Category is required'),
-  title: z.string().min(1, 'Title is required'),
-  description: z.string().min(1, 'Description is required'),
-  price: coerceToOptionalNumber,
-  location: z.string().min(1, 'Location is required'),
-  contact_number: z.string().min(10, 'Invalid contact number').optional(),
-  contact_mobile: z.string().min(10, 'Invalid contact number').optional(),
-  latitude: coerceToOptionalNumber,
-  longitude: coerceToOptionalNumber,
-  animal_type: coerceToOptionalString,
-  lactation: coerceToOptionalString,
-  milk_per_day: coerceToOptionalNumber,
-}).refine(data => data.contact_number || data.contact_mobile, {
-  message: "Contact number is required",
-  path: ["contact_number"]
-});
+exports.createPostSchema = z
+  .object({
+    category: z.string().min(1, 'Category is required'),
+    title: z.string().min(1, 'Title is required'),
+    description: z.string().min(1, 'Description is required'),
+    price: coerceToOptionalNumber,
+    location: z.string().min(1, 'Location is required'),
+    contact_number: z.string().min(10, 'Invalid contact number').optional(),
+    contact_mobile: z.string().min(10, 'Invalid contact number').optional(),
+    latitude: coerceToOptionalNumber,
+    longitude: coerceToOptionalNumber,
+    animal_type: coerceToOptionalString,
+    lactation: coerceToOptionalString,
+    milk_per_day: coerceToOptionalNumber,
+  })
+  .refine((data) => data.contact_number || data.contact_mobile, {
+    message: 'Contact number is required',
+    path: ['contact_number'],
+  });
 
 exports.updatePostSchema = z.object({
   category: z.string().optional(),

@@ -20,7 +20,7 @@ class MarketRepository {
   }
 
   async getNearbyShops(userLat, userLng, radiusKm = 50) {
-    let query = `
+    const query = `
       SELECT s.*, 
       (6371 * acos(cos(radians($1)) * cos(radians(s.latitude)) * cos(radians(s.longitude) - radians($2)) + sin(radians($1)) * sin(radians(s.latitude)))) AS distance
       FROM shops s
@@ -30,7 +30,7 @@ class MarketRepository {
     const shops = await pool.queryWithRetry(query, [userLat, userLng, radiusKm]);
 
     // Fetch products for these shops
-    const shopIds = shops.rows.map(s => s.id);
+    const shopIds = shops.rows.map((s) => s.id);
     if (shopIds.length === 0) return [];
 
     const productsResult = await pool.queryWithRetry(
@@ -39,16 +39,16 @@ class MarketRepository {
     );
 
     const productsByShopId = {};
-    productsResult.rows.forEach(p => {
+    productsResult.rows.forEach((p) => {
       if (!productsByShopId[p.shop_id]) {
         productsByShopId[p.shop_id] = [];
       }
       productsByShopId[p.shop_id].push(p);
     });
 
-    return shops.rows.map(shop => ({
+    return shops.rows.map((shop) => ({
       ...shop,
-      products: productsByShopId[shop.id] || []
+      products: productsByShopId[shop.id] || [],
     }));
   }
 }

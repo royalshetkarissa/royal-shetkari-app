@@ -19,10 +19,12 @@ class AdminRepository {
   }
 
   async updateUserAccess(targetUserId, role, permissions, isAdmin) {
-    await pool.query(
-      'UPDATE users SET role = $1, permissions = $2, is_admin = $3 WHERE id = $4',
-      [role, JSON.stringify(permissions), isAdmin, targetUserId]
-    );
+    await pool.query('UPDATE users SET role = $1, permissions = $2, is_admin = $3 WHERE id = $4', [
+      role,
+      JSON.stringify(permissions),
+      isAdmin,
+      targetUserId,
+    ]);
   }
 
   async getTopCommenters() {
@@ -70,48 +72,72 @@ class AdminRepository {
   }
 
   async getUserFullProfile(id) {
-    const posts = await pool.query('SELECT * FROM posts WHERE user_id = $1 ORDER BY created_at DESC', [id]);
-    const bookings = await pool.query('SELECT * FROM call_bookings WHERE user_id = $1 ORDER BY created_at DESC', [id]);
+    const posts = await pool.query(
+      'SELECT * FROM posts WHERE user_id = $1 ORDER BY created_at DESC',
+      [id]
+    );
+    const bookings = await pool.query(
+      'SELECT * FROM call_bookings WHERE user_id = $1 ORDER BY created_at DESC',
+      [id]
+    );
     const user = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
     return { user: user.rows[0], posts: posts.rows, bookings: bookings.rows };
   }
 
   async getPostAuditHistory(id) {
-    const history = await pool.query(`
+    const history = await pool.query(
+      `
       SELECT l.*, u.full_name as actor_name 
       FROM activity_logs l JOIN users u ON l.user_id = u.id 
       WHERE l.resource_id = $1 AND l.resource_type = 'post' 
-      ORDER BY l.created_at DESC`, [id]);
-    
-    const post = await pool.query(`
+      ORDER BY l.created_at DESC`,
+      [id]
+    );
+
+    const post = await pool.query(
+      `
       SELECT p.*, u.full_name as author_name
       FROM posts p JOIN users u ON p.user_id = u.id 
-      WHERE p.id = $1`, [id]);
+      WHERE p.id = $1`,
+      [id]
+    );
 
-    const likers = await pool.query(`
-      SELECT u.full_name, u.mobile FROM post_likes l JOIN users u ON l.user_id = u.id WHERE l.post_id = $1`, [id]);
+    const likers = await pool.query(
+      `
+      SELECT u.full_name, u.mobile FROM post_likes l JOIN users u ON l.user_id = u.id WHERE l.post_id = $1`,
+      [id]
+    );
 
-    const savers = await pool.query(`
-      SELECT u.full_name FROM saved_posts s JOIN users u ON s.user_id = u.id WHERE s.post_id = $1`, [id]);
+    const savers = await pool.query(
+      `
+      SELECT u.full_name FROM saved_posts s JOIN users u ON s.user_id = u.id WHERE s.post_id = $1`,
+      [id]
+    );
 
-    const comments = await pool.query(`
-      SELECT c.*, u.full_name FROM post_comments c JOIN users u ON c.user_id = u.id WHERE c.post_id = $1 ORDER BY c.created_at DESC`, [id]);
-    
+    const comments = await pool.query(
+      `
+      SELECT c.*, u.full_name FROM post_comments c JOIN users u ON c.user_id = u.id WHERE c.post_id = $1 ORDER BY c.created_at DESC`,
+      [id]
+    );
+
     return {
       history: history.rows,
       post: post.rows[0],
       likers: likers.rows,
       savers: savers.rows,
-      comments: comments.rows
+      comments: comments.rows,
     };
   }
 
   async getUserComments(userId) {
-    const result = await pool.query(`
+    const result = await pool.query(
+      `
       SELECT c.*, p.title as post_title, p.image_url as post_photo, p.id as post_id
       FROM post_comments c 
       JOIN posts p ON c.post_id = p.id 
-      WHERE c.user_id = $1 ORDER BY c.created_at DESC`, [userId]);
+      WHERE c.user_id = $1 ORDER BY c.created_at DESC`,
+      [userId]
+    );
     return result.rows;
   }
 }

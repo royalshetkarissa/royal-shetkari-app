@@ -16,7 +16,16 @@ exports.up = async (client) => {
     await client.query(
       `INSERT INTO users (full_name, mobile, password, village, state, pincode, is_admin, role) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      ['Admin User', mobile, hashedPassword, 'Admin Village', 'Maharashtra', '411001', true, 'admin']
+      [
+        'Admin User',
+        mobile,
+        hashedPassword,
+        'Admin Village',
+        'Maharashtra',
+        '411001',
+        true,
+        'admin',
+      ]
     );
   } else {
     // Update password and admin flags if user found

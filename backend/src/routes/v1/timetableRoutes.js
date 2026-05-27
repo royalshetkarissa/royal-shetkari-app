@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const timetableController = require('../../controllers/timetableController');
-const { verifyToken, verifyAdmin } = require('../../middleware/auth');
+const { verifyToken } = require('../../middleware/auth');
 
 // Public/User Routes
 router.get('/crops', verifyToken, timetableController.getAvailableCrops);

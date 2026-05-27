@@ -24,7 +24,14 @@ exports.updateUserAccess = async (req, res, next) => {
   const { targetUserId, role, permissions, isAdmin } = req.body;
   try {
     await adminRepository.updateUserAccess(targetUserId, role, permissions, isAdmin);
-    await logActivity(req.userId, 'UPDATE_USER_ACCESS', 'user', targetUserId, { role, permissions, isAdmin }, req.id);
+    await logActivity(
+      req.userId,
+      'UPDATE_USER_ACCESS',
+      'user',
+      targetUserId,
+      { role, permissions, isAdmin },
+      req.id
+    );
     res.json({ success: true, message: 'Access updated successfully', requestId: req.id });
   } catch (error) {
     next(new AppError('Failed to update access', 500));
@@ -69,7 +76,14 @@ exports.deleteComment = async (req, res, next) => {
   try {
     const comment = await adminRepository.getCommentById(id);
     await adminRepository.deleteComment(id);
-    await logActivity(req.userId, 'DELETE_COMMENT', 'comment', id, { deleted_comment: comment }, req.id);
+    await logActivity(
+      req.userId,
+      'DELETE_COMMENT',
+      'comment',
+      id,
+      { deleted_comment: comment },
+      req.id
+    );
     res.json({ success: true, message: 'Comment deleted', requestId: req.id });
   } catch (error) {
     next(new AppError('Failed to delete comment', 500));
@@ -99,10 +113,10 @@ exports.getPostHistory = async (req, res, next) => {
   const { id } = req.params;
   try {
     const data = await adminRepository.getPostAuditHistory(id);
-    res.json({ 
+    res.json({
       success: true,
       ...data,
-      requestId: req.id
+      requestId: req.id,
     });
   } catch (error) {
     next(new AppError('Failed to fetch post audit history', 500));

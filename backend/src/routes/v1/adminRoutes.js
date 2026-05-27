@@ -14,7 +14,12 @@ router.get('/users/:id/activity', verifyAdmin, adminController.getUserActivity);
 router.get('/posts/:id/history', verifyAdmin, adminController.getPostHistory);
 router.get('/users/:id/comments', verifyAdmin, adminController.getUserComments);
 
-router.post('/update-access', verifySuperUser, validate(updateAccessSchema), adminController.updateUserAccess);
+router.post(
+  '/update-access',
+  verifySuperUser,
+  validate(updateAccessSchema),
+  adminController.updateUserAccess
+);
 router.delete('/users/:id', verifySuperUser, adminController.deleteUser);
 
 router.delete('/posts/:id', verifyAdmin, adminController.deletePost);

@@ -21,7 +21,8 @@ if (process.env.ENABLE_TRACING === 'true') {
 }
 
 process.on('SIGTERM', () => {
-  sdk.shutdown()
+  sdk
+    .shutdown()
     .then(() => logger.info('Tracing terminated'))
     .catch((error) => logger.error('Error terminating tracing', error))
     .finally(() => process.exit(0));

@@ -5,13 +5,18 @@ exports.addHospital = async (req, res, next) => {
   try {
     const { name, location, contactNumber, service } = req.body;
     if (!name || !location || !contactNumber || !service) {
-      return res.status(400).json({ success: false, message: 'All hospital details are required.' });
+      return res
+        .status(400)
+        .json({ success: false, message: 'All hospital details are required.' });
     }
 
     const hospital = await hospitalService.addHospital({ name, location, contactNumber, service });
-    
+
     // Log Admin Action
-    await logger.logActivity(req.userId, 'ADD_HOSPITAL', 'hospital', hospital.id, { name, location });
+    await logger.logActivity(req.userId, 'ADD_HOSPITAL', 'hospital', hospital.id, {
+      name,
+      location,
+    });
 
     res.status(201).json({ success: true, hospital });
   } catch (err) {
@@ -36,7 +41,9 @@ exports.deleteHospital = async (req, res, next) => {
     }
 
     // Log Admin Action
-    await logger.logActivity(req.userId, 'DELETE_HOSPITAL', 'hospital', parseInt(req.params.id), { name: hospital.name });
+    await logger.logActivity(req.userId, 'DELETE_HOSPITAL', 'hospital', parseInt(req.params.id), {
+      name: hospital.name,
+    });
 
     res.json({ success: true, message: 'Hospital successfully deleted.' });
   } catch (err) {
@@ -46,10 +53,19 @@ exports.deleteHospital = async (req, res, next) => {
 
 exports.redeemCoins = async (req, res, next) => {
   try {
-    const { newCoins, redemption } = await hospitalService.redeemCoins(req.userId, parseInt(req.params.id));
-    
+    const { newCoins, redemption } = await hospitalService.redeemCoins(
+      req.userId,
+      parseInt(req.params.id)
+    );
+
     // Log User Action
-    await logger.logActivity(req.userId, 'REDEEM_COINS_HOSPITAL', 'hospital', parseInt(req.params.id), { coins_redeemed: 50 });
+    await logger.logActivity(
+      req.userId,
+      'REDEEM_COINS_HOSPITAL',
+      'hospital',
+      parseInt(req.params.id),
+      { coins_redeemed: 50 }
+    );
 
     res.json({ success: true, newCoins, redemption });
   } catch (err) {

@@ -2,26 +2,31 @@ const { Pool } = require('pg');
 const env = require('./env');
 const logger = require('../utils/logger');
 
-const poolConfig = env.DATABASE_URL ? {
-  connectionString: env.DATABASE_URL,
-  ssl: env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  max: 50, // Connection pooling (Max 50 as requested)
-  min: 10, // Minimum 10 idle connections
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
-  query_timeout: 30000, // 30 second timeout on all queries
-} : {
-  user: env.DB.USER,
-  password: env.DB.PASSWORD,
-  host: env.DB.HOST,
-  port: env.DB.PORT,
-  database: env.DB.NAME,
-  max: 50, // Connection pooling (Max 50 as requested)
-  min: 10, // Minimum 10 idle connections
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
-  query_timeout: 30000, // 30 second timeout on all queries
-};
+const poolConfig = env.DATABASE_URL
+  ? {
+      connectionString: env.DATABASE_URL,
+      ssl:
+        env.NODE_ENV === 'production'
+          ? { rejectUnauthorized: env.DB_SSL_REJECT_UNAUTHORIZED }
+          : false,
+      max: 50, // Connection pooling (Max 50 as requested)
+      min: 10, // Minimum 10 idle connections
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 5000,
+      query_timeout: 30000, // 30 second timeout on all queries
+    }
+  : {
+      user: env.DB.USER,
+      password: env.DB.PASSWORD,
+      host: env.DB.HOST,
+      port: env.DB.PORT,
+      database: env.DB.NAME,
+      max: 50, // Connection pooling (Max 50 as requested)
+      min: 10, // Minimum 10 idle connections
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 5000,
+      query_timeout: 30000, // 30 second timeout on all queries
+    };
 
 const pool = new Pool(poolConfig);
 
@@ -38,10 +43,15 @@ const connectWithRetry = async (attempt = 1) => {
     client.release();
   } catch (err) {
     if (attempt <= maxAttempts) {
-      logger.warn(`❌ DB connection failed (Attempt ${attempt}/${maxAttempts}). Retrying in ${delay/1000}s...`, { error: err.message });
+      logger.warn(
+        `❌ DB connection failed (Attempt ${attempt}/${maxAttempts}). Retrying in ${delay / 1000}s...`,
+        { error: err.message }
+      );
       setTimeout(() => connectWithRetry(attempt + 1), delay);
     } else {
-      logger.error('💥 Critical: Could not connect to PostgreSQL after multiple attempts.', { error: err.message });
+      logger.error('💥 Critical: Could not connect to PostgreSQL after multiple attempts.', {
+        error: err.message,
+      });
       process.exit(1);
     }
   }
@@ -60,9 +70,14 @@ pool.queryWithRetry = async (text, params, attempt = 1) => {
   } catch (err) {
     // Retry on connection errors or transient issues (standard pg error codes)
     const retryableErrors = ['08000', '08003', '08006', '57P01', '57P02', '57P03'];
-    if (attempt < maxAttempts && (retryableErrors.includes(err.code) || err.message.includes('timeout'))) {
-      logger.warn(`Retrying query (Attempt ${attempt}/${maxAttempts}) due to error: ${err.message}`);
-      await new Promise(resolve => setTimeout(resolve, delay));
+    if (
+      attempt < maxAttempts &&
+      (retryableErrors.includes(err.code) || err.message.includes('timeout'))
+    ) {
+      logger.warn(
+        `Retrying query (Attempt ${attempt}/${maxAttempts}) due to error: ${err.message}`
+      );
+      await new Promise((resolve) => setTimeout(resolve, delay));
       return pool.queryWithRetry(text, params, attempt + 1);
     }
     throw err;

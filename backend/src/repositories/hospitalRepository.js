@@ -80,14 +80,17 @@ class HospitalRepository {
   }
 
   async getHistoryByUserId(userId) {
-    const result = await pool.query(`
+    const result = await pool.query(
+      `
       SELECT cr.id, cr.coins_redeemed, cr.created_at,
              h.name as hospital_name, h.location as hospital_location, h.contact_number as hospital_contact
       FROM coin_redemptions cr
       JOIN hospitals h ON cr.hospital_id = h.id
       WHERE cr.user_id = $1
       ORDER BY cr.created_at DESC
-    `, [userId]);
+    `,
+      [userId]
+    );
     return result.rows;
   }
 }

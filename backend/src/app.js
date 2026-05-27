@@ -21,7 +21,7 @@ const analyticsRoutes = require('./routes/v1/analyticsRoutes');
 const userRoutes = require('./routes/userRoutes');
 const b2Routes = require('./routes/v1/b2Routes');
 
-const { securityHeaders, apiLimiter, authLimiter } = require('./middleware/security');
+const { securityHeaders, apiLimiter } = require('./middleware/security');
 
 const requestId = require('./middleware/requestId');
 const errorMiddleware = require('./middleware/errorMiddleware');
@@ -31,13 +31,31 @@ const app = express();
 // 1. Global Middlewares
 app.use(requestId);
 
-const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:3000', 'http://localhost:5000'];
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : ['http://localhost:3000', 'http://localhost:5000'];
 
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Idempotency-Key', 'X-Requested-With']
-}));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, etc.)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+        return callback(null, true);
+      }
+      return callback(new Error('Not allowed by CORS'));
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'Idempotency-Key',
+      'X-Requested-With',
+    ],
+    credentials: true,
+  })
+);
 app.options('*', cors());
 app.use(securityHeaders);
 app.use('/api', apiLimiter);
@@ -53,7 +71,7 @@ app.get('/', (req, res) => {
     status: 'success',
     message: 'Welcome to the Royal Shetkari API!',
     version: '1.0.0',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -67,7 +85,7 @@ app.get('/health', async (req, res) => {
       timestamp: new Date().toISOString(),
       database: dbStatus ? 'connected' : 'disconnected',
       redis: redis.status === 'ready' ? 'connected' : 'disconnected',
-      version: '1.0.0-prod'
+      version: '1.0.0-prod',
     });
   } catch (err) {
     logger.error('Health check failed', { error: err.message, requestId: req.id });

@@ -3,8 +3,20 @@ const { logActivity } = require('../utils/logger');
 
 exports.addShop = async (req, res, next) => {
   try {
-    const { name, address, contact_mobile, whatsapp_number, categories, latitude, longitude, owner_name, services, pincode, city } = req.body;
-    
+    const {
+      name,
+      address,
+      contact_mobile,
+      whatsapp_number,
+      categories,
+      latitude,
+      longitude,
+      owner_name,
+      services,
+      pincode,
+      city,
+    } = req.body;
+
     let profilePhoto = null;
     let images = [];
 
@@ -13,7 +25,7 @@ exports.addShop = async (req, res, next) => {
         profilePhoto = `/uploads/${req.files['profile_photo'][0].filename}`;
       }
       if (req.files['images']) {
-        images = req.files['images'].map(f => `/uploads/${f.filename}`);
+        images = req.files['images'].map((f) => `/uploads/${f.filename}`);
       }
     }
 
@@ -31,7 +43,7 @@ exports.addShop = async (req, res, next) => {
       owner_name,
       services,
       pincode,
-      city
+      city,
     });
 
     await logActivity(req.userId, 'ADD_SHOP', 'shop', shop.id, { name });

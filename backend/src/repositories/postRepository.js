@@ -2,21 +2,63 @@ const pool = require('../config/db');
 
 class PostRepository {
   async create(data) {
-    const { userId, category, title, description, price, location, contact_mobile, images, image_url, latitude, longitude, animal_type, lactation, milk_per_day } = data;
+    const {
+      userId,
+      category,
+      title,
+      description,
+      price,
+      location,
+      contact_mobile,
+      images,
+      image_url,
+      latitude,
+      longitude,
+      animal_type,
+      lactation,
+      milk_per_day,
+    } = data;
     const result = await pool.queryWithRetry(
       `INSERT INTO posts (user_id, category, title, description, price, location, contact_mobile, images, image_url, latitude, longitude, animal_type, lactation, milk_per_day) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
-      [userId, category, title, description, price || null, location, contact_mobile, JSON.stringify(images), image_url, latitude || null, longitude || null, animal_type || null, lactation || null, milk_per_day || null]
+      [
+        userId,
+        category,
+        title,
+        description,
+        price || null,
+        location,
+        contact_mobile,
+        JSON.stringify(images),
+        image_url,
+        latitude || null,
+        longitude || null,
+        animal_type || null,
+        lactation || null,
+        milk_per_day || null,
+      ]
     );
     return result.rows[0];
   }
 
   async findAll(filters) {
-    const { category, animal_type, minPrice, maxPrice, radius_km, userLat, userLng, search, sortBy, dateFilter, hasImages } = filters || {};
-    
+    const {
+      category,
+      animal_type,
+      minPrice,
+      maxPrice,
+      radius_km,
+      userLat,
+      userLng,
+      search,
+      sortBy,
+      dateFilter,
+      hasImages,
+    } = filters || {};
+
     let selectClause = `SELECT p.*, u.full_name as farmer_name, u.village`;
     let distanceClause = ``;
-    let params = [];
+    const params = [];
     let paramIndex = 1;
 
     // Haversine distance formula if user location is provided
@@ -33,13 +75,13 @@ class PostRepository {
       JOIN users u ON p.user_id = u.id
       WHERE p.status = 'active'
     `;
-    
+
     if (category && category !== 'all') {
       query += ` AND p.category = $${paramIndex}`;
       params.push(category);
       paramIndex++;
     }
-    
+
     if (animal_type) {
       query += ` AND p.animal_type = $${paramIndex}`;
       params.push(animal_type);
@@ -96,19 +138,22 @@ class PostRepository {
     }
 
     query += ` ORDER BY ${orderBy}`;
-    
+
     const result = await pool.queryWithRetry(query, params);
     return result.rows;
   }
 
   async findById(id) {
-    const result = await pool.queryWithRetry(`
+    const result = await pool.queryWithRetry(
+      `
       SELECT p.*, u.full_name as farmer_name, u.village, u.profile_photo_url,
       (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) as total_likes,
       (SELECT COUNT(*) FROM post_comments WHERE post_id = p.id) as total_comments,
       (SELECT COUNT(*) FROM saved_posts WHERE post_id = p.id) as total_saves
       FROM posts p JOIN users u ON p.user_id = u.id 
-      WHERE p.id = $1`, [id]);
+      WHERE p.id = $1`,
+      [id]
+    );
     return result.rows[0];
   }
 
@@ -125,38 +170,63 @@ class PostRepository {
   }
 
   async findLike(userId, postId) {
-    const result = await pool.queryWithRetry('SELECT * FROM post_likes WHERE user_id = $1 AND post_id = $2', [userId, postId]);
+    const result = await pool.queryWithRetry(
+      'SELECT * FROM post_likes WHERE user_id = $1 AND post_id = $2',
+      [userId, postId]
+    );
     return result.rows[0];
   }
 
   async addLike(userId, postId) {
-    await pool.queryWithRetry('INSERT INTO post_likes (user_id, post_id) VALUES ($1, $2)', [userId, postId]);
-    await pool.queryWithRetry('UPDATE posts SET likes_count = likes_count + 1 WHERE id = $1', [postId]);
+    await pool.queryWithRetry('INSERT INTO post_likes (user_id, post_id) VALUES ($1, $2)', [
+      userId,
+      postId,
+    ]);
+    await pool.queryWithRetry('UPDATE posts SET likes_count = likes_count + 1 WHERE id = $1', [
+      postId,
+    ]);
   }
 
   async removeLike(userId, postId) {
-    await pool.queryWithRetry('DELETE FROM post_likes WHERE user_id = $1 AND post_id = $2', [userId, postId]);
-    await pool.queryWithRetry('UPDATE posts SET likes_count = likes_count - 1 WHERE id = $1', [postId]);
+    await pool.queryWithRetry('DELETE FROM post_likes WHERE user_id = $1 AND post_id = $2', [
+      userId,
+      postId,
+    ]);
+    await pool.queryWithRetry('UPDATE posts SET likes_count = likes_count - 1 WHERE id = $1', [
+      postId,
+    ]);
   }
 
   async findSave(userId, postId) {
-    const result = await pool.queryWithRetry('SELECT * FROM saved_posts WHERE user_id = $1 AND post_id = $2', [userId, postId]);
+    const result = await pool.queryWithRetry(
+      'SELECT * FROM saved_posts WHERE user_id = $1 AND post_id = $2',
+      [userId, postId]
+    );
     return result.rows[0];
   }
 
   async addSave(userId, postId) {
-    await pool.queryWithRetry('INSERT INTO saved_posts (user_id, post_id) VALUES ($1, $2)', [userId, postId]);
+    await pool.queryWithRetry('INSERT INTO saved_posts (user_id, post_id) VALUES ($1, $2)', [
+      userId,
+      postId,
+    ]);
   }
 
   async removeSave(userId, postId) {
-    await pool.queryWithRetry('DELETE FROM saved_posts WHERE user_id = $1 AND post_id = $2', [userId, postId]);
+    await pool.queryWithRetry('DELETE FROM saved_posts WHERE user_id = $1 AND post_id = $2', [
+      userId,
+      postId,
+    ]);
   }
 
   async getComments(postId) {
-    const result = await pool.queryWithRetry(`
+    const result = await pool.queryWithRetry(
+      `
       SELECT c.*, u.full_name, u.profile_photo_url 
       FROM post_comments c JOIN users u ON c.user_id = u.id 
-      WHERE c.post_id = $1 ORDER BY c.created_at DESC`, [postId]);
+      WHERE c.post_id = $1 ORDER BY c.created_at DESC`,
+      [postId]
+    );
     return result.rows;
   }
 
@@ -176,7 +246,7 @@ class PostRepository {
         [postId, userId, userMobile]
       );
       const post = postRes.rows[0];
-      
+
       if (post) {
         // 2. Fetch comments with commenter user details
         const commentsRes = await pool.queryWithRetry(
@@ -192,10 +262,11 @@ class PostRepository {
         const colRes = await pool.queryWithRetry(
           `SELECT column_name FROM information_schema.columns WHERE table_name='post_likes' AND column_name='created_at'`
         );
-        let likesQuery = colRes.rows.length > 0
-          ? `SELECT l.created_at, u.id as user_id, u.full_name, u.mobile FROM post_likes l JOIN users u ON l.user_id = u.id WHERE l.post_id = $1`
-          : `SELECT NOW() as created_at, u.id as user_id, u.full_name, u.mobile FROM post_likes l JOIN users u ON l.user_id = u.id WHERE l.post_id = $1`;
-        
+        const likesQuery =
+          colRes.rows.length > 0
+            ? `SELECT l.created_at, u.id as user_id, u.full_name, u.mobile FROM post_likes l JOIN users u ON l.user_id = u.id WHERE l.post_id = $1`
+            : `SELECT NOW() as created_at, u.id as user_id, u.full_name, u.mobile FROM post_likes l JOIN users u ON l.user_id = u.id WHERE l.post_id = $1`;
+
         const likesRes = await pool.queryWithRetry(likesQuery, [postId]);
         const likes = likesRes.rows;
 
@@ -218,23 +289,44 @@ class PostRepository {
             deleted_at, comments, likes, saves
           ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, NOW(), $23, $24, $25)`,
           [
-            post.id, post.user_id, post.category, post.title, post.description, post.price, post.old_price, post.location,
-            post.latitude, post.longitude, post.animal_type, post.lactation, post.milk_per_day, post.wp_clicks, post.call_clicks,
-            post.contact_mobile, JSON.stringify(post.images), post.image_url, post.likes_count, post.views_count, 'deleted', post.created_at,
-            JSON.stringify(comments), JSON.stringify(likes), JSON.stringify(saves)
+            post.id,
+            post.user_id,
+            post.category,
+            post.title,
+            post.description,
+            post.price,
+            post.old_price,
+            post.location,
+            post.latitude,
+            post.longitude,
+            post.animal_type,
+            post.lactation,
+            post.milk_per_day,
+            post.wp_clicks,
+            post.call_clicks,
+            post.contact_mobile,
+            JSON.stringify(post.images),
+            post.image_url,
+            post.likes_count,
+            post.views_count,
+            'deleted',
+            post.created_at,
+            JSON.stringify(comments),
+            JSON.stringify(likes),
+            JSON.stringify(saves),
           ]
         );
       }
-      
+
       // Update status and set deleted_at to NOW()
       const result = await pool.queryWithRetry(
-        "UPDATE posts SET status = $1, deleted_at = NOW() WHERE id = $2 AND (user_id = $3 OR contact_mobile = $4) RETURNING *",
+        'UPDATE posts SET status = $1, deleted_at = NOW() WHERE id = $2 AND (user_id = $3 OR contact_mobile = $4) RETURNING *',
         [status, postId, userId, userMobile]
       );
       return result.rows[0];
     } else {
       const result = await pool.queryWithRetry(
-        "UPDATE posts SET status = $1 WHERE id = $2 AND (user_id = $3 OR contact_mobile = $4) RETURNING *",
+        'UPDATE posts SET status = $1 WHERE id = $2 AND (user_id = $3 OR contact_mobile = $4) RETURNING *',
         [status, postId, userId, userMobile]
       );
       return result.rows[0];
@@ -242,13 +334,42 @@ class PostRepository {
   }
 
   async update(postId, userId, userMobile, data) {
-    const { category, title, description, price, location, contact_mobile, oldPrice, latitude, longitude, animal_type, lactation, milk_per_day } = data;
+    const {
+      category,
+      title,
+      description,
+      price,
+      location,
+      contact_mobile,
+      oldPrice,
+      latitude,
+      longitude,
+      animal_type,
+      lactation,
+      milk_per_day,
+    } = data;
     const result = await pool.queryWithRetry(
       `UPDATE posts SET category = $1, title = $2, description = $3, price = $4, location = $5, 
        contact_mobile = $6, edit_count = edit_count + 1, old_price = $7, status = 'active',
        latitude = COALESCE($8, latitude), longitude = COALESCE($9, longitude), animal_type = $10, lactation = $11, milk_per_day = $12
        WHERE id = $13 AND (user_id = $14 OR contact_mobile = $15) RETURNING *`,
-      [category, title, description, price, location, contact_mobile, oldPrice, latitude || null, longitude || null, animal_type || null, lactation || null, milk_per_day || null, postId, userId, userMobile]
+      [
+        category,
+        title,
+        description,
+        price,
+        location,
+        contact_mobile,
+        oldPrice,
+        latitude || null,
+        longitude || null,
+        animal_type || null,
+        lactation || null,
+        milk_per_day || null,
+        postId,
+        userId,
+        userMobile,
+      ]
     );
     return result.rows[0];
   }
@@ -262,19 +383,25 @@ class PostRepository {
   }
 
   async getUserSocialStats(userId) {
-    const result = await pool.queryWithRetry(`
+    const result = await pool.queryWithRetry(
+      `
       SELECT COALESCE(SUM(likes_count), 0) as total_likes, COALESCE(SUM(views_count), 0) as total_views 
-      FROM posts WHERE user_id = $1`, [userId]);
+      FROM posts WHERE user_id = $1`,
+      [userId]
+    );
     return result.rows[0];
   }
 
   async getSavedPosts(userId) {
-    const result = await pool.queryWithRetry(`
+    const result = await pool.queryWithRetry(
+      `
       SELECT p.*, u.full_name as farmer_name 
       FROM saved_posts s 
       JOIN posts p ON s.post_id = p.id 
       JOIN users u ON p.user_id = u.id 
-      WHERE s.user_id = $1 ORDER BY s.created_at DESC`, [userId]);
+      WHERE s.user_id = $1 ORDER BY s.created_at DESC`,
+      [userId]
+    );
     return result.rows;
   }
 }
