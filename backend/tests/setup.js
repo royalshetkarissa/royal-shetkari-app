@@ -25,6 +25,7 @@ jest.mock('ioredis', () => {
     async get() { return null; }
     async set() { return 'OK'; }
     async del() { return 1; }
+    async keys() { return []; }
     async quit() { return 'OK'; }
     async disconnect() {}
     async ping() { return 'PONG'; }
