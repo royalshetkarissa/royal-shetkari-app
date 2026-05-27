@@ -85,6 +85,7 @@ sonar.organization=royalshetkarissa
 sonar.projectKey=royalshetkarissa_royal-shetkari-app
 sonar.projectName=royal-shetkari-app
 sonar.projectVersion=1.0.0
+sonar.host.url=https://sonarcloud.io
 
 # Path to source directories
 sonar.sources=src
@@ -105,13 +106,37 @@ sonar.javascript.lcov.reportPaths=coverage/lcov.info
 ### B. GitHub Actions CI Workflow
 Path: `.github/workflows/ci.yml` (Excerpt)
 ```yaml
-      - name: SonarCloud Scan
-        # Scan code quality & security via SonarCloud
-        # Requires SONAR_TOKEN to be configured in GitHub Secrets
+      - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectBaseDir: ./backend
 ```
+
+---
+
+## 8. How to Test SonarCloud Access Locally
+Before committing or pushing your changes, you can verify your configuration and credentials locally.
+
+### Method A: Using Docker (Recommended)
+If you have Docker installed, you can run the scanner locally from the root folder:
+```bash
+docker run --rm \
+  -e SONAR_TOKEN="your_regenerated_sonar_token" \
+  -v "$(pwd):/usr/src" \
+  sonarsource/sonar-scanner-cli \
+  -Dsonar.projectBaseDir=/usr/src/backend
+```
+
+### Method B: Using local SonarScanner CLI
+1. Download and extract the SonarScanner CLI for your OS.
+2. Add the `bin/` folder of the extracted package to your system's PATH.
+3. Run the following command from the root directory of the project:
+   ```bash
+   sonar-scanner \
+     -Dsonar.token="your_regenerated_sonar_token" \
+     -Dsonar.projectBaseDir=./backend
+   ```
+If the token and configurations are correct, the scan will complete successfully locally and upload the report to SonarCloud.
