@@ -45,3 +45,27 @@ jest.mock('bullmq', () => {
     })),
   };
 });
+
+const migrationRunner = require('../src/utils/migrationRunner');
+
+beforeAll(async () => {
+  try {
+    await migrationRunner.up();
+  } catch (err) {
+    console.error('Failed to auto-run migrations during Jest setup:', err);
+    throw err;
+  }
+});
+
+afterAll(async () => {
+  const pool = require('../src/config/db');
+  if (pool && !pool._ending) {
+    try {
+      await pool.end();
+    } catch (err) {
+      if (!err.message.includes('Called end on pool more than once')) {
+        throw err;
+      }
+    }
+  }
+});

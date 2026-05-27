@@ -57,6 +57,14 @@ jobs:
         # Scan for high/critical security vulnerabilities in dependencies
         run: npm audit --audit-level=high
 
+      - name: Run Database Migrations
+        # Set up schema and run migrations on the database service container
+        run: node run_migrations.js
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgres://postgres:postgres_password@localhost:5432/test_db
+          DB_SSL_REJECT_UNAUTHORIZED: false
+
       - name: Run Integration Tests
         # Run tests (pass if no tests defined or standard suite checks out)
         run: npm test

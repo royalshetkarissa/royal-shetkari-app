@@ -19,7 +19,6 @@ describe('Auth Integration Tests', () => {
   afterAll(async () => {
     // Cleanup test user
     await pool.query('DELETE FROM users WHERE mobile = $1', [testUser.mobile]);
-    await pool.end();
   });
 
   it('should register a new user successfully', async () => {
