@@ -74,12 +74,10 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres_password@localhost:5432/test_db
           DB_SSL_REJECT_UNAUTHORIZED: false
 
-      - name: SonarCloud Scan
-        # Scan code quality & security via SonarCloud
-        # Requires SONAR_TOKEN to be configured in GitHub Secrets
+      - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectBaseDir: ./backend
