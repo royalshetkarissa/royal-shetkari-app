@@ -5,7 +5,7 @@ This guide describes how to resolve the `Project not found` and `Failed to check
 ---
 
 ## 1. Why Does “Project not found” or "Failed to check if project is bound" Still Occur?
-Even when a project exists on SonarCloud with the correct key (`royalshetkarissa_royal-shetkari-app`), the scanner can still fail with these errors. This happens because:
+Even when a project exists on SonarCloud with the correct key (`royal-shetkari-app`), the scanner can still fail with these errors. This happens because:
 * **Token Scope & Permissions (Read/Write Mismatch)**: The SonarScanner needs to make authenticated calls to SonarCloud. If the token is valid but doesn't have permissions to write analysis or check bindings, SonarCloud returns a `404 Not Found` (disguised as `Project not found`) or reports that it failed to check if the project is bound. This is a security measure to prevent unauthorized users from discovering private project keys.
 * **Stale ALM / Repository Binding**: If the connection between GitHub and SonarCloud is disrupted (e.g., due to updated GitHub organization member access, expired GitHub OAuth permissions, or incorrect SonarCloud App permissions), the project binding check will fail.
 * **Private Project Settings**: If the project is private on SonarCloud, a standard public/unprivileged token cannot see it, resulting in the scanner reporting the project as "not found".
@@ -78,7 +78,7 @@ To verify if your project is successfully bound:
 
 ## 8. Verification Checklist Before Push
 Before committing your configuration, make sure you checked:
-- [ ] Is `sonar.projectKey` set to exactly `royalshetkarissa_royal-shetkari-app` in `backend/sonar-project.properties`?
+- [ ] Is `sonar.projectKey` set to exactly `royal-shetkari-app` in `backend/sonar-project.properties`?
 - [ ] Is `sonar.organization` set to exactly `royalshetkarissa` in `backend/sonar-project.properties`?
 - [ ] Is `sonar.host.url` set to `https://sonarcloud.io` in `backend/sonar-project.properties`?
 - [ ] Does `.github/workflows/ci.yml` run the Sonar step with `uses: SonarSource/sonarqube-scan-action@v6`?
@@ -94,7 +94,7 @@ Path: `backend/sonar-project.properties`
 ```properties
 # SonarCloud Organization and Project Keys (Must match exactly with SonarCloud dashboard)
 sonar.organization=royalshetkarissa
-sonar.projectKey=royalshetkarissa_royal-shetkari-app
+sonar.projectKey=royal-shetkari-app
 sonar.projectName=royal-shetkari-app
 sonar.projectVersion=1.0.0
 sonar.host.url=https://sonarcloud.io
