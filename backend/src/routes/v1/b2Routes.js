@@ -99,10 +99,10 @@ router.post('/upload', verifyToken, upload.single('image'), async (req, res, nex
   }
 });
 
-// GET /image/:key - Generates a temporary getSignedUrl and redirects the request
-router.get('/image/:key', async (req, res, next) => {
+// GET /image/* - Generates a temporary getSignedUrl and redirects the request
+router.get('/image/*', async (req, res, next) => {
   try {
-    const { key } = req.params;
+    const key = req.params[0];
     const command = new GetObjectCommand({
       Bucket: process.env.B2_BUCKET || 'rsitapp-images',
       Key: key,
