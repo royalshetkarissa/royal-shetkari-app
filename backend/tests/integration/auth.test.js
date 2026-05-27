@@ -50,4 +50,54 @@ describe('Auth Integration Tests', () => {
     expect(res.statusCode).toEqual(400);
     expect(res.body.status).toBe('fail');
   });
+
+  describe('POST /api/v1/auth/reset-password', () => {
+    it('should reset password successfully for registered user', async () => {
+      // First ensure the user is registered
+      await request(app)
+        .post('/api/v1/register')
+        .send(testUser);
+
+      // Now reset the password
+      const res = await request(app)
+        .post('/api/v1/reset-password')
+        .send({
+          mobile: testUser.mobile,
+          newPassword: 'newsecurepassword123',
+        });
+
+      expect(res.statusCode).toEqual(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.message).toContain('successfully');
+      expect(res.body.user).toHaveProperty('id');
+      expect(res.body.user.mobile).toBe(testUser.mobile);
+    });
+
+    it('should return 404 when resetting password for non-registered mobile', async () => {
+      const res = await request(app)
+        .post('/api/v1/reset-password')
+        .send({
+          mobile: '9999999991',
+          newPassword: 'somepassword123',
+        });
+
+      console.log('--- 404 test res.body:', res.body);
+      expect(res.statusCode).toEqual(404);
+      expect(res.body.status).toBe('fail');
+      expect(res.body.message).toContain('not registered');
+    });
+
+    it('should return 400 when validation fails (password too short)', async () => {
+      const res = await request(app)
+        .post('/api/v1/reset-password')
+        .send({
+          mobile: testUser.mobile,
+          newPassword: '123',
+        });
+
+      expect(res.statusCode).toEqual(400);
+      expect(res.body.status).toBe('fail');
+    });
+  });
 });
+

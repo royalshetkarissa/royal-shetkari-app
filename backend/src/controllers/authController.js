@@ -189,12 +189,31 @@ exports.resetPassword = async (req, res, next) => {
   try {
     const { mobile, newPassword } = req.body;
 
+    if (!mobile || !newPassword) {
+      return next(new AppError('Mobile number and new password are required', 400));
+    }
+
     const user = await authService.findUserByMobile(mobile);
     if (!user) {
       return next(new AppError('Mobile number not registered', 404));
     }
 
-    const updatedUser = await authService.resetPassword(mobile, newPassword);
+    let updatedUser;
+    try {
+      updatedUser = await authService.resetPassword(mobile, newPassword);
+    } catch (dbError) {
+      logger.error('Database error during password reset:', {
+        message: dbError.message,
+        stack: dbError.stack,
+        mobile,
+        requestId: req.id,
+      });
+      return next(new AppError(`Database error during password reset: ${dbError.message}`, 500));
+    }
+
+    if (!updatedUser) {
+      return next(new AppError('Failed to reset password. User not found.', 404));
+    }
 
     // Log the security event in user change history/audit log
     await logActivity(
@@ -216,6 +235,11 @@ exports.resetPassword = async (req, res, next) => {
       },
     });
   } catch (error) {
+    logger.error('Error in resetPassword controller:', {
+      error: error.message,
+      stack: error.stack,
+      requestId: req.id,
+    });
     next(error);
   }
 };
