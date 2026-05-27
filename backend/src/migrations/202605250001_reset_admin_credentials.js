@@ -4,9 +4,22 @@
  */
 const bcrypt = require('bcrypt');
 
+const env = require('../config/env');
+
 exports.up = async (client) => {
-  const mobile = '8605889356';
-  const plainPassword = 'admin@123';
+  const mobile = env.SUPER_ADMIN.MOBILE || '8605889356';
+  const plainPassword = env.SUPER_ADMIN.PASSWORD;
+
+  if (!plainPassword) {
+    if (env.NODE_ENV === 'production') {
+      throw new Error('SUPER_ADMIN_PASSWORD is required in production environment.');
+    }
+    console.warn(
+      '⚠️ SUPER_ADMIN_PASSWORD is not set. Skipping admin credentials migration in non-production.'
+    );
+    return;
+  }
+
   const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
   // Check if user exists
