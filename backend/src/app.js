@@ -27,6 +27,7 @@ const requestId = require('./middleware/requestId');
 const errorMiddleware = require('./middleware/errorMiddleware');
 
 const app = express();
+app.disable('x-powered-by');
 
 // 1. Global Middlewares
 app.use(requestId);
