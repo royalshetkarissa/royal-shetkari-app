@@ -1,14 +1,22 @@
+const path = require('path');
 require('dotenv').config();
+if (process.env.NODE_ENV === 'test') {
+  require('dotenv').config({ path: path.resolve(__dirname, '../../.env.test') });
+}
 const { z } = require('zod');
 
 /**
  * Validate environment variables at startup.
  */
+const isTestObj = process.env.NODE_ENV === 'test';
+
 const envSchema = z
   .object({
     PORT: z.string().default('5000'),
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-    JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
+    JWT_SECRET: isTestObj
+      ? z.string().default('mock_secret_key_for_testing_purposes_only')
+      : z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
     DATABASE_URL: z.string().optional(),
     DB_HOST: z.string().optional(),
     DB_USER: z.string().optional(),
@@ -26,7 +34,9 @@ const envSchema = z
   })
   .refine(
     (data) =>
-      data.DATABASE_URL || (data.DB_HOST && data.DB_USER && data.DB_PASSWORD && data.DB_NAME),
+      isTestObj ||
+      data.DATABASE_URL ||
+      (data.DB_HOST && data.DB_USER && data.DB_PASSWORD && data.DB_NAME),
     {
       message: 'Either DATABASE_URL or (DB_HOST, DB_USER, DB_PASSWORD, DB_NAME) must be provided',
       path: ['DATABASE_URL'],

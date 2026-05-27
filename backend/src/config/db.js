@@ -88,6 +88,8 @@ pool.on('error', (err) => {
   logger.error('❌ Unexpected error on idle DB client', { error: err.message });
 });
 
-connectWithRetry();
+if (env.NODE_ENV !== 'test') {
+  connectWithRetry();
+}
 
 module.exports = pool;

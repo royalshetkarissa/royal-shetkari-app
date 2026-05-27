@@ -18,7 +18,6 @@ backend/history.log
 # Backend dependencies & env
 backend/node_modules/
 backend/.env
-backend/.env.test
 backend/uploads/*
 !backend/uploads/.gitkeep
 

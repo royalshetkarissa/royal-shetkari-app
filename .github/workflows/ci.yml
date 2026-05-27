@@ -11,6 +11,21 @@ jobs:
     name: Backend Security, Lint & Test
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres_password
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     defaults:
       run:
         working-directory: ./backend
@@ -45,6 +60,11 @@ jobs:
       - name: Run Integration Tests
         # Run tests (pass if no tests defined or standard suite checks out)
         run: npm test
+        env:
+          NODE_ENV: test
+          JWT_SECRET: mock_secret_key_for_testing_purposes_only
+          DATABASE_URL: postgres://postgres:postgres_password@localhost:5432/test_db
+          DB_SSL_REJECT_UNAUTHORIZED: false
 
       - name: SonarCloud Scan
         # Scan code quality & security via SonarCloud
