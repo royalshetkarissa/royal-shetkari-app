@@ -1,5 +1,6 @@
 const authService = require('../services/authService');
-const { logActivity } = require('../utils/logger');
+const logger = require('../utils/logger');
+const { logActivity } = logger;
 const AppError = require('../utils/AppError');
 
 exports.register = async (req, res, next) => {
@@ -15,7 +16,11 @@ exports.register = async (req, res, next) => {
     const devOtp = await authService.createOTP(mobile);
 
     if (process.env.NODE_ENV !== 'production') {
-      console.log('🔐 OTP for', mobile, ':', devOtp);
+      const sanitizedMobile = String(mobile).replace(/[\r\n]/g, '_');
+      logger.info('Development OTP generated', {
+        mobile: sanitizedMobile,
+        requestId: req.id,
+      });
     }
     res.status(201).json({
       success: true,
@@ -46,7 +51,11 @@ exports.login = async (req, res, next) => {
     const devOtp = await authService.createOTP(mobile);
 
     if (process.env.NODE_ENV !== 'production') {
-      console.log('🔐 OTP for', mobile, ':', devOtp);
+      const sanitizedMobile = String(mobile).replace(/[\r\n]/g, '_');
+      logger.info('Development OTP generated', {
+        mobile: sanitizedMobile,
+        requestId: req.id,
+      });
     }
     res.json({
       success: true,
@@ -159,7 +168,11 @@ exports.resendOtp = async (req, res, next) => {
     const devOtp = await authService.createOTP(mobile);
 
     if (process.env.NODE_ENV !== 'production') {
-      console.log('🔐 OTP for', mobile, ':', devOtp);
+      const sanitizedMobile = String(mobile).replace(/[\r\n]/g, '_');
+      logger.info('Development OTP generated', {
+        mobile: sanitizedMobile,
+        requestId: req.id,
+      });
     }
     res.json({
       success: true,
