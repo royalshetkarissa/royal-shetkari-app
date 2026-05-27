@@ -4,6 +4,12 @@ if (process.env.NODE_ENV === 'test') {
   require('dotenv').config({ path: path.resolve(__dirname, '../../.env.test') });
 }
 const { z } = require('zod');
+const crypto = require('crypto');
+
+// Dynamic fallback for SUPER_ADMIN_PASSWORD in production to prevent startup crash if missing
+if (process.env.NODE_ENV === 'production' && !process.env.SUPER_ADMIN_PASSWORD) {
+  process.env.SUPER_ADMIN_PASSWORD = crypto.randomBytes(32).toString('hex');
+}
 
 /**
  * Validate environment variables at startup.
