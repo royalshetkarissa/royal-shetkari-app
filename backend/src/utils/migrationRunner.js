@@ -57,7 +57,7 @@ class MigrationRunner {
     const files = fs
       .readdirSync(migrationsDir)
       .filter((f) => f.endsWith('.js'))
-      .sort();
+      .sort((a, b) => a.localeCompare(b));
 
     for (const file of files) {
       const version = file.split('_')[0];
