@@ -2,31 +2,49 @@ const { Pool } = require('pg');
 const env = require('./env');
 const logger = require('../utils/logger');
 
-const poolConfig = env.DATABASE_URL
-  ? {
-      connectionString: env.DATABASE_URL,
-      ssl:
-        env.NODE_ENV === 'production'
-          ? { rejectUnauthorized: env.DB_SSL_REJECT_UNAUTHORIZED }
-          : false,
-      max: 50, // Connection pooling (Max 50 as requested)
-      min: 10, // Minimum 10 idle connections
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000,
-      query_timeout: 30000, // 30 second timeout on all queries
-    }
-  : {
-      user: env.DB.USER,
-      password: env.DB.PASSWORD,
-      host: env.DB.HOST,
-      port: env.DB.PORT,
-      database: env.DB.NAME,
-      max: 50, // Connection pooling (Max 50 as requested)
-      min: 10, // Minimum 10 idle connections
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000,
-      query_timeout: 30000, // 30 second timeout on all queries
-    };
+const databaseUrl = process.env.DATABASE_URL || env.DATABASE_URL;
+const isProd = env.NODE_ENV === 'production';
+
+let poolConfig;
+
+if (
+  databaseUrl &&
+  databaseUrl !== '/' &&
+  databaseUrl !== 'localhost' &&
+  databaseUrl !== '127.0.0.1'
+) {
+  poolConfig = {
+    connectionString: databaseUrl,
+    ssl: isProd ? { rejectUnauthorized: env.DB_SSL_REJECT_UNAUTHORIZED } : false,
+    max: 50,
+    min: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
+    query_timeout: 30000,
+  };
+} else {
+  const host = env.DB.HOST || '127.0.0.1';
+  const safeHost =
+    (host === '/' || host === 'localhost' || host === '127.0.0.1') && isProd ? undefined : host;
+
+  if (isProd && !safeHost) {
+    logger.error('💥 Critical: No valid DATABASE_URL or database host configured for production.');
+    process.exit(1);
+  }
+
+  poolConfig = {
+    user: env.DB.USER,
+    password: env.DB.PASSWORD,
+    host: safeHost,
+    port: env.DB.PORT,
+    database: env.DB.NAME,
+    max: 50,
+    min: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
+    query_timeout: 30000,
+  };
+}
 
 const pool = new Pool(poolConfig);
 
