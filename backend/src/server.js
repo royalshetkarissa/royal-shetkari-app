@@ -13,11 +13,13 @@ require('./jobs/postWorker');
 const server = app.listen(PORT, async () => {
   logger.info(`🚀 Production Server running on port ${PORT}`);
 
-  // Run Database Migrations
+  // Run Database Migrations and Bootstrap Admin
   try {
     await migrationRunner.up();
+    const bootstrapAdmin = require('./utils/bootstrapAdmin');
+    await bootstrapAdmin();
   } catch (err) {
-    logger.error('Failed to run migrations on startup', err);
+    logger.error('Failed to run migrations or bootstrap on startup', err);
   }
 });
 

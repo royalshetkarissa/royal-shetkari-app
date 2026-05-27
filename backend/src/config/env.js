@@ -31,6 +31,10 @@ const envSchema = z
     TWILIO_PHONE_NUMBER: z.string().optional(),
     SUPER_USER_MOBILE: z.string().default('8605889356'),
     DB_SSL_REJECT_UNAUTHORIZED: z.enum(['true', 'false']).default('true'),
+    SUPER_ADMIN_NAME: z.string().default('System Admin'),
+    SUPER_ADMIN_MOBILE: z.string().default('8605889356'),
+    SUPER_ADMIN_EMAIL: z.string().default('admin@royalshetkari.com'),
+    SUPER_ADMIN_PASSWORD: z.string().optional(),
   })
   .refine(
     (data) =>
@@ -40,6 +44,18 @@ const envSchema = z
     {
       message: 'Either DATABASE_URL or (DB_HOST, DB_USER, DB_PASSWORD, DB_NAME) must be provided',
       path: ['DATABASE_URL'],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.NODE_ENV === 'production' && !data.SUPER_ADMIN_PASSWORD) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: 'SUPER_ADMIN_PASSWORD is required in production environment',
+      path: ['SUPER_ADMIN_PASSWORD'],
     }
   );
 
@@ -70,5 +86,11 @@ module.exports = {
     SID: env.TWILIO_ACCOUNT_SID,
     TOKEN: env.TWILIO_AUTH_TOKEN,
     PHONE: env.TWILIO_PHONE_NUMBER,
+  },
+  SUPER_ADMIN: {
+    NAME: env.SUPER_ADMIN_NAME,
+    MOBILE: env.SUPER_ADMIN_MOBILE,
+    EMAIL: env.SUPER_ADMIN_EMAIL,
+    PASSWORD: env.SUPER_ADMIN_PASSWORD,
   },
 };
