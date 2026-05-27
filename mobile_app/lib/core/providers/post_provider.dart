@@ -105,6 +105,8 @@ class PostProvider extends ChangeNotifier {
         location: location,
         contactNumber: contactMobile,
         imagePaths: imagePaths ?? imageFiles?.map((f) => f.path).toList().cast<String>(),
+        imageBytesList: imageBytesList?.cast<Uint8List>(),
+        isWeb: isWeb,
         latitude: latitude,
         longitude: longitude,
         animalType: animalType,

@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import './dio_client.dart';
 import '../config/app_config.dart';
@@ -101,7 +102,22 @@ class ApiService {
     return List<Map<String, dynamic>>.from(data['posts']);
   }
 
-  Future<Map<String, dynamic>> createPost({required String category, required String title, required String description, required double? price, required String location, required String contactNumber, List<String>? imagePaths, double? latitude, double? longitude, String? animalType, String? lactation, double? milkPerDay}) async {
+  Future<Map<String, dynamic>> createPost({
+    required String category,
+    required String title,
+    required String description,
+    required double? price,
+    required String location,
+    required String contactNumber,
+    List<String>? imagePaths,
+    List<Uint8List>? imageBytesList,
+    bool isWeb = false,
+    double? latitude,
+    double? longitude,
+    String? animalType,
+    String? lactation,
+    double? milkPerDay,
+  }) async {
     Map<String, dynamic> fields = {
       'category': category,
       'title': title,
@@ -116,7 +132,13 @@ class ApiService {
       if (milkPerDay != null) 'milk_per_day': milkPerDay,
     };
     
-    if (imagePaths != null && imagePaths.isNotEmpty) {
+    if (isWeb && imageBytesList != null && imageBytesList.isNotEmpty) {
+      List<MultipartFile> files = [];
+      for (var bytes in imageBytesList) {
+        files.add(MultipartFile.fromBytes(bytes, filename: 'upload.jpg'));
+      }
+      fields['images'] = files;
+    } else if (imagePaths != null && imagePaths.isNotEmpty) {
       List<MultipartFile> files = [];
       for (var path in imagePaths) {
         files.add(await MultipartFile.fromFile(path));
