@@ -1,5 +1,107 @@
 const pool = require('../config/db');
 
+const DATE_INTERVALS = {
+  today: '1 day',
+  week: '7 days',
+  month: '30 days',
+};
+
+const SORT_ORDER_BY = {
+  likes: 'p.likes_count DESC, p.created_at DESC',
+  views: 'p.views_count DESC, p.created_at DESC',
+  price_asc: 'p.price ASC, p.created_at DESC',
+  price_desc: 'p.price DESC, p.created_at DESC',
+};
+
+function buildDistanceSelect(userLat, userLng, radius_km, state) {
+  if (userLat && userLng && radius_km) {
+    const distanceClause = `, (6371 * acos(cos(radians($${state.paramIndex})) * cos(radians(p.latitude)) * cos(radians(p.longitude) - radians($${state.paramIndex + 1})) + sin(radians($${state.paramIndex})) * sin(radians(p.latitude)))) AS distance`;
+    state.params.push(userLat, userLng);
+    state.paramIndex += 2;
+    return distanceClause;
+  }
+  return '';
+}
+
+function buildDateFilter(dateFilter) {
+  const interval = DATE_INTERVALS[dateFilter];
+  if (interval) {
+    return ` AND p.created_at >= NOW() - INTERVAL '${interval}'`;
+  }
+  return '';
+}
+
+function buildOrderBy(sortBy, hasDistance) {
+  if (SORT_ORDER_BY[sortBy]) {
+    return SORT_ORDER_BY[sortBy];
+  }
+  if (hasDistance) {
+    return 'distance ASC';
+  }
+  return 'p.created_at DESC';
+}
+
+function appendFilters(query, filters, state) {
+  const {
+    category,
+    animal_type,
+    minPrice,
+    maxPrice,
+    radius_km,
+    userLat,
+    userLng,
+    search,
+    hasImages,
+    dateFilter,
+  } = filters;
+
+  let updatedQuery = query;
+
+  if (category && category !== 'all') {
+    updatedQuery += ` AND p.category = $${state.paramIndex}`;
+    state.params.push(category);
+    state.paramIndex++;
+  }
+
+  if (animal_type) {
+    updatedQuery += ` AND p.animal_type = $${state.paramIndex}`;
+    state.params.push(animal_type);
+    state.paramIndex++;
+  }
+
+  if (minPrice !== undefined) {
+    updatedQuery += ` AND p.price >= $${state.paramIndex}`;
+    state.params.push(minPrice);
+    state.paramIndex++;
+  }
+
+  if (maxPrice !== undefined) {
+    updatedQuery += ` AND p.price <= $${state.paramIndex}`;
+    state.params.push(maxPrice);
+    state.paramIndex++;
+  }
+
+  if (userLat && userLng && radius_km) {
+    updatedQuery += ` AND (6371 * acos(cos(radians($1)) * cos(radians(p.latitude)) * cos(radians(p.longitude) - radians($2)) + sin(radians($1)) * sin(radians(p.latitude)))) <= $${state.paramIndex}`;
+    state.params.push(radius_km);
+    state.paramIndex++;
+  }
+
+  if (search) {
+    updatedQuery += ` AND (p.title ILIKE $${state.paramIndex} OR p.description ILIKE $${state.paramIndex} OR p.location ILIKE $${state.paramIndex})`;
+    state.params.push(`%${search}%`);
+    state.paramIndex++;
+  }
+
+  if (hasImages === 'true' || hasImages === true) {
+    updatedQuery += ` AND p.image_url IS NOT NULL AND p.image_url != ''`;
+  }
+
+  updatedQuery += buildDateFilter(dateFilter);
+
+  return updatedQuery;
+}
+
 class PostRepository {
   async create(data) {
     const {
@@ -42,32 +144,13 @@ class PostRepository {
   }
 
   async findAll(filters) {
-    const {
-      category,
-      animal_type,
-      minPrice,
-      maxPrice,
-      radius_km,
-      userLat,
-      userLng,
-      search,
-      sortBy,
-      dateFilter,
-      hasImages,
-    } = filters || {};
+    const { radius_km, userLat, userLng, sortBy } = filters || {};
+
+    const state = { params: [], paramIndex: 1 };
 
     let selectClause = `SELECT p.*, u.full_name as farmer_name, u.village`;
-    let distanceClause = ``;
-    const params = [];
-    let paramIndex = 1;
-
-    // Haversine distance formula if user location is provided
-    if (userLat && userLng && radius_km) {
-      distanceClause = `, (6371 * acos(cos(radians($${paramIndex})) * cos(radians(p.latitude)) * cos(radians(p.longitude) - radians($${paramIndex + 1})) + sin(radians($${paramIndex})) * sin(radians(p.latitude)))) AS distance`;
-      selectClause += distanceClause;
-      params.push(userLat, userLng);
-      paramIndex += 2;
-    }
+    const distanceClause = buildDistanceSelect(userLat, userLng, radius_km, state);
+    selectClause += distanceClause;
 
     let query = `
       ${selectClause}
@@ -76,70 +159,13 @@ class PostRepository {
       WHERE p.status = 'active'
     `;
 
-    if (category && category !== 'all') {
-      query += ` AND p.category = $${paramIndex}`;
-      params.push(category);
-      paramIndex++;
-    }
+    query = appendFilters(query, filters || {}, state);
 
-    if (animal_type) {
-      query += ` AND p.animal_type = $${paramIndex}`;
-      params.push(animal_type);
-      paramIndex++;
-    }
-
-    if (minPrice !== undefined) {
-      query += ` AND p.price >= $${paramIndex}`;
-      params.push(minPrice);
-      paramIndex++;
-    }
-
-    if (maxPrice !== undefined) {
-      query += ` AND p.price <= $${paramIndex}`;
-      params.push(maxPrice);
-      paramIndex++;
-    }
-
-    if (userLat && userLng && radius_km) {
-      query += ` AND (6371 * acos(cos(radians($1)) * cos(radians(p.latitude)) * cos(radians(p.longitude) - radians($2)) + sin(radians($1)) * sin(radians(p.latitude)))) <= $${paramIndex}`;
-      params.push(radius_km);
-      paramIndex++;
-    }
-
-    if (search) {
-      query += ` AND (p.title ILIKE $${paramIndex} OR p.description ILIKE $${paramIndex} OR p.location ILIKE $${paramIndex})`;
-      params.push(`%${search}%`);
-      paramIndex++;
-    }
-
-    if (hasImages === 'true' || hasImages === true) {
-      query += ` AND p.image_url IS NOT NULL AND p.image_url != ''`;
-    }
-
-    if (dateFilter === 'today') {
-      query += ` AND p.created_at >= NOW() - INTERVAL '1 day'`;
-    } else if (dateFilter === 'week') {
-      query += ` AND p.created_at >= NOW() - INTERVAL '7 days'`;
-    } else if (dateFilter === 'month') {
-      query += ` AND p.created_at >= NOW() - INTERVAL '30 days'`;
-    }
-
-    let orderBy = `p.created_at DESC`;
-    if (sortBy === 'likes') {
-      orderBy = `p.likes_count DESC, p.created_at DESC`;
-    } else if (sortBy === 'views') {
-      orderBy = `p.views_count DESC, p.created_at DESC`;
-    } else if (sortBy === 'price_asc') {
-      orderBy = `p.price ASC, p.created_at DESC`;
-    } else if (sortBy === 'price_desc') {
-      orderBy = `p.price DESC, p.created_at DESC`;
-    } else if (userLat && userLng && radius_km) {
-      orderBy = `distance ASC`;
-    }
-
+    const hasDistance = !!(userLat && userLng && radius_km);
+    const orderBy = buildOrderBy(sortBy, hasDistance);
     query += ` ORDER BY ${orderBy}`;
 
-    const result = await pool.queryWithRetry(query, params);
+    const result = await pool.queryWithRetry(query, state.params);
     return result.rows;
   }
 
