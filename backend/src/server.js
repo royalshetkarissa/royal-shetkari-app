@@ -1,6 +1,3 @@
-// 🔭 Initialize Distributed Tracing before anything else (Updated 2026-05-18)
-require('./instrumentation');
-
 const app = require('./app');
 const env = require('./config/env');
 const pool = require('./config/db');
