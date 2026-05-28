@@ -34,7 +34,27 @@ exports.addShop = async (req, res, next) => {
       address,
       contact_mobile,
       whatsapp_number,
-      categories: typeof categories === 'string' ? JSON.parse(categories) : categories,
+      categories: (() => {
+        if (!categories) return [];
+        if (typeof categories === 'string') {
+          const trimmed = categories.trim();
+          if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+            try {
+              return JSON.parse(trimmed);
+            } catch (e) {
+              return trimmed
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean);
+            }
+          }
+          return trimmed
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean);
+        }
+        return Array.isArray(categories) ? categories : [categories];
+      })(),
       images,
       profile_photo: profilePhoto,
       latitude: latitude && !isNaN(parseFloat(latitude)) ? parseFloat(latitude) : 19.076,
