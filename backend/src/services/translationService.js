@@ -232,7 +232,11 @@ async function updateUserLanguage(userId, langCode) {
     );
     return result.rows[0];
   } catch (err) {
-    logger.error('Failed to update user language preference:', { error: err.message, userId, langCode });
+    logger.error('Failed to update user language preference:', {
+      error: err.message,
+      userId,
+      langCode,
+    });
     throw err;
   }
 }

@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: Continuous Integration & Delivery
 
 on:
   push:
@@ -6,9 +6,14 @@ on:
   pull_request:
     branches: [ main, master ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true # Automatically cancel redundant runs on push updates
+
 jobs:
+  # JOB 1: Backend Security, Lints & Tests
   backend-checks:
-    name: Backend Security, Lint & Test
+    name: Backend Code Quality & Tests
     runs-on: ubuntu-latest
 
     services:
@@ -31,7 +36,7 @@ jobs:
         working-directory: ./backend
 
     steps:
-      - name: Checkout Code
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -42,33 +47,111 @@ jobs:
           cache-dependency-path: './backend/package-lock.json'
 
       - name: Install Dependencies
-        # npm ci enforces the lockfile and will fail if package.json and package-lock.json are out of sync
         run: npm ci
 
-      - name: Check Code Formatting
+      - name: Check Code Formatting (Prettier)
         run: npm run format:check
 
-      - name: Lint Code
+      - name: Code Linting (ESLint)
         run: npm run lint
 
-      - name: Security Vulnerability Scan (npm audit)
-        # Scan for high/critical security vulnerabilities in dependencies
+      - name: Security Vulnerability Scan
         run: npm audit --audit-level=high
 
       - name: Run Database Migrations
-        # Set up schema and run migrations on the database service container
         run: node run_migrations.js
         env:
           NODE_ENV: test
           DATABASE_URL: postgres://postgres:postgres_password@localhost:5432/test_db
           DB_SSL_REJECT_UNAUTHORIZED: false
 
-      - name: Run Integration Tests
-        # Run tests (pass if no tests defined or standard suite checks out)
-        run: npm test
+      - name: Run Integration Tests with Coverage
+        run: npm test -- --coverage
         env:
           NODE_ENV: test
           JWT_SECRET: mock_secret_key_for_testing_purposes_only
           DATABASE_URL: postgres://postgres:postgres_password@localhost:5432/test_db
           DB_SSL_REJECT_UNAUTHORIZED: false
+
+      - name: Upload Coverage Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage/
+
+  # JOB 2: SonarCloud Code Analysis
+  sonar-analysis:
+    name: SonarCloud Quality Gate
+    needs: backend-checks # Fail early if lints/tests are breaking
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Complete history required for proper SonarCloud scan
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v3
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectBaseDir: ./backend
+
+  # JOB 3: Flutter Mobile App Build
+  flutter-android-build:
+    name: Flutter Android Build
+    needs: backend-checks # Save CI minutes by executing only after backend validations pass
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java Development Kit (JDK 17)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+          cache: 'gradle' # Automatically cache Gradle dependencies & configurations
+
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+          cache-key: "flutter-:os:-:channel:-:version:-:arch:-:hash:"
+
+      - name: Get Flutter Pub Dependencies
+        run: |
+          cd mobile_app
+          flutter pub get
+
+      - name: Verify Code Compilation & Style
+        run: |
+          cd mobile_app
+          flutter analyze
+
+      - name: Build Android Release APK
+        run: |
+          cd mobile_app
+          flutter build apk --release --no-tree-shake-icons
+
+      - name: Upload Release APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: royal-shetkari-release-apk
+          path: mobile_app/build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Create GitHub Release (On Main Branch Push)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest-build
+          name: Latest Release Build
+          draft: false
+          prerelease: true
+          files: mobile_app/build/app/outputs/flutter-apk/app-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
