@@ -67,7 +67,7 @@ async function getTranslations(langCode) {
     } else {
       localCache.set(langCode, {
         timestamp: Date.now(),
-        data: translationsObj
+        data: translationsObj,
       });
     }
 
@@ -83,7 +83,7 @@ async function getTranslations(langCode) {
  */
 async function getTranslation(langCode, key) {
   const translations = await getTranslations(langCode);
-  
+
   if (translations[key] !== undefined) {
     return translations[key];
   }
@@ -171,7 +171,7 @@ async function addTranslationKey(key, section = 'general', description = '') {
 async function deleteTranslationKey(key) {
   try {
     const result = await pool.query('DELETE FROM translation_keys WHERE key = $1', [key]);
-    
+
     // Clear all language caches since a key was deleted
     const langsResult = await pool.query('SELECT code FROM languages');
     for (const row of langsResult.rows) {

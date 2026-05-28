@@ -7,10 +7,12 @@ const AppError = require('../utils/AppError');
  */
 exports.getLanguages = async (req, res, next) => {
   try {
-    const result = await pool.query('SELECT code, name, is_active FROM languages WHERE is_active = true');
+    const result = await pool.query(
+      'SELECT code, name, is_active FROM languages WHERE is_active = true'
+    );
     res.json({
       success: true,
-      languages: result.rows
+      languages: result.rows,
     });
   } catch (err) {
     next(err);
@@ -27,7 +29,7 @@ exports.getTranslations = async (req, res, next) => {
     res.json({
       success: true,
       language: lang,
-      translations
+      translations,
     });
   } catch (err) {
     next(err);
@@ -49,7 +51,7 @@ exports.updateTranslation = async (req, res, next) => {
     res.json({
       success: true,
       message: 'Translation updated successfully',
-      data: result
+      data: result,
     });
   } catch (err) {
     next(err);
@@ -67,11 +69,15 @@ exports.addTranslationKey = async (req, res, next) => {
       return next(new AppError('Please provide a translation key', 400));
     }
 
-    const result = await translationService.addTranslationKey(key, section || 'general', description || '');
+    const result = await translationService.addTranslationKey(
+      key,
+      section || 'general',
+      description || ''
+    );
     res.status(201).json({
       success: true,
       message: 'Translation key registered successfully',
-      data: result
+      data: result,
     });
   } catch (err) {
     next(err);
@@ -96,7 +102,7 @@ exports.deleteTranslationKey = async (req, res, next) => {
 
     res.json({
       success: true,
-      message: `Translation key '${key}' deleted successfully`
+      message: `Translation key '${key}' deleted successfully`,
     });
   } catch (err) {
     next(err);
@@ -112,7 +118,7 @@ exports.getMissingTranslationsReport = async (req, res, next) => {
     res.json({
       success: true,
       count: report.length,
-      report
+      report,
     });
   } catch (err) {
     next(err);

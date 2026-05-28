@@ -91,11 +91,12 @@ exports.up = async (client) => {
     { key: 'community', lang: 'hi', val: 'समुदाय' },
     { key: 'community', lang: 'mr', val: 'समुदाय' },
     { key: 'community', lang: 'ta', val: 'சமூகம்' },
-    { key: 'community', lang: 'gu', val: 'સમુદાય' }
+    { key: 'community', lang: 'gu', val: 'સમુદાય' },
   ];
 
   for (const seed of seeds) {
-    await client.query(`
+    await client.query(
+      `
       INSERT INTO translations (key_id, language_code, value)
       VALUES (
         (SELECT id FROM translation_keys WHERE key = $1),
@@ -103,7 +104,9 @@ exports.up = async (client) => {
         $3
       )
       ON CONFLICT (key_id, language_code) DO UPDATE SET value = EXCLUDED.value;
-    `, [seed.key, seed.lang, seed.val]);
+    `,
+      [seed.key, seed.lang, seed.val]
+    );
   }
 };
 

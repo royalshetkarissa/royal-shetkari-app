@@ -22,12 +22,11 @@ module.exports = (req, res, next) => {
   if (!detectedLang && req.headers && req.headers['accept-language']) {
     const acceptHeader = req.headers['accept-language'];
     // Format is typically: en-US,en;q=0.9,mr;q=0.8
-    const languages = acceptHeader.split(',')
-      .map(lang => {
-        const parts = lang.split(';');
-        const code = parts[0].trim().split('-')[0].toLowerCase(); // Get main code (e.g. 'mr' from 'mr-IN')
-        return code;
-      });
+    const languages = acceptHeader.split(',').map((lang) => {
+      const parts = lang.split(';');
+      const code = parts[0].trim().split('-')[0].toLowerCase(); // Get main code (e.g. 'mr' from 'mr-IN')
+      return code;
+    });
 
     for (const code of languages) {
       if (SUPPORTED_LANGUAGES.includes(code)) {
@@ -39,7 +38,7 @@ module.exports = (req, res, next) => {
 
   // Fallback to English
   req.language = detectedLang || FALLBACK_LANGUAGE;
-  
+
   // Set response header for tracking/debugging
   res.setHeader('Content-Language', req.language);
 
