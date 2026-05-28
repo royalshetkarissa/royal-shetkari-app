@@ -191,12 +191,13 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
-  }
+      ],
+    ),
+  );
+}
 
   Widget _buildAppBar() {
     final bool canPop = Navigator.of(context).canPop();
