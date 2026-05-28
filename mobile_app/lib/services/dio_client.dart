@@ -88,13 +88,15 @@ class DioClient {
 
   Future<bool> _refreshToken() async {
     try {
-      final refreshToken = await _storage.read(key: 'refreshToken');
+      final prefs = await SharedPreferences.getInstance();
+      final refreshToken = await _storage.read(key: 'refreshToken') ?? prefs.getString('refreshToken');
       if (refreshToken == null) return false;
 
       final response = await dio.post('/auth/refresh-token', data: {'refreshToken': refreshToken});
       if (response.statusCode == 200) {
         final newAccessToken = response.data['accessToken'];
         await _storage.write(key: 'accessToken', value: newAccessToken);
+        await prefs.setString('token', newAccessToken);
         return true;
       }
     } catch (e) {

@@ -6,7 +6,7 @@ const env = require('../config/env');
  */
 exports.signAccessToken = (payload) => {
   return jwt.sign(payload, env.JWT_SECRET, {
-    expiresIn: '15m', // Short life for security
+    expiresIn: '7d', // 7 days for a seamless mobile/web session experience
   });
 };
 

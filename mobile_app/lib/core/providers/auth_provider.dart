@@ -129,6 +129,7 @@ class AuthProvider extends ChangeNotifier {
       
       if (response['refreshToken'] != null) {
         await _storage.write(key: 'refreshToken', value: response['refreshToken']);
+        await prefs.setString('refreshToken', response['refreshToken']);
       }
       
       return true;
@@ -218,6 +219,7 @@ class AuthProvider extends ChangeNotifier {
     await _storage.delete(key: 'refreshToken');
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
+    await prefs.remove('refreshToken');
     await prefs.remove('user');
     _token = null; _user = null;
     notifyListeners();
