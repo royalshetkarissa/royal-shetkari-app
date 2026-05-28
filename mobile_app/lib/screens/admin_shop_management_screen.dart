@@ -33,13 +33,15 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
   bool _isLoading = false;
   Position? _currentPosition;
   
-  // The 5 Core Categories
+  // The 7 Core Categories
   final Map<String, Map<String, String>> _categories = {
     'fertilizers': {'mr': 'खते व बियाणे', 'en': 'Fertilizers & Seeds'},
     'crop': {'mr': 'धान्य व पीक बाजार', 'en': 'Crop Market'},
     'equipment_repair': {'mr': 'शेती अवजारे दुरुस्ती', 'en': 'Equipment Repairing'},
     'hardware': {'mr': 'कृषी हार्डवेअर', 'en': 'Hardware Shop'},
     'organic_farming': {'mr': 'सेंद्रिय शेती साहित्य', 'en': 'Organic Farming'},
+    'animal_doctor': {'mr': 'पशुवैद्यकीय डॉक्टर', 'en': 'Animal Doctor / Vet'},
+    'produce_buyer': {'mr': 'शेतमाल खरेदीदार', 'en': 'Agricultural Produce Buyer'},
   };
 
   final Map<String, bool> _selectedCategories = {
@@ -48,15 +50,21 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
     'equipment_repair': false,
     'hardware': false,
     'organic_farming': false,
+    'animal_doctor': false,
+    'produce_buyer': false,
   };
 
   List<ShopModel> _shops = [];
   bool _acceptedTerms = false;
+  List<Map<String, dynamic>> _claims = [];
+  bool _claimsLoading = false;
+  final _claimsSearchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _fetchShops();
+    _fetchClaims();
   }
 
   @override
@@ -69,6 +77,7 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
     _servicesController.dispose();
     _pincodeController.dispose();
     _cityController.dispose();
+    _claimsSearchController.dispose();
     super.dispose();
   }
 
@@ -139,11 +148,6 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
       return;
     }
 
-    if (_currentPosition == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please capture the GPS location coordinates'), backgroundColor: Colors.red));
-      return;
-    }
-
     final selectedCats = _selectedCategories.entries
         .where((e) => e.value)
         .map((e) => e.key)
@@ -165,8 +169,8 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
         'services': _servicesController.text.trim(),
         'pincode': _pincodeController.text.trim(),
         'city': _cityController.text.trim(),
-        'latitude': _currentPosition!.latitude,
-        'longitude': _currentPosition!.longitude,
+        'latitude': 19.0760,
+        'longitude': 72.8777,
         'categories': selectedCats.join(','),
         'profilePhoto': await MultipartFile.fromFile(_profilePhoto!.path),
       });
@@ -294,7 +298,7 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         appBar: RoyalAppBar(
           title: 'शेतकरी मार्केट व्यवस्थापन / Admin Shops',
@@ -306,6 +310,7 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
             tabs: [
               Tab(text: 'नवीन नोंदणी / ADD SHOP'),
               Tab(text: 'व्यवस्थापन / MANAGE'),
+              Tab(text: 'नाणी क्लेम लॉग / COIN CLAIMS'),
             ],
           ),
         ),
@@ -313,6 +318,7 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
           children: [
             _buildAddShopTab(),
             _buildManageShopsTab(),
+            _buildCoinClaimsTab(),
           ],
         ),
       ),
@@ -476,40 +482,21 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _pickShopImages,
-                    icon: const Icon(Icons.photo_library, color: Color(0xFF1B5E20)),
-                    label: Text(
-                      'गॅलरी फोटो (${_shopImages.length}/10)',
-                      style: const TextStyle(color: Color(0xFF1B5E20), fontWeight: FontWeight.bold, fontSize: 12),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFF1B5E20), width: 1.5),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      minimumSize: const Size(0, 48),
-                    ),
-                  ),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: OutlinedButton.icon(
+                onPressed: _pickShopImages,
+                icon: const Icon(Icons.photo_library, color: Color(0xFF1B5E20)),
+                label: Text(
+                  'गॅलरी फोटो (${_shopImages.length}/10)',
+                  style: const TextStyle(color: Color(0xFF1B5E20), fontWeight: FontWeight.bold, fontSize: 12),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _getCurrentLocation,
-                    icon: const Icon(Icons.my_location, color: Colors.white),
-                    label: Text(
-                      _currentPosition == null ? 'लोकेशन टॅग करा' : 'लोकेशन टॅग केले ✅',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _currentPosition == null ? Colors.amber[800] : Colors.green,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      minimumSize: const Size(0, 48),
-                    ),
-                  ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFF1B5E20), width: 1.5),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-              ],
+              ),
             ),
             const SizedBox(height: 24),
             Row(
@@ -707,6 +694,193 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+      ),
+    );
+  }
+
+  Future<void> _fetchClaims() async {
+    setState(() => _claimsLoading = true);
+    try {
+      final claims = await _api.getAdminCoinClaims();
+      setState(() {
+        _claims = claims;
+        _claimsLoading = false;
+      });
+    } catch (_) {
+      setState(() => _claimsLoading = false);
+    }
+  }
+
+  Widget _buildCoinClaimsTab() {
+    if (_claimsLoading) {
+      return const Center(child: CircularProgressIndicator(color: Color(0xFF1B5E20)));
+    }
+
+    final query = _claimsSearchController.text.trim().toLowerCase();
+    final filteredClaims = _claims.where((claim) {
+      final shopName = (claim['shop_name'] ?? '').toString().toLowerCase();
+      final userName = (claim['user_name'] ?? '').toString().toLowerCase();
+      final userMobile = (claim['user_mobile'] ?? '').toString();
+      final code = (claim['claim_code'] ?? '').toString().toLowerCase();
+
+      return shopName.contains(query) ||
+          userName.contains(query) ||
+          userMobile.contains(query) ||
+          code.contains(query);
+    }).toList();
+
+    return RefreshIndicator(
+      onRefresh: _fetchClaims,
+      color: const Color(0xFF1B5E20),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: TextField(
+              controller: _claimsSearchController,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                hintText: 'शोध दुकान, शेतकरी किंवा कोड / Search...',
+                prefixIcon: const Icon(Icons.search, color: Color(0xFF1B5E20)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                isDense: true,
+                filled: true,
+                fillColor: Colors.white,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.green.shade200),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text('एकूण क्लेम्स / Total Claims', style: TextStyle(fontSize: 11, color: Colors.black87)),
+                        const SizedBox(height: 4),
+                        Text('${filteredClaims.length}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1B5E20))),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade50,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.amber.shade200),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text('एकूण नाणी / Total Coins', style: TextStyle(fontSize: 11, color: Colors.black87)),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${filteredClaims.fold<int>(0, (sum, item) => sum + (int.tryParse(item['coins_redeemed']?.toString() ?? '50') ?? 50))}',
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.amber),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: filteredClaims.isEmpty
+                ? const Center(child: Text('कोणतेही रेकॉर्ड सापडले नाही / No claims found.', style: TextStyle(color: Colors.grey)))
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: filteredClaims.length,
+                    itemBuilder: (context, index) {
+                      final claim = filteredClaims[index];
+                      final dateStr = claim['created_at'] != null 
+                          ? DateTime.parse(claim['created_at'].toString()).toLocal().toString().substring(0, 16)
+                          : 'N/A';
+
+                      return Card(
+                        elevation: 1,
+                        margin: const EdgeInsets.only(bottom: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.between,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      claim['shop_name'] ?? 'Shop',
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green.shade100,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      '${claim['discount_percentage'] ?? '5'}% OFF',
+                                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.green.shade800),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const Divider(height: 20),
+                              Row(
+                                children: [
+                                  const Icon(Icons.person, size: 16, color: Colors.grey),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '${claim['user_name'] ?? 'Farmer'} (${claim['user_mobile'] ?? ''})',
+                                    style: const TextStyle(fontSize: 12.5, color: Colors.black87),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.between,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.vpn_key, size: 16, color: Colors.amber),
+                                      const SizedBox(width: 8),
+                                      SelectableText(
+                                        claim['claim_code'] ?? 'CODE',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.amber,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Text(
+                                    dateStr,
+                                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }

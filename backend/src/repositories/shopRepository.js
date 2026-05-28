@@ -80,6 +80,11 @@ class ShopRepository {
     return result.rows[0];
   }
 
+  async getUserCoins(userId) {
+    const result = await pool.query(`SELECT coins FROM users WHERE id = $1`, [userId]);
+    return result.rows[0]?.coins || 0;
+  }
+
   async logClick(shopId, userId, clickType) {
     await pool.query(`INSERT INTO shop_clicks (shop_id, user_id, click_type) VALUES ($1, $2, $3)`, [
       shopId,
@@ -111,6 +116,54 @@ class ShopRepository {
       LEFT JOIN users u ON sc.user_id = u.id
       GROUP BY s.name, sc.click_type, u.full_name, u.mobile
       ORDER BY last_click DESC
+    `);
+    return result.rows;
+  }
+
+  async redeemCoins(userId, shopId, coins = 50) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // 1. Deduct coins from user
+      const updateResult = await client.query(
+        `UPDATE users SET coins = coins - $1 WHERE id = $2 RETURNING coins`,
+        [coins, userId]
+      );
+      if (updateResult.rows.length === 0) {
+        throw new Error('User not found');
+      }
+      const newCoins = updateResult.rows[0].coins;
+
+      // 2. Generate claim code
+      const claimCode = `RS-5%-CLAIM-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
+      // 3. Insert claim record
+      const claimResult = await client.query(
+        `INSERT INTO shop_coin_claims (user_id, shop_id, coins_redeemed, discount_percentage, claim_code)
+         VALUES ($1, $2, $3, 5.0, $4) RETURNING *`,
+        [userId, shopId, coins, claimCode]
+      );
+
+      await client.query('COMMIT');
+      return { newCoins, claim: claimResult.rows[0] };
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
+  async getAllCoinClaims() {
+    const result = await pool.query(`
+      SELECT scc.id, scc.coins_redeemed, scc.discount_percentage, scc.claim_code, scc.created_at,
+             u.full_name as user_name, u.mobile as user_mobile,
+             s.name as shop_name, s.city as shop_city
+      FROM shop_coin_claims scc
+      JOIN users u ON scc.user_id = u.id
+      JOIN shops s ON scc.shop_id = s.id
+      ORDER BY scc.created_at DESC
     `);
     return result.rows;
   }

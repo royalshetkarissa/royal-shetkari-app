@@ -21,6 +21,8 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
   List<ShopModel> _shops = [];
   bool _isLoading = true;
   TabController? _tabController;
+  final TextEditingController _cityFilterController = TextEditingController();
+  final TextEditingController _pincodeFilterController = TextEditingController();
 
   final List<Map<String, String>> _tabs = [
     {'key': 'fertilizers', 'labelMr': 'खते व औषधे', 'labelEn': 'Fertilizers'},
@@ -28,6 +30,8 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
     {'key': 'equipment_repair', 'labelMr': 'अवजारे दुरुस्ती', 'labelEn': 'Equipment'},
     {'key': 'hardware', 'labelMr': 'हार्डवेअर', 'labelEn': 'Hardware'},
     {'key': 'organic_farming', 'labelMr': 'सेंद्रिय शेती', 'labelEn': 'Organic'},
+    {'key': 'animal_doctor', 'labelMr': 'पशुवैद्यकीय डॉक्टर', 'labelEn': 'Animal Doctor'},
+    {'key': 'produce_buyer', 'labelMr': 'शेतमाल खरेदीदार', 'labelEn': 'Produce Buyers'},
   ];
 
   @override
@@ -40,6 +44,8 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
   @override
   void dispose() {
     _tabController?.dispose();
+    _cityFilterController.dispose();
+    _pincodeFilterController.dispose();
     super.dispose();
   }
 
@@ -87,21 +93,86 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
       });
     }).toList();
 
+    // Apply city and pincode filters
+    final filtered = categoryShops.where((s) {
+      final cityText = _cityFilterController.text.trim().toLowerCase();
+      final pincodeText = _pincodeFilterController.text.trim();
+
+      if (cityText.isNotEmpty) {
+        final shopCity = (s.city ?? '').toLowerCase();
+        if (!shopCity.contains(cityText)) return false;
+      }
+
+      if (pincodeText.isNotEmpty) {
+        final shopPincode = s.pincode ?? '';
+        if (!shopPincode.contains(pincodeText)) return false;
+      }
+
+      return true;
+    }).toList();
+
     // 🔄 Apply the daily 4-shop cycling schedule
-    if (categoryShops.length <= 4) {
-      return categoryShops;
+    if (filtered.length <= 4) {
+      return filtered;
     }
 
     final now = DateTime.now();
     final daysSinceEpoch = now.difference(DateTime(2026, 1, 1)).inDays;
-    int startIndex = (daysSinceEpoch * 4) % categoryShops.length;
+    int startIndex = (daysSinceEpoch * 4) % filtered.length;
 
     List<ShopModel> cyclicList = [];
     for (int i = 0; i < 4; i++) {
-      int index = (startIndex + i) % categoryShops.length;
-      cyclicList.add(categoryShops[index]);
+      int index = (startIndex + i) % filtered.length;
+      cyclicList.add(filtered[index]);
     }
     return cyclicList;
+  }
+
+  Widget _buildFilterRow() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _cityFilterController,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                isDense: true,
+                hintText: context.translate('city_taluka'),
+                prefixIcon: const Icon(Icons.location_city, size: 18, color: Color(0xFF1B5E20)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                filled: true,
+                fillColor: Colors.grey[50],
+              ),
+              style: const TextStyle(fontSize: 12),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: TextField(
+              controller: _pincodeFilterController,
+              keyboardType: TextInputType.number,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                isDense: true,
+                hintText: 'Pincode',
+                prefixIcon: const Icon(Icons.pin_drop, size: 18, color: Color(0xFF1B5E20)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                filled: true,
+                fillColor: Colors.grey[50],
+              ),
+              style: const TextStyle(fontSize: 12),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<bool> _onWillPop() async {
@@ -207,6 +278,8 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                     physics: const AlwaysScrollableScrollPhysics(),
                     children: [
+                      _buildFilterRow(),
+                      const SizedBox(height: 16),
                       if (isOrganic) ...[
                         _buildOrganicTipsHeader(),
                         const SizedBox(height: 16),

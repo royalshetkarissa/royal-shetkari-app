@@ -44,6 +44,18 @@ class ShopService {
   async getShopClicks(shopId) {
     return await shopRepository.getShopClicks(shopId);
   }
+
+  async redeemCoins(userId, shopId) {
+    const userCoins = await shopRepository.getUserCoins(userId);
+    if (userCoins < 50) {
+      throw new Error('Insufficient coins. Minimum 50 coins required for redemption.');
+    }
+    return await shopRepository.redeemCoins(userId, shopId, 50);
+  }
+
+  async getAllCoinClaims() {
+    return await shopRepository.getAllCoinClaims();
+  }
 }
 
 module.exports = new ShopService();

@@ -7,6 +7,7 @@ const upload = require('../../middleware/upload');
 // Public/Farmer Market Routes
 router.get('/nearby', shopController.getNearbyShops);
 router.post('/:id/click', verifyToken, shopController.trackClick);
+router.post('/:id/redeem', verifyToken, shopController.redeemShopCoins);
 
 // Admin Routes
 router.post(
@@ -25,5 +26,6 @@ router.post('/admin/:id/activate', verifyToken, isAdmin, shopController.activate
 router.delete('/admin/:id', verifyToken, isAdmin, shopController.deleteShop);
 router.get('/admin/analytics', verifyToken, isAdmin, shopController.getAnalytics);
 router.get('/admin/shop-clicks/:shopId', verifyToken, isAdmin, shopController.getShopClicks);
+router.get('/admin/coin-claims', verifyToken, isAdmin, shopController.getAdminCoinClaims);
 
 module.exports = router;

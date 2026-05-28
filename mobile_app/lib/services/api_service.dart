@@ -370,6 +370,17 @@ class ApiService {
     return List<Map<String, dynamic>>.from(data['clicks']);
   }
 
+  Future<Map<String, dynamic>> redeemShopCoins(int shopId) async {
+    final response = await _dio.post('/shops/$shopId/redeem');
+    return Map<String, dynamic>.from(_handleResponse(response));
+  }
+
+  Future<List<Map<String, dynamic>>> getAdminCoinClaims() async {
+    final response = await _dio.get('/shops/admin/coin-claims');
+    final data = _handleResponse(response);
+    return List<Map<String, dynamic>>.from(data['claims']);
+  }
+
   // 🏥 HOSPITAL COIN REDEMPTIONS & MANAGEMENT
   Future<List<Map<String, dynamic>>> getHospitals() async {
     final response = await _dio.get('/hospitals');

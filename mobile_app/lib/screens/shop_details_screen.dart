@@ -1,18 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
 import '../models/shop_model.dart';
 import '../services/api_service.dart';
 import '../localization/app_localizations.dart';
+import '../core/providers/auth_provider.dart';
 
-class ShopDetailsScreen extends StatelessWidget {
+class ShopDetailsScreen extends StatefulWidget {
   final ShopModel shop;
   final String? categoryKey;
-  final ApiService _api = ApiService();
 
-  ShopDetailsScreen({super.key, required this.shop, this.categoryKey});
+  const ShopDetailsScreen({super.key, required this.shop, this.categoryKey});
+
+  @override
+  State<ShopDetailsScreen> createState() => _ShopDetailsScreenState();
+}
+
+class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
+  final ApiService _api = ApiService();
+  bool _isRedeeming = false;
 
   String _getPrefilledMessage(BuildContext context) {
-    switch (categoryKey?.toLowerCase()) {
+    switch (widget.categoryKey?.toLowerCase()) {
       case 'fertilizers':
         return context.translate('whatsapp_msg_fertilizers');
       case 'crop':
@@ -37,12 +46,12 @@ class ShopDetailsScreen extends StatelessWidget {
   }
 
   Future<void> _launchWhatsApp(BuildContext context) async {
-    final rawNumber = shop.whatsappNumber ?? shop.contactMobile;
+    final rawNumber = widget.shop.whatsappNumber ?? widget.shop.contactMobile;
     final number = _formatWhatsAppNumber(rawNumber);
     final message = Uri.encodeComponent(_getPrefilledMessage(context));
     final url = "whatsapp://send?phone=$number&text=$message";
     
-    await _api.trackShopClick(shop.id, 'whatsapp');
+    await _api.trackShopClick(widget.shop.id, 'whatsapp');
     
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url));
@@ -53,20 +62,133 @@ class ShopDetailsScreen extends StatelessWidget {
   }
 
   Future<void> _launchCall() async {
-    final url = "tel:${shop.contactMobile}";
-    await _api.trackShopClick(shop.id, 'call');
+    final url = "tel:${widget.shop.contactMobile}";
+    await _api.trackShopClick(widget.shop.id, 'call');
     await launchUrl(Uri.parse(url));
   }
 
   Future<void> _launchMap() async {
-    final url = "https://www.google.com/maps/search/?api=1&query=${shop.latitude},${shop.longitude}";
+    final url = "https://www.google.com/maps/search/?api=1&query=${widget.shop.latitude},${widget.shop.longitude}";
     await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+  }
+
+  Future<void> _handleRedeem(BuildContext context, AuthProvider authProvider) async {
+    final bool confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Confirm Redemption', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Text('Are you sure you want to redeem 50 coins for a 5% discount coupon at ${widget.shop.name}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('CANCEL', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1B5E20),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('REDEEM', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    ) ?? false;
+
+    if (!confirm) return;
+
+    setState(() => _isRedeeming = true);
+    try {
+      final response = await _api.redeemShopCoins(widget.shop.id);
+      await authProvider.refreshUser();
+      
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            title: Row(
+              children: const [
+                Icon(Icons.stars, color: Colors.amber, size: 28),
+                SizedBox(width: 8),
+                Text('Redeemed! 🎉', style: TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Your 5% discount coupon has been claimed successfully.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14),
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade50,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.amber.shade300, width: 1.5),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'SHOW CODE AT SHOP:',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.amber),
+                      ),
+                      const SizedBox(height: 6),
+                      SelectableText(
+                        response['claim']['claim_code'] ?? 'RS-CLAIM-CODE',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: Colors.black87),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Note: Show this claim code to the merchant to redeem your 5% discount.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 11, color: Colors.grey),
+                ),
+              ],
+            ),
+            actions: [
+              Center(
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1B5E20),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    minimumSize: const Size(120, 44),
+                  ),
+                  child: const Text('OKAY', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to redeem: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isRedeeming = false);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDeleted = shop.status.toLowerCase() == 'deleted';
-    final isInactive = shop.status.toLowerCase() == 'inactive';
+    final isDeleted = widget.shop.status.toLowerCase() == 'deleted';
+    final isInactive = widget.shop.status.toLowerCase() == 'inactive';
+    final authProvider = Provider.of<AuthProvider>(context);
+    final bool isLoggedIn = authProvider.isAuthenticated;
+    final int userCoins = authProvider.user != null ? (authProvider.user!['coins'] ?? 0) : 0;
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -77,7 +199,7 @@ class ShopDetailsScreen extends StatelessWidget {
               key: const Key('btn_back_shop_details'),
               icon: Container(
                 padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: Colors.black45,
                   shape: BoxShape.circle,
                 ),
@@ -90,7 +212,7 @@ class ShopDetailsScreen extends StatelessWidget {
             backgroundColor: const Color(0xFF1B5E20),
             flexibleSpace: FlexibleSpaceBar(
               title: Text(
-                shop.name,
+                widget.shop.name,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
@@ -104,7 +226,7 @@ class ShopDetailsScreen extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   Image.network(
-                    _api.getImageUrl(shop.profilePhoto),
+                    _api.getImageUrl(widget.shop.profilePhoto),
                     fit: BoxFit.cover,
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) return child;
@@ -166,6 +288,10 @@ class ShopDetailsScreen extends StatelessWidget {
                   children: [
                     // Owner & Verification Banner
                     _buildMerchantCard(context),
+                    const SizedBox(height: 20),
+
+                    // Coin redemption panel
+                    _buildCoinRedemptionCard(context, isLoggedIn, userCoins, authProvider),
                     const SizedBox(height: 24),
                     
                     // Services Section
@@ -180,8 +306,8 @@ class ShopDetailsScreen extends StatelessWidget {
                         border: Border.all(color: Colors.grey.shade100),
                       ),
                       child: Text(
-                        shop.services != null && shop.services!.isNotEmpty
-                            ? shop.services!
+                        widget.shop.services != null && widget.shop.services!.isNotEmpty
+                            ? widget.shop.services!
                             : context.translate('default_services_desc'),
                         style: const TextStyle(fontSize: 14, height: 1.5, color: Colors.black87),
                       ),
@@ -194,7 +320,7 @@ class ShopDetailsScreen extends StatelessWidget {
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: shop.categories.map((cat) => _buildCategoryTag(cat)).toList(),
+                      children: widget.shop.categories.map((cat) => _buildCategoryTag(cat)).toList(),
                     ),
                     const SizedBox(height: 24),
 
@@ -205,14 +331,14 @@ class ShopDetailsScreen extends StatelessWidget {
                     const SizedBox(height: 24),
 
                     // Dynamic Product Slider (Gallery)
-                    if (shop.images.isNotEmpty) ...[
+                    if (widget.shop.images.isNotEmpty) ...[
                       _buildSectionHeader(context.translate('product_gallery')),
                       const SizedBox(height: 12),
                       SizedBox(
                         height: 160,
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
-                          itemCount: shop.images.length,
+                          itemCount: widget.shop.images.length,
                           itemBuilder: (context, index) {
                             return Container(
                               width: 220,
@@ -231,7 +357,7 @@ class ShopDetailsScreen extends StatelessWidget {
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(15),
                                 child: Image.network(
-                                  _api.getImageUrl(shop.images[index]),
+                                  _api.getImageUrl(widget.shop.images[index]),
                                   fit: BoxFit.cover,
                                   loadingBuilder: (context, child, loadingProgress) {
                                     if (loadingProgress == null) return child;
@@ -349,8 +475,8 @@ class ShopDetailsScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  shop.ownerName != null && shop.ownerName!.isNotEmpty 
-                      ? '${context.translate('owner')}: ${shop.ownerName!}' 
+                  widget.shop.ownerName != null && widget.shop.ownerName!.isNotEmpty 
+                      ? '${context.translate('owner')}: ${widget.shop.ownerName!}' 
                       : context.translate('merchant_partner'),
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
                 ),
@@ -373,6 +499,124 @@ class ShopDetailsScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildCoinRedemptionCard(BuildContext context, bool isLoggedIn, int userCoins, AuthProvider authProvider) {
+    if (!isLoggedIn) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Row(
+          children: const [
+            Icon(Icons.info_outline, color: Colors.grey),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Login to claim 5% coin discount offers!',
+                style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final bool canRedeem = userCoins >= 50;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.amber.shade300, width: 1.5),
+        gradient: LinearGradient(
+          colors: [Colors.amber.shade50.withOpacity(0.3), Colors.white],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.amber.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: Colors.amber.shade100,
+                child: const Icon(Icons.card_membership, color: Colors.amber, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      '5% Coins Discount Offer',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Redeem 50 coins to claim 5% discount at this shop',
+                      style: TextStyle(fontSize: 11, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.between,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.stars, color: Colors.amber, size: 18),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Your Balance: $userCoins Coins',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.black87),
+                  ),
+                ],
+              ),
+              _isRedeeming
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1B5E20)),
+                    )
+                  : ElevatedButton(
+                      onPressed: canRedeem ? () => _handleRedeem(context, authProvider) : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1B5E20),
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor: Colors.grey.shade300,
+                        disabledForegroundColor: Colors.grey.shade500,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      ),
+                      child: Text(
+                        canRedeem ? 'REDEEM' : 'NEED ${50 - userCoins} MORE',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                      ),
+                    ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildAddressCard(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -384,11 +628,11 @@ class ShopDetailsScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildAddressRow(Icons.location_city, context.translate('city_taluka'), shop.city ?? 'Maharashtra'),
+          _buildAddressRow(Icons.location_city, context.translate('city_taluka'), widget.shop.city ?? 'Maharashtra'),
           const Divider(height: 20),
-          _buildAddressRow(Icons.pin_drop, 'Pincode', shop.pincode ?? '411001'),
+          _buildAddressRow(Icons.pin_drop, 'Pincode', widget.shop.pincode ?? '411001'),
           const Divider(height: 20),
-          _buildAddressRow(Icons.map_outlined, context.translate('full_address'), shop.address),
+          _buildAddressRow(Icons.map_outlined, context.translate('full_address'), widget.shop.address),
           const SizedBox(height: 16),
           // Google Map Redirect button
           SizedBox(

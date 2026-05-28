@@ -37,8 +37,8 @@ exports.addShop = async (req, res, next) => {
       categories: typeof categories === 'string' ? JSON.parse(categories) : categories,
       images,
       profile_photo: profilePhoto,
-      latitude: parseFloat(latitude),
-      longitude: parseFloat(longitude),
+      latitude: latitude && !isNaN(parseFloat(latitude)) ? parseFloat(latitude) : 19.076,
+      longitude: longitude && !isNaN(parseFloat(longitude)) ? parseFloat(longitude) : 72.8777,
       ownerId: req.userId,
       owner_name,
       services,
@@ -113,6 +113,29 @@ exports.getShopClicks = async (req, res, next) => {
   try {
     const clicks = await shopService.getShopClicks(req.params.shopId);
     res.json({ success: true, clicks });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.redeemShopCoins = async (req, res, next) => {
+  try {
+    const shopId = parseInt(req.params.id);
+    const { newCoins, claim } = await shopService.redeemCoins(req.userId, shopId);
+
+    await logActivity(req.userId, 'REDEEM_COINS_SHOP', 'shop', shopId, {
+      claimCode: claim.claim_code,
+    });
+    res.json({ success: true, newCoins, claim });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.getAdminCoinClaims = async (req, res, next) => {
+  try {
+    const claims = await shopService.getAllCoinClaims();
+    res.json({ success: true, claims });
   } catch (err) {
     next(err);
   }
