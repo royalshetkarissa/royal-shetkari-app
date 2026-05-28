@@ -2384,7 +2384,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   Text(
                                     "$discount% सवलत (Discount)",
                                     style: const TextStyle(
-                                      color: Colors.white80,
+                                      color: Colors.white70,
                                       fontSize: 11.5,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -2395,7 +2395,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   Text(
                                     "$coins नाणी (Coins)",
                                     style: const TextStyle(
-                                      color: Colors.white80,
+                                      color: Colors.white70,
                                       fontSize: 11.5,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -2440,6 +2440,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
     );
+  }
 
   Widget _buildTopMenuButton(
       {required IconData icon,
