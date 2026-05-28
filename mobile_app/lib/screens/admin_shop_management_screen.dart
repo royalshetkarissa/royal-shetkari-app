@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import '../services/api_service.dart';
@@ -28,8 +29,8 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
   final _pincodeController = TextEditingController();
   final _cityController = TextEditingController();
   
-  File? _profilePhoto;
-  List<File> _shopImages = [];
+  XFile? _profilePhoto;
+  List<XFile> _shopImages = [];
   bool _isLoading = false;
   Position? _currentPosition;
   
@@ -93,7 +94,7 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
     final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
     if (picked != null) {
       setState(() {
-        _profilePhoto = File(picked.path);
+        _profilePhoto = picked;
       });
     }
   }
@@ -107,7 +108,7 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
         return;
       }
       setState(() {
-        _shopImages = pickedList.map((e) => File(e.path)).toList();
+        _shopImages = pickedList;
       });
     }
   }
@@ -160,6 +161,12 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
 
     setState(() => _isLoading = true);
     try {
+      final profilePhotoBytes = await _profilePhoto!.readAsBytes();
+      final profilePhotoMultipart = MultipartFile.fromBytes(
+        profilePhotoBytes,
+        filename: _profilePhoto!.name,
+      );
+
       FormData formData = FormData.fromMap({
         'name': _nameController.text.trim(),
         'owner_name': _ownerNameController.text.trim(),
@@ -172,13 +179,17 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
         'latitude': 19.0760,
         'longitude': 72.8777,
         'categories': selectedCats.join(','),
-        'profile_photo': await MultipartFile.fromFile(_profilePhoto!.path),
+        'profile_photo': profilePhotoMultipart,
       });
 
       for (int i = 0; i < _shopImages.length; i++) {
+        final imgBytes = await _shopImages[i].readAsBytes();
         formData.files.add(MapEntry(
           'images',
-          await MultipartFile.fromFile(_shopImages[i].path),
+          MultipartFile.fromBytes(
+            imgBytes,
+            filename: _shopImages[i].name,
+          ),
         ));
       }
 
@@ -341,7 +352,11 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
                     CircleAvatar(
                       radius: 54,
                       backgroundColor: Colors.green.shade50,
-                      backgroundImage: _profilePhoto != null ? FileImage(_profilePhoto!) : null,
+                      backgroundImage: _profilePhoto != null
+                          ? (kIsWeb
+                              ? NetworkImage(_profilePhoto!.path) as ImageProvider
+                              : FileImage(File(_profilePhoto!.path)) as ImageProvider)
+                          : null,
                       child: _profilePhoto == null 
                           ? const Icon(Icons.add_a_photo, size: 36, color: Color(0xFF1B5E20)) 
                           : null,
