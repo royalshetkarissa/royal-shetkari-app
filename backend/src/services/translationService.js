@@ -110,7 +110,7 @@ async function updateTranslation(key, langCode, value) {
     await client.query('BEGIN');
 
     // 1. Ensure key exists in translation_keys
-    let keyResult = await client.query('SELECT id FROM translation_keys WHERE key = $1', [key]);
+    const keyResult = await client.query('SELECT id FROM translation_keys WHERE key = $1', [key]);
     let keyId;
     if (keyResult.rows.length === 0) {
       const insertKey = await client.query(
