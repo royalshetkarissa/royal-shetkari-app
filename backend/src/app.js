@@ -146,6 +146,8 @@ app.use('/api/v1', b2Routes);
 
 app.use('/api/localization', localizationRoutes);
 app.use('/api/v1/localization', localizationRoutes);
+app.use('/api/language', localizationRoutes);
+app.use('/api/v1/language', localizationRoutes);
 
 // 4. Unhandled Routes
 app.all('*', (req, res, next) => {

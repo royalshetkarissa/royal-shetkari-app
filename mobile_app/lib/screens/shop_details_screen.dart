@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/shop_model.dart';
 import '../services/api_service.dart';
+import '../localization/app_localizations.dart';
 
 class ShopDetailsScreen extends StatelessWidget {
   final ShopModel shop;
@@ -10,20 +11,20 @@ class ShopDetailsScreen extends StatelessWidget {
 
   ShopDetailsScreen({super.key, required this.shop, this.categoryKey});
 
-  String _getPrefilledMessage() {
+  String _getPrefilledMessage(BuildContext context) {
     switch (categoryKey?.toLowerCase()) {
       case 'fertilizers':
-        return "नमस्कार, मी रॉयल शेतकरी ॲपवरून आपल्या दुकानाची माहिती पाहिली. मला खते आणि बियाणे खरेदी करायचे आहेत, कृपया माहिती द्या.\n\nI saw your shop on Royal Shetkari. I want to buy fertilizers & seeds, please share details.";
+        return context.translate('whatsapp_msg_fertilizers');
       case 'crop':
-        return "नमस्कार, मी रॉयल शेतकरी ॲपवरून आपल्या दुकानाची माहिती पाहिली. मला धान्य व पीक खरेदी/विक्री संदर्भात चर्चा करायची आहे.\n\nI saw your profile on Royal Shetkari. I want to discuss crop buying/selling.";
+        return context.translate('whatsapp_msg_crop');
       case 'equipment_repair':
-        return "नमस्कार, मी रॉयल शेतकरी ॲपवरून आपल्या दुरुस्ती केंद्राची माहिती पाहिली. मला माझ्या शेती अवजारांच्या दुरुस्तीची सेवा हवी आहे.\n\nI saw your service on Royal Shetkari. I want farming equipment repairing service.";
+        return context.translate('whatsapp_msg_repair');
       case 'hardware':
-        return "नमस्कार, मी रॉयल शेतकरी ॲपवरून आपल्या हार्डवेअर दुकानाची माहिती पाहिली. मला कृषी हार्डवेअर साहित्य खरेदी करायचे आहे.\n\nI saw your shop on Royal Shetkari. I want to buy agricultural hardware supplies.";
+        return context.translate('whatsapp_msg_hardware');
       case 'organic_farming':
-        return "नमस्कार, मी रॉयल शेतकरी ॲपवरून आपल्या सेंद्रिय केंद्राची माहिती पाहिली. मला सेंद्रिय शेती साहित्य खरेदी करायचे आहे.\n\nI saw your shop on Royal Shetkari. I want to buy organic farming inputs.";
+        return context.translate('whatsapp_msg_organic');
       default:
-        return "नमस्कार, मी रॉयल शेतकरी ॲपवरून आपल्या दुकानाची माहिती पाहिली. मला आपल्या दुकानाच्या सेवांबद्दल माहिती हवी आहे.\n\nI saw your profile on Royal Shetkari. I want more information about your services.";
+        return context.translate('whatsapp_msg_default');
     }
   }
 
@@ -35,10 +36,10 @@ class ShopDetailsScreen extends StatelessWidget {
     return digits;
   }
 
-  Future<void> _launchWhatsApp() async {
+  Future<void> _launchWhatsApp(BuildContext context) async {
     final rawNumber = shop.whatsappNumber ?? shop.contactMobile;
     final number = _formatWhatsAppNumber(rawNumber);
-    final message = Uri.encodeComponent(_getPrefilledMessage());
+    final message = Uri.encodeComponent(_getPrefilledMessage(context));
     final url = "whatsapp://send?phone=$number&text=$message";
     
     await _api.trackShopClick(shop.id, 'whatsapp');
@@ -150,8 +151,8 @@ class ShopDetailsScreen extends StatelessWidget {
                       Expanded(
                         child: Text(
                           isDeleted 
-                              ? 'हे दुकान काढण्यात आले आहे (Deleted Shop)' 
-                              : 'हे दुकान सध्या निष्क्रिय आहे (Inactive Shop)',
+                              ? context.translate('deleted_shop') 
+                              : context.translate('inactive_shop'),
                           style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 13),
                         ),
                       ),
@@ -164,11 +165,11 @@ class ShopDetailsScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Owner & Verification Banner
-                    _buildMerchantCard(),
+                    _buildMerchantCard(context),
                     const SizedBox(height: 24),
                     
                     // Services Section
-                    _buildSectionHeader('सेवा आणि माहिती / Services Info'),
+                    _buildSectionHeader(context.translate('services_info')),
                     const SizedBox(height: 12),
                     Container(
                       width: double.infinity,
@@ -181,14 +182,14 @@ class ShopDetailsScreen extends StatelessWidget {
                       child: Text(
                         shop.services != null && shop.services!.isNotEmpty
                             ? shop.services!
-                            : 'सर्व प्रकारच्या दर्जेदार सेवा व साहित्य उपलब्ध.\nQuality service and products available.',
+                            : context.translate('default_services_desc'),
                         style: const TextStyle(fontSize: 14, height: 1.5, color: Colors.black87),
                       ),
                     ),
                     const SizedBox(height: 24),
 
                     // Available categories
-                    _buildSectionHeader('वर्गीकरण / Shop Category'),
+                    _buildSectionHeader(context.translate('shop_category')),
                     const SizedBox(height: 12),
                     Wrap(
                       spacing: 8,
@@ -198,14 +199,14 @@ class ShopDetailsScreen extends StatelessWidget {
                     const SizedBox(height: 24),
 
                     // Contact & Pincode Card
-                    _buildSectionHeader('पत्ता आणि संपर्क / Location & Address'),
+                    _buildSectionHeader(context.translate('location_address')),
                     const SizedBox(height: 12),
-                    _buildAddressCard(),
+                    _buildAddressCard(context),
                     const SizedBox(height: 24),
 
                     // Dynamic Product Slider (Gallery)
                     if (shop.images.isNotEmpty) ...[
-                      _buildSectionHeader('उत्पादन गॅलरी / Product Gallery'),
+                      _buildSectionHeader(context.translate('product_gallery')),
                       const SizedBox(height: 12),
                       SizedBox(
                         height: 160,
@@ -280,7 +281,7 @@ class ShopDetailsScreen extends StatelessWidget {
                 key: const Key('btn_call_merchant'),
                 onPressed: _launchCall,
                 icon: const Icon(Icons.call, color: Colors.white, size: 20),
-                label: const Text('कॉल करा / CALL', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                label: Text(context.translate('call').toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1B5E20),
                   minimumSize: const Size(0, 54),
@@ -292,9 +293,9 @@ class ShopDetailsScreen extends StatelessWidget {
             Expanded(
               child: ElevatedButton.icon(
                 key: const Key('btn_whatsapp_merchant'),
-                onPressed: _launchWhatsApp,
+                onPressed: () => _launchWhatsApp(context),
                 icon: const Icon(Icons.chat, color: Colors.white, size: 20),
-                label: const Text('व्हॉट्सॲप / WHATSAPP', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                label: Text(context.translate('whatsapp').toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.teal[600],
                   minimumSize: const Size(0, 54),
@@ -315,7 +316,7 @@ class ShopDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMerchantCard() {
+  Widget _buildMerchantCard(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -349,18 +350,18 @@ class ShopDetailsScreen extends StatelessWidget {
               children: [
                 Text(
                   shop.ownerName != null && shop.ownerName!.isNotEmpty 
-                      ? 'मालक: ${shop.ownerName!}' 
-                      : 'नोंदणीकृत व्यावसायिक / Merchant Partner',
+                      ? '${context.translate('owner')}: ${shop.ownerName!}' 
+                      : context.translate('merchant_partner'),
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
                 ),
                 const SizedBox(height: 4),
                 Row(
-                  children: const [
-                    Icon(Icons.verified, color: Colors.green, size: 16),
-                    SizedBox(width: 4),
+                  children: [
+                    const Icon(Icons.verified, color: Colors.green, size: 16),
+                    const SizedBox(width: 4),
                     Text(
-                      'व्हेरिफाइड शेतकरी व्यावसायिक',
-                      style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 11),
+                      context.translate('verified_merchant'),
+                      style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 11),
                     ),
                   ],
                 ),
@@ -372,7 +373,7 @@ class ShopDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAddressCard() {
+  Widget _buildAddressCard(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -383,11 +384,11 @@ class ShopDetailsScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildAddressRow(Icons.location_city, 'शहर / तालुका', shop.city ?? 'Maharashtra'),
+          _buildAddressRow(Icons.location_city, context.translate('city_taluka'), shop.city ?? 'Maharashtra'),
           const Divider(height: 20),
-          _buildAddressRow(Icons.pin_drop, 'पिनकोड / Pincode', shop.pincode ?? '411001'),
+          _buildAddressRow(Icons.pin_drop, 'Pincode', shop.pincode ?? '411001'),
           const Divider(height: 20),
-          _buildAddressRow(Icons.map_outlined, 'पत्ता / Full Address', shop.address),
+          _buildAddressRow(Icons.map_outlined, context.translate('full_address'), shop.address),
           const SizedBox(height: 16),
           // Google Map Redirect button
           SizedBox(
@@ -397,7 +398,7 @@ class ShopDetailsScreen extends StatelessWidget {
               key: const Key('btn_maps_redirect'),
               onPressed: _launchMap,
               icon: const Icon(Icons.directions, color: Color(0xFF1B5E20), size: 18),
-              label: const Text('नकाशात पहा / Open in Maps', style: TextStyle(color: Color(0xFF1B5E20), fontWeight: FontWeight.bold, fontSize: 12.5)),
+              label: Text(context.translate('open_in_maps'), style: const TextStyle(color: Color(0xFF1B5E20), fontWeight: FontWeight.bold, fontSize: 12.5)),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Color(0xFF1B5E20), width: 1.5),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

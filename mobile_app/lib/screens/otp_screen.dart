@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'dart:async';
 import '../core/providers/auth_provider.dart';
 import '../widgets/animated_button.dart';
+import '../localization/app_localizations.dart';
 
 class OtpScreen extends StatefulWidget {
   const OtpScreen({super.key});
@@ -124,7 +125,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Verify OTP'),
+        title: Text(context.translate('otp_title')),
         backgroundColor: const Color(0xFF2E7D32),
         foregroundColor: Colors.white,
         elevation: 0,
@@ -195,7 +196,7 @@ class _OtpScreenState extends State<OtpScreen> {
             ],
             const SizedBox(height: 32),
             AnimatedButton(
-              text: 'VERIFY OTP',
+              text: context.translate('verify_otp').toUpperCase(),
               color: const Color(0xFFFF9800),
               isLoading: auth.isLoading,
               onPressed: auth.isLoading ? null : _verifyOtp,
@@ -205,8 +206,8 @@ class _OtpScreenState extends State<OtpScreen> {
               onPressed: _secondsRemaining == 0 ? _resendOtp : null,
               child: Text(
                 _secondsRemaining > 0 
-                    ? 'Resend OTP in ${_secondsRemaining}s' 
-                    : 'Resend OTP',
+                    ? '${context.translate('resend_otp')} in ${_secondsRemaining}s' 
+                    : context.translate('resend_otp'),
                 style: TextStyle(
                   color: _secondsRemaining > 0 ? Colors.grey : const Color(0xFF42A5F5), 
                   fontSize: 16,

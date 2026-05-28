@@ -6,6 +6,7 @@ import '../models/shop_model.dart';
 import '../widgets/royal_app_bar.dart';
 import 'shop_details_screen.dart';
 import 'organic_tips_screen.dart';
+import '../localization/app_localizations.dart';
 
 class MarketScreen extends StatefulWidget {
   final VoidCallback? onBackToHome;
@@ -109,20 +110,20 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
-          children: const [
-            Icon(Icons.exit_to_app, color: Color(0xFF1B5E20)),
-            SizedBox(width: 12),
-            Text('सत्र समाप्त / Quit?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          children: [
+            const Icon(Icons.exit_to_app, color: Color(0xFF1B5E20)),
+            const SizedBox(width: 12),
+            Text(context.translate('quit_title'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           ],
         ),
-        content: const Text(
-          'तुम्हाला खरोखर या सत्रातून बाहेर पडायचे आहे का?\nDo you want to quit this session?',
-          style: TextStyle(fontSize: 13.5),
+        content: Text(
+          context.translate('quit_msg'),
+          style: const TextStyle(fontSize: 13.5),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('नाही / NO', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+            child: Text(context.translate('no').toUpperCase(), style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -130,7 +131,7 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
               backgroundColor: const Color(0xFF1B5E20),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            child: const Text('होय / YES', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Text(context.translate('yes').toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -152,7 +153,7 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
       },
       child: Scaffold(
         appBar: RoyalAppBar(
-          title: 'रॉयल शेतकरी मार्केट / Market',
+          title: context.translate('market'),
           onBackPressed: () async {
             if (canPop) {
               if (await _onWillPop()) {
@@ -180,14 +181,12 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
             unselectedLabelColor: Colors.white70,
             labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
             tabs: _tabs.map((tab) {
+              final key = tab['key'] == 'crop' ? 'crop_market' : tab['key']!;
               return Tab(
                 key: Key('tab_item_${tab['key']}'),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(tab['labelMr']!, style: const TextStyle(fontSize: 12)),
-                    Text(tab['labelEn']!, style: const TextStyle(fontSize: 9)),
-                  ],
+                child: Text(
+                  context.translate(key),
+                  style: const TextStyle(fontSize: 12),
                 ),
               );
             }).toList(),

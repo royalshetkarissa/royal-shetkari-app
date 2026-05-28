@@ -6,6 +6,10 @@ const { verifyToken, verifyAdmin } = require('../../middleware/auth');
 // Public endpoints
 router.get('/languages', localizationController.getLanguages);
 router.get('/translations', localizationController.getTranslations);
+router.get('/translate/:key', localizationController.translateKey);
+
+// Authenticated user endpoints
+router.put('/preference', verifyToken, localizationController.updateUserPreference);
 
 // Admin-only management endpoints
 router.post('/translations', verifyAdmin, localizationController.updateTranslation);

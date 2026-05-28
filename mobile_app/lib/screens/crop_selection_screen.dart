@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/crop_model.dart';
 import '../services/timetable_service.dart';
 import 'package:intl/intl.dart';
+import '../localization/app_localizations.dart';
 
 class CropSelectionScreen extends StatefulWidget {
   const CropSelectionScreen({super.key});
@@ -52,7 +53,7 @@ class _CropSelectionScreenState extends State<CropSelectionScreen> {
       initialDate: DateTime.now(),
       firstDate: DateTime.now().subtract(const Duration(days: 365)),
       lastDate: DateTime.now(),
-      helpText: 'Select Plantation Date for ${crop.marathiName}',
+      helpText: context.translate('select_plantation_date').replaceAll('{crop}', crop.marathiName),
     );
 
     if (selectedDate != null) {
@@ -60,12 +61,12 @@ class _CropSelectionScreenState extends State<CropSelectionScreen> {
       if (mounted) {
         if (success) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Successfully started journey for ${crop.marathiName}'), backgroundColor: Colors.green),
+            SnackBar(content: Text(context.translate('journey_started').replaceAll('{crop}', crop.marathiName)), backgroundColor: Colors.green),
           );
           Navigator.pop(context);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to start journey. Please try again.'), backgroundColor: Colors.red),
+            SnackBar(content: Text(context.translate('failed_start_journey')), backgroundColor: Colors.red),
           );
         }
       }
@@ -77,7 +78,7 @@ class _CropSelectionScreenState extends State<CropSelectionScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Choose Your Crop', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: Text(context.translate('choose_your_crop'), style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),

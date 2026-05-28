@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/crop_model.dart';
 import '../services/timetable_service.dart';
 import 'package:intl/intl.dart';
+import '../localization/app_localizations.dart';
 import 'crop_selection_screen.dart';
 import 'crop_timeline_screen.dart';
 
@@ -53,7 +54,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text('My Crop Schedules', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: Text(context.translate('my_crop_schedules'), style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
@@ -73,12 +74,12 @@ class _TimetableScreenState extends State<TimetableScreen> {
                         children: [
                           Icon(Icons.agriculture, size: 80, color: Colors.grey.shade300),
                           const SizedBox(height: 16),
-                          const Text('No active schedules', style: TextStyle(fontSize: 18, color: Colors.grey, fontWeight: FontWeight.w500)),
+                          Text(context.translate('no_active_schedules'), style: const TextStyle(fontSize: 18, color: Colors.grey, fontWeight: FontWeight.w500)),
                           const SizedBox(height: 16),
                           ElevatedButton.icon(
                             onPressed: () => _navigateToSelection(),
                             icon: const Icon(Icons.add, color: Colors.white),
-                            label: const Text('Start New Journey', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                            label: Text(context.translate('start_new_journey'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF2E7D32),
                               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -136,7 +137,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
                                         Icon(Icons.calendar_today, size: 12, color: Colors.blueGrey.shade300),
                                         const SizedBox(width: 4),
                                         Text(
-                                          'Planted: ${DateFormat('dd MMM yyyy').format(j.plantingDate)}',
+                                          '${context.translate('planted')}: ${DateFormat('dd MMM yyyy').format(j.plantingDate)}',
                                           style: TextStyle(fontSize: 12, color: Colors.blueGrey.shade400, fontWeight: FontWeight.w500),
                                         ),
                                       ],
@@ -171,7 +172,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
         onPressed: () => _navigateToSelection(),
         backgroundColor: const Color(0xFF2E7D32),
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('New Crop', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: Text(context.translate('new_crop'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
     );
   }
@@ -187,11 +188,11 @@ class _TimetableScreenState extends State<TimetableScreen> {
     return await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Schedule?'),
-        content: Text('Do you want to remove the schedule for ${journey.cropMarathi}?'),
+        title: Text(context.translate('delete_schedule_title')),
+        content: Text(context.translate('delete_schedule_msg').replaceAll('{crop}', journey.cropMarathi)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('DELETE', style: TextStyle(color: Colors.red))),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(context.translate('cancel').toUpperCase())),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: Text(context.translate('delete').toUpperCase(), style: const TextStyle(color: Colors.red))),
         ],
       ),
     );
@@ -202,7 +203,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
     if (success) {
       setState(() => _journeys.removeAt(index));
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Journey Deleted Successfully')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.translate('journey_deleted'))));
       }
     }
   }

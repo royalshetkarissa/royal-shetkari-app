@@ -221,6 +221,22 @@ async function getMissingTranslationsReport() {
   }
 }
 
+/**
+ * Update user language preference in the database.
+ */
+async function updateUserLanguage(userId, langCode) {
+  try {
+    const result = await pool.query(
+      'UPDATE users SET language_preference = $1 WHERE id = $2 RETURNING id, language_preference',
+      [langCode, userId]
+    );
+    return result.rows[0];
+  } catch (err) {
+    logger.error('Failed to update user language preference:', { error: err.message, userId, langCode });
+    throw err;
+  }
+}
+
 module.exports = {
   getTranslations,
   getTranslation,
@@ -229,4 +245,5 @@ module.exports = {
   deleteTranslationKey,
   clearCache,
   getMissingTranslationsReport,
+  updateUserLanguage,
 };

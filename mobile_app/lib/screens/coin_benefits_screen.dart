@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../core/providers/auth_provider.dart';
 import '../services/api_service.dart';
 import 'dart:math' as math;
+import '../localization/app_localizations.dart';
 
 class CoinBenefitsScreen extends StatefulWidget {
   const CoinBenefitsScreen({super.key});
@@ -68,14 +69,14 @@ class _CoinBenefitsScreenState extends State<CoinBenefitsScreen> with SingleTick
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open phone dialer')),
+          SnackBar(content: Text(context.translate('could_not_launch_dialer'))),
         );
       }
     }
   }
 
   Future<void> _openWhatsApp(String phone, String hospitalName) async {
-    final String msg = "मी तपासणीसाठी रुग्णालयात येत आहे. तपासणीनंतर, भरतीची आवश्यकता असल्यास, मला नाणी रिडीम करायची आहेत.\n\nI am coming to the hospital for checking. After checking, if admission is needed, I want to redeem the coins against $hospitalName.";
+    final String msg = context.translate('whatsapp_msg_hospital').replaceAll('{hospital}', hospitalName);
     final String url = "https://wa.me/$phone?text=${Uri.encodeComponent(msg)}";
     final Uri uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
@@ -83,7 +84,7 @@ class _CoinBenefitsScreenState extends State<CoinBenefitsScreen> with SingleTick
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open WhatsApp')),
+          SnackBar(content: Text(context.translate('could_not_launch_whatsapp'))),
         );
       }
     }
@@ -97,20 +98,20 @@ class _CoinBenefitsScreenState extends State<CoinBenefitsScreen> with SingleTick
         builder: (c) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Row(
-            children: const [
-              Icon(Icons.warning_amber, color: Colors.orange),
-              SizedBox(width: 8),
-              Text('कमी नाणी / Low Coins'),
+            children: [
+              const Icon(Icons.warning_amber, color: Colors.orange),
+              const SizedBox(width: 8),
+              Text(context.translate('low_coins')),
             ],
           ),
-          content: const Text(
-            'नाणी रिडीम करण्यासाठी तुमच्या खात्यात किमान ५० नाणी असणे आवश्यक आहे.\n\nYou need at least 50 coins in your account to redeem this offer.',
-            style: TextStyle(fontWeight: FontWeight.w500),
+          content: Text(
+            context.translate('low_coins_msg'),
+            style: const TextStyle(fontWeight: FontWeight.w500),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(c),
-              child: const Text('ठीक आहे / OK', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: Text(context.translate('ok'), style: const TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -123,20 +124,20 @@ class _CoinBenefitsScreenState extends State<CoinBenefitsScreen> with SingleTick
       context: context,
       builder: (c) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('नाणी रिडीम करायची? / Confirm Redeem?'),
+        title: Text(context.translate('confirm_redeem')),
         content: Text(
-          'तुम्ही $hospitalName मध्ये १०% सूट मिळवण्यासाठी ५० नाणी रिडीम करू इच्छिता?\n\nDo you want to redeem 50 coins to get a 10% IPD discount at $hospitalName?',
+          context.translate('redeem_offer_msg').replaceAll('{hospital}', hospitalName),
           style: const TextStyle(fontWeight: FontWeight.w500),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('CANCEL')),
+          TextButton(onPressed: () => Navigator.pop(c, false), child: Text(context.translate('cancel'))),
           ElevatedButton(
             onPressed: () => Navigator.pop(c, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF2E7D32),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            child: const Text('REDEEM', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Text(context.translate('redeem'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -191,9 +192,9 @@ class _CoinBenefitsScreenState extends State<CoinBenefitsScreen> with SingleTick
             ),
           ),
         ),
-        title: const Text(
-          'नाणी व आरोग्य लाभ / Coins & Benefits',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 18),
+        title: Text(
+          context.translate('coins_health_benefits'),
+          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 18),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
@@ -212,9 +213,9 @@ class _CoinBenefitsScreenState extends State<CoinBenefitsScreen> with SingleTick
               indicatorColor: const Color(0xFF2E7D32),
               indicatorWeight: 3,
               labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-              tabs: const [
-                Tab(text: 'रुग्णालय / Hospitals', icon: Icon(Icons.local_hospital_outlined)),
-                Tab(text: 'इतिहास / History', icon: Icon(Icons.history_rounded)),
+              tabs: [
+                Tab(text: context.translate('hospitals'), icon: const Icon(Icons.local_hospital_outlined)),
+                Tab(text: context.translate('history'), icon: const Icon(Icons.history_rounded)),
               ],
             ),
           ),
@@ -270,9 +271,9 @@ class _CoinBenefitsScreenState extends State<CoinBenefitsScreen> with SingleTick
                       '$coins',
                       style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white, height: 1.1),
                     ),
-                    const Text(
-                      'एकूण उपलब्ध नाणी / Total Coins',
-                      style: TextStyle(fontSize: 10, color: Colors.white70, fontWeight: FontWeight.w500),
+                    Text(
+                      context.translate('total_available_coins'),
+                      style: const TextStyle(fontSize: 10, color: Colors.white70, fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
@@ -301,23 +302,18 @@ class _CoinBenefitsScreenState extends State<CoinBenefitsScreen> with SingleTick
                       child: const Icon(Icons.favorite, color: Colors.red, size: 22),
                     ),
                     const SizedBox(width: 12),
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        'विशेष आरोग्य लाभ / Special Health Benefits',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black87),
+                        context.translate('special_health_benefits'),
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black87),
                       ),
                     ),
                   ],
                 ),
                 const Divider(height: 20),
-                const Text(
-                  'ज्या शेतकऱ्यांकडे ५० किंवा त्यापेक्षा जास्त नाणी उपलब्ध आहेत, त्यांना कुटुंबातील कोणत्याही व्यक्तीला भरती (Admit) केल्यानंतर रुग्णालयाच्या IPD बिलावर १०% विशेष सूट दिली जाईल.',
-                  style: TextStyle(fontSize: 13, color: Colors.black87, height: 1.4, fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 6),
                 Text(
-                  'Farmers who have 50 or more coins are eligible for a special 10% discount on IPD bills for any admitted family member in the designated hospitals.',
-                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600, height: 1.4),
+                  context.translate('health_benefits_desc'),
+                  style: const TextStyle(fontSize: 13, color: Colors.black87, height: 1.4, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -348,21 +344,15 @@ class _CoinBenefitsScreenState extends State<CoinBenefitsScreen> with SingleTick
               children: [
                 Icon(Icons.local_hospital_rounded, color: Colors.grey.shade400, size: 64),
                 const SizedBox(height: 16),
-                const Text(
-                  'कोणतेही रुग्णालय उपलब्ध नाही',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
-                ),
-                const SizedBox(height: 4),
                 Text(
-                  'सध्या कोणतीही रुग्णालय ऑफर उपलब्ध नाही.',
+                  context.translate('no_hospitals_title'),
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  context.translate('no_hospitals_available'),
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'No hospital offers available at the moment.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade400, fontStyle: FontStyle.italic),
                 ),
               ],
             ),
@@ -447,7 +437,7 @@ class _CoinBenefitsScreenState extends State<CoinBenefitsScreen> with SingleTick
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'सुविधा / Services: ${h['service']}',
+                            '${context.translate('services')}: ${h['service']}',
                             style: TextStyle(fontSize: 13, color: Colors.grey.shade700, height: 1.3),
                           ),
                         ),
@@ -480,10 +470,10 @@ class _CoinBenefitsScreenState extends State<CoinBenefitsScreen> with SingleTick
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
-                                Icon(Icons.call, color: Colors.blue, size: 18),
-                                SizedBox(width: 6),
-                                Text('कॉल / Call', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 13)),
+                              children: [
+                                const Icon(Icons.call, color: Colors.blue, size: 18),
+                                const SizedBox(width: 6),
+                                Text(context.translate('call'), style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 13)),
                               ],
                             ),
                           ),
@@ -500,10 +490,10 @@ class _CoinBenefitsScreenState extends State<CoinBenefitsScreen> with SingleTick
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
-                                Icon(Icons.chat_bubble_outline, color: Colors.green, size: 18),
-                                SizedBox(width: 6),
-                                Text('WhatsApp', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13)),
+                              children: [
+                                const Icon(Icons.chat_bubble_outline, color: Colors.green, size: 18),
+                                const SizedBox(width: 6),
+                                Text(context.translate('whatsapp'), style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13)),
                               ],
                             ),
                           ),
@@ -529,8 +519,8 @@ class _CoinBenefitsScreenState extends State<CoinBenefitsScreen> with SingleTick
                             const SizedBox(width: 8),
                             Text(
                               canRedeem
-                                  ? '५० नाणी रिडीम करा / Redeem 50 Coins'
-                                  : 'रिडीमसाठी ५० नाणी आवश्यक / 50 Coins Required',
+                                  ? context.translate('redeem_50_coins')
+                                  : context.translate('coins_required_50'),
                               style: TextStyle(
                                 color: canRedeem ? Colors.white : Colors.grey.shade600,
                                 fontWeight: FontWeight.bold,
@@ -563,13 +553,13 @@ class _CoinBenefitsScreenState extends State<CoinBenefitsScreen> with SingleTick
           children: [
             Icon(Icons.history_rounded, color: Colors.grey.shade400, size: 64),
             const SizedBox(height: 16),
-            const Text(
-              'कोणताही इतिहास नाही',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black54),
+            Text(
+              context.translate('no_history'),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black54),
             ),
             const SizedBox(height: 4),
             Text(
-              'तुम्ही अद्याप कोणतीही नाणी रिडीम केलेली नाहीत.',
+              context.translate('no_history_desc'),
               style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
             ),
           ],
@@ -622,7 +612,7 @@ class _CoinBenefitsScreenState extends State<CoinBenefitsScreen> with SingleTick
                 ),
               ),
               Text(
-                '-${item['coins_redeemed']} नाणी',
+                '-${item['coins_redeemed']} ${context.translate('coins')}',
                 style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red, fontSize: 14),
               ),
             ],
@@ -770,48 +760,24 @@ class _CreativeRedeemSuccessDialogState extends State<CreativeRedeemSuccessDialo
               ),
             ),
             const SizedBox(height: 20),
-            // Marathi success heading
-            const Text(
-              'रिडेम्पशन यशस्वी! 🎉',
+            Text(
+              context.translate('redemption_success'),
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF2E7D32),
               ),
             ),
-            const SizedBox(height: 4),
-            // English success heading
-            Text(
-              'Redemption Successful! 🎉',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade600,
-              ),
-            ),
             const SizedBox(height: 16),
-            // Marathi success explanation
             Text(
-              'तुमची ५० नाणी यशस्वीरित्या रिडीम करण्यात आली आहेत. ${widget.hospitalName} मध्ये दाखल करताना १०% IPD सवलतीचा लाभ घेण्यासाठी इतिहास दाखवा.',
+              context.translate('redemption_success_desc').replaceAll('{hospital}', widget.hospitalName),
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 14,
                 color: Colors.black87,
                 height: 1.4,
                 fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 10),
-            // English success explanation
-            Text(
-              'Your 50 coins have been successfully redeemed. Please present the history record at ${widget.hospitalName} during admission to claim the 10% IPD discount.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade500,
-                height: 1.4,
               ),
             ),
             const SizedBox(height: 28),
@@ -828,9 +794,9 @@ class _CreativeRedeemSuccessDialogState extends State<CreativeRedeemSuccessDialo
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                   elevation: 4,
                 ),
-                child: const Text(
-                  'उत्कृष्ट / Awesome',
-                  style: TextStyle(
+                child: Text(
+                  context.translate('awesome'),
+                  style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,

@@ -6,6 +6,7 @@ import '../models/crop_model.dart';
 import '../models/post_model.dart';
 import '../services/api_service.dart';
 import '../services/timetable_service.dart';
+import '../localization/app_localizations.dart';
 import 'post_detail_screen.dart';
 import 'crop_timeline_screen.dart';
 
@@ -16,7 +17,8 @@ class NotificationScreen extends StatefulWidget {
   State<NotificationScreen> createState() => _NotificationScreenState();
 }
 
-class _NotificationScreenState extends State<NotificationScreen> with SingleTickerProviderStateMixin {
+class _NotificationScreenState extends State<NotificationScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final ApiService _api = ApiService();
   final TimetableService _timetableService = TimetableService();
@@ -45,7 +47,8 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
 
       // 1. Fetch latest feed posts & filter within last 24 hours
       final postsData = await _api.getPosts(category: 'all');
-      final parsedPosts = postsData.map((json) => PostModel.fromJson(json)).toList();
+      final parsedPosts =
+          postsData.map((json) => PostModel.fromJson(json)).toList();
       _latestPosts = parsedPosts.where((post) {
         return now.difference(post.createdAt).inHours < 24;
       }).toList();
@@ -59,7 +62,8 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
 
       for (var journey in activeJourneys) {
         for (var task in journey.tasks) {
-          final taskDate = DateTime(task.dueDate.year, task.dueDate.month, task.dueDate.day);
+          final taskDate =
+              DateTime(task.dueDate.year, task.dueDate.month, task.dueDate.day);
           final bool isToday = taskDate.isAtSameMomentAs(today);
           final bool isTomorrow = taskDate.isAtSameMomentAs(tomorrow);
 
@@ -103,7 +107,8 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final taskDate = DateTime(task.dueDate.year, task.dueDate.month, task.dueDate.day);
+    final taskDate =
+        DateTime(task.dueDate.year, task.dueDate.month, task.dueDate.day);
 
     if (taskDate.isBefore(today)) {
       _showCoinAnimationDialog('past', task);
@@ -140,7 +145,8 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
     showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (context) => CreativeCoinStatusDialog(status: status, task: task),
+      builder: (context) =>
+          CreativeCoinStatusDialog(status: status, task: task),
     );
   }
 
@@ -149,9 +155,10 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
     return Scaffold(
       backgroundColor: const Color(0xFFF9FBF9),
       appBar: AppBar(
-        title: const Text(
-          'Notifications / सूचना',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.white),
+        title: Text(
+          context.translate('notifications'),
+          style: const TextStyle(
+              fontWeight: FontWeight.bold, fontSize: 20, color: Colors.white),
         ),
         centerTitle: true,
         backgroundColor: const Color(0xFF2E7D32),
@@ -166,15 +173,16 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
           indicatorWeight: 4,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
-          labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-          tabs: const [
+          labelStyle:
+              const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          tabs: [
             Tab(
-              icon: Icon(Icons.playlist_add_check_circle_outlined),
-              text: 'Farm Tasks (शेतीची कामे)',
+              icon: const Icon(Icons.playlist_add_check_circle_outlined),
+              text: context.translate('farm_tasks_tab'),
             ),
             Tab(
-              icon: Icon(Icons.feed_outlined),
-              text: 'Community (समुदाय नवीन)',
+              icon: const Icon(Icons.feed_outlined),
+              text: context.translate('community_tab'),
             ),
           ],
         ),
@@ -194,10 +202,10 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
   Widget _buildTasksTab() {
     if (_activeTasks.isEmpty) {
       return _buildEmptyState(
+        context,
         icon: Icons.done_all_rounded,
-        titleMarathi: "आज किंवा उद्यासाठी कोणतीही कामे नाहीत!",
-        titleEnglish: "No tasks scheduled for today or tomorrow!",
-        subtitle: "तुमचे वेळापत्रक पूर्णपणे अपडेटेड आहे. शेतीची काळजी घेत राहा!",
+        titleKey: 'no_tasks_today_tomorrow',
+        descKey: 'no_tasks_today_tomorrow_desc',
       );
     }
 
@@ -245,7 +253,9 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                     shape: BoxShape.circle,
                     color: task.isCompleted
                         ? Colors.green
-                        : (isToday ? Colors.amber.shade50 : Colors.blue.shade50),
+                        : (isToday
+                            ? Colors.amber.shade50
+                            : Colors.blue.shade50),
                     border: Border.all(
                       color: task.isCompleted
                           ? Colors.green
@@ -258,17 +268,22 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                     size: 16,
                     color: task.isCompleted
                         ? Colors.white
-                        : (isToday ? Colors.amber.shade800 : Colors.blue.shade800),
+                        : (isToday
+                            ? Colors.amber.shade800
+                            : Colors.blue.shade800),
                   ),
                 ),
               ),
               title: Text(
-                task.nameMarathi,
+                Localizations.localeOf(context).languageCode == 'mr'
+                    ? task.nameMarathi
+                    : task.name,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                   color: task.isCompleted ? Colors.grey : Colors.black87,
-                  decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                  decoration:
+                      task.isCompleted ? TextDecoration.lineThrough : null,
                 ),
               ),
               subtitle: Padding(
@@ -277,7 +292,8 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: journey.cropName.toLowerCase() == 'sugarcane' ||
                                 journey.cropMarathi.contains('ऊस')
@@ -286,30 +302,39 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        journey.cropMarathi,
+                        context.translate(journey.cropName.toLowerCase(),
+                            defaultValue: journey.cropMarathi),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: journey.cropName.toLowerCase() == 'sugarcane' ||
-                                  journey.cropMarathi.contains('ऊस')
-                              ? Colors.green.shade800
-                              : Colors.orange.shade800,
+                          color:
+                              journey.cropName.toLowerCase() == 'sugarcane' ||
+                                      journey.cropMarathi.contains('ऊस')
+                                  ? Colors.green.shade800
+                                  : Colors.orange.shade800,
                         ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: isToday ? Colors.amber.shade50 : Colors.blue.shade50,
+                        color: isToday
+                            ? Colors.amber.shade50
+                            : Colors.blue.shade50,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        isToday ? 'आज (Today)' : 'उद्या (Tomorrow)',
+                        isToday
+                            ? context.translate('today')
+                            : context.translate('tomorrow'),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: isToday ? Colors.amber.shade800 : Colors.blue.shade800,
+                          color: isToday
+                              ? Colors.amber.shade800
+                              : Colors.blue.shade800,
                         ),
                       ),
                     ),
@@ -320,7 +345,8 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
               children: [
                 const Divider(height: 1),
                 const SizedBox(height: 12),
-                if (task.rationaleMarathi != null || task.rationaleEnglish != null) ...[
+                if (task.rationaleMarathi != null ||
+                    task.rationaleEnglish != null) ...[
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -333,10 +359,11 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.psychology, color: Colors.blue.shade700, size: 18),
+                            Icon(Icons.psychology,
+                                color: Colors.blue.shade700, size: 18),
                             const SizedBox(width: 8),
                             Text(
-                              'EXPERT ADVICE (तज्ज्ञ सल्ला)',
+                              context.translate('expert_advice'),
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
@@ -348,7 +375,13 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          task.rationaleMarathi ?? task.rationaleEnglish ?? '',
+                          Localizations.localeOf(context).languageCode == 'mr'
+                              ? (task.rationaleMarathi ??
+                                  task.rationaleEnglish ??
+                                  '')
+                              : (task.rationaleEnglish ??
+                                  task.rationaleMarathi ??
+                                  ''),
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -360,17 +393,20 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                   ),
                   const SizedBox(height: 12),
                 ],
-                _buildDoseRow('Organic (सेंद्रिय फवारणी)', task.organicDetails ?? 'N/A', Colors.green),
+                _buildDoseRow(context.translate('organic_dose'),
+                    task.organicDetails ?? 'N/A', Colors.green),
                 const SizedBox(height: 10),
-                _buildDoseRow('Chemical (रासायनिक फवारणी)', task.chemicalDetails ?? 'N/A', Colors.blueGrey),
+                _buildDoseRow(context.translate('chemical_dose'),
+                    task.chemicalDetails ?? 'N/A', Colors.blueGrey),
                 if (!task.isCompleted) ...[
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
                     onPressed: () => _completeTask(task, journey),
-                    icon: const Icon(Icons.check_circle_outline, size: 18, color: Colors.white),
-                    label: const Text(
-                      'Mark Completed & Earn Coin',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    icon: const Icon(Icons.check_circle_outline,
+                        size: 18, color: Colors.white),
+                    label: Text(
+                      context.translate('mark_completed_earn_coin'),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF2E7D32),
@@ -407,12 +443,14 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
             children: [
               Text(
                 label,
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color),
+                style: TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.bold, color: color),
               ),
               const SizedBox(height: 2),
               Text(
                 details,
-                style: const TextStyle(fontSize: 13, color: Colors.black87, height: 1.4),
+                style: const TextStyle(
+                    fontSize: 13, color: Colors.black87, height: 1.4),
               ),
             ],
           ),
@@ -424,10 +462,10 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
   Widget _buildCommunityTab() {
     if (_latestPosts.isEmpty) {
       return _buildEmptyState(
+        context,
         icon: Icons.notifications_off_outlined,
-        titleMarathi: "मागील २४ तासात कोणतीही नवीन पोस्ट नाही",
-        titleEnglish: "No new community posts in the last 24 hours!",
-        subtitle: "नवीन माहिती किंवा विक्रीसाठी नंतर पुन्हा तपासा.",
+        titleKey: 'no_posts_24h',
+        descKey: 'no_posts_24h_desc',
       );
     }
 
@@ -488,9 +526,11 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF2E7D32).withOpacity(0.1),
+                                    color: const Color(0xFF2E7D32)
+                                        .withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
@@ -504,11 +544,13 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                                 ),
                                 Row(
                                   children: [
-                                    const Icon(Icons.access_time, size: 12, color: Colors.grey),
+                                    const Icon(Icons.access_time,
+                                        size: 12, color: Colors.grey),
                                     const SizedBox(width: 4),
                                     Text(
                                       timeAgoString,
-                                      style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                      style: const TextStyle(
+                                          fontSize: 11, color: Colors.grey),
                                     ),
                                   ],
                                 ),
@@ -550,11 +592,11 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
     );
   }
 
-  Widget _buildEmptyState({
+  Widget _buildEmptyState(
+    BuildContext context, {
     required IconData icon,
-    required String titleMarathi,
-    required String titleEnglish,
-    required String subtitle,
+    required String titleKey,
+    required String descKey,
   }) {
     return Center(
       child: Padding(
@@ -572,7 +614,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
             ),
             const SizedBox(height: 24),
             Text(
-              titleMarathi,
+              context.translate(titleKey),
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 18,
@@ -580,23 +622,13 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                 color: Colors.black87,
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              titleEnglish,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade500,
-              ),
-            ),
             const SizedBox(height: 12),
             Text(
-              subtitle,
+              context.translate(descKey),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
-                color: Colors.grey.shade400,
+                color: Colors.grey.shade600,
                 height: 1.4,
               ),
             ),

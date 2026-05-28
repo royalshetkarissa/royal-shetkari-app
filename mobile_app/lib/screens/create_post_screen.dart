@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
 import '../core/providers/post_provider.dart';
 import '../core/providers/auth_provider.dart';
+import '../localization/app_localizations.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
@@ -25,14 +26,20 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   String _selectedCategory = 'farming';
   bool _isLoading = false;
   List<File> _selectedImages = [];
-  List<Uint8List> _selectedImagesBytes = []; 
+  List<Uint8List> _selectedImagesBytes = [];
   bool _isWeb = false;
-  
+
   String? _animalType;
   String? _lactation;
   final _milkPerDayController = TextEditingController();
-  
-  final List<String> _animalTypes = ['Cow', 'Buffalo', 'Goat', 'Sheep', 'Other'];
+
+  final List<String> _animalTypes = [
+    'Cow',
+    'Buffalo',
+    'Goat',
+    'Sheep',
+    'Other'
+  ];
   final List<String> _lactationOptions = ['1st', '2nd', '3rd', '4th', '5th+'];
 
   final List<String> _categories = ['farming', 'animals', 'equipment', 'land'];
@@ -72,23 +79,27 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedImages.isEmpty && _selectedImagesBytes.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please add at least one image')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please add at least one image')));
       return;
     }
 
     setState(() => _isLoading = true);
     final postProvider = Provider.of<PostProvider>(context, listen: false);
-    
+
     double? parsedPrice = double.tryParse(_priceController.text);
     double? milkPerDay = double.tryParse(_milkPerDayController.text);
-    
+
     Position? position;
     try {
       if (await Geolocator.isLocationServiceEnabled()) {
         LocationPermission perm = await Geolocator.checkPermission();
-        if (perm == LocationPermission.denied) perm = await Geolocator.requestPermission();
-        if (perm == LocationPermission.always || perm == LocationPermission.whileInUse) {
-          position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.low);
+        if (perm == LocationPermission.denied)
+          perm = await Geolocator.requestPermission();
+        if (perm == LocationPermission.always ||
+            perm == LocationPermission.whileInUse) {
+          position = await Geolocator.getCurrentPosition(
+              desiredAccuracy: LocationAccuracy.low);
         }
       }
     } catch (e) {
@@ -114,10 +125,14 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
     setState(() => _isLoading = false);
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Post published to community!'), backgroundColor: Colors.green));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Post published to community!'),
+          backgroundColor: Colors.green));
       Navigator.pop(context, true);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(postProvider.error ?? 'Failed to publish post'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(postProvider.error ?? 'Failed to publish post'),
+          backgroundColor: Colors.red));
     }
   }
 
@@ -126,7 +141,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Community Post', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(context.translate('create_post_title'),
+            style: const TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: const Color(0xFF2E7D32),
         foregroundColor: Colors.white,
       ),
@@ -145,24 +161,49 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 _buildAnimalFields(),
                 const SizedBox(height: 24),
               ],
-              _buildTextField(_titleController, 'Post Title', Icons.title),
+              _buildTextField(_titleController,
+                  context.translate('title_label'), Icons.title),
               const SizedBox(height: 16),
-              _buildTextField(_descriptionController, 'Detailed Description', Icons.description, maxLines: 4),
+              _buildTextField(_descriptionController,
+                  context.translate('description_label'), Icons.description,
+                  maxLines: 4),
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Expanded(child: _buildTextField(_priceController, 'Price (₹)', Icons.currency_rupee, keyboardType: TextInputType.number)),
+                  Expanded(
+                      child: _buildTextField(
+                          _priceController,
+                          context.translate('price_label'),
+                          Icons.currency_rupee,
+                          keyboardType: TextInputType.number)),
                   const SizedBox(width: 16),
-                  Expanded(child: _buildTextField(_locationController, 'Location', Icons.location_on)),
+                  Expanded(
+                      child: _buildTextField(
+                          _locationController,
+                          context.translate('location_label'),
+                          Icons.location_on)),
                 ],
               ),
               const SizedBox(height: 16),
-              _buildTextField(_contactController, 'Contact Number', Icons.phone, keyboardType: TextInputType.phone),
+              _buildTextField(
+                  _contactController, context.translate('contact'), Icons.phone,
+                  keyboardType: TextInputType.phone),
               const SizedBox(height: 40),
               ElevatedButton(
                 onPressed: _isLoading ? null : _submit,
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF9800), minimumSize: const Size(double.infinity, 60), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), elevation: 5),
-                child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('PUBLISH POST', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF9800),
+                    minimumSize: const Size(double.infinity, 60),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20)),
+                    elevation: 5),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : Text(context.translate('submit_post').toUpperCase(),
+                        style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white)),
               ),
             ],
           ),
@@ -175,7 +216,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Photos (Up to 5)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        Text(context.translate('select_images'),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         const SizedBox(height: 12),
         SizedBox(
           height: 100,
@@ -184,18 +226,33 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             children: [
               GestureDetector(
                 onTap: _pickImages,
-                child: Container(width: 100, decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey[300]!)), child: const Icon(Icons.add_a_photo, color: Colors.grey, size: 30)),
+                child: Container(
+                    width: 100,
+                    decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.grey[300]!)),
+                    child: const Icon(Icons.add_a_photo,
+                        color: Colors.grey, size: 30)),
               ),
               if (_isWeb)
                 ..._selectedImagesBytes.map((bytes) => Container(
-                  width: 100, margin: const EdgeInsets.only(left: 12),
-                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), image: DecorationImage(image: MemoryImage(bytes), fit: BoxFit.cover)),
-                ))
+                      width: 100,
+                      margin: const EdgeInsets.only(left: 12),
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          image: DecorationImage(
+                              image: MemoryImage(bytes), fit: BoxFit.cover)),
+                    ))
               else
                 ..._selectedImages.map((file) => Container(
-                  width: 100, margin: const EdgeInsets.only(left: 12),
-                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), image: DecorationImage(image: FileImage(file), fit: BoxFit.cover)),
-                )),
+                      width: 100,
+                      margin: const EdgeInsets.only(left: 12),
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          image: DecorationImage(
+                              image: FileImage(file), fit: BoxFit.cover)),
+                    )),
             ],
           ),
         ),
@@ -207,35 +264,64 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Select Category', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        Text(context.translate('category_label'),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
-          children: _categories.map((cat) => ChoiceChip(
-            label: Text(cat.toUpperCase(), style: TextStyle(color: _selectedCategory == cat ? Colors.white : Colors.black, fontSize: 10, fontWeight: FontWeight.bold)),
-            selected: _selectedCategory == cat,
-            onSelected: (s) => setState(() => _selectedCategory = cat),
-            selectedColor: const Color(0xFF2E7D32),
-            backgroundColor: Colors.grey[100],
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          )).toList(),
+          children: _categories.map((cat) {
+            String catLabel = cat.toUpperCase();
+            if (cat == 'animals')
+              catLabel = context.translate('animals_category');
+            if (cat == 'farming')
+              catLabel = context.translate('farming_category');
+            if (cat == 'equipment')
+              catLabel = context.translate('equipment_category');
+            if (cat == 'land') catLabel = context.translate('land_category');
+            return ChoiceChip(
+              label: Text(catLabel,
+                  style: TextStyle(
+                      color: _selectedCategory == cat
+                          ? Colors.white
+                          : Colors.black,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold)),
+              selected: _selectedCategory == cat,
+              onSelected: (s) => setState(() => _selectedCategory = cat),
+              selectedColor: const Color(0xFF2E7D32),
+              backgroundColor: Colors.grey[100],
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            );
+          }).toList(),
         ),
       ],
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label, IconData icon, {int maxLines = 1, TextInputType keyboardType = TextInputType.text, bool isOptional = false}) {
+  Widget _buildTextField(
+      TextEditingController controller, String label, IconData icon,
+      {int maxLines = 1,
+      TextInputType keyboardType = TextInputType.text,
+      bool isOptional = false}) {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
       keyboardType: keyboardType,
       decoration: InputDecoration(
-        labelText: label + (isOptional ? ' (Optional)' : ''), 
+        labelText: label + (isOptional ? ' (Optional)' : ''),
         prefixIcon: Icon(icon, color: const Color(0xFF2E7D32)),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey[200]!)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey[200]!)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 2)),
-        filled: true, fillColor: Colors.grey[50],
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey[200]!)),
+        enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey[200]!)),
+        focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 2)),
+        filled: true,
+        fillColor: Colors.grey[50],
       ),
       validator: (v) {
         if (isOptional) return null;
@@ -251,13 +337,22 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         DropdownButtonFormField<String>(
           value: _animalType,
           decoration: InputDecoration(
-            labelText: 'Animal Type', prefixIcon: const Icon(Icons.pets, color: Color(0xFF2E7D32)),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey[200]!)),
-            filled: true, fillColor: Colors.grey[50],
+            labelText: context.translate('animal_type'),
+            prefixIcon: const Icon(Icons.pets, color: Color(0xFF2E7D32)),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: Colors.grey[200]!)),
+            filled: true,
+            fillColor: Colors.grey[50],
           ),
-          items: _animalTypes.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+          items: _animalTypes
+              .map((t) => DropdownMenuItem(
+                  value: t, child: Text(context.translate(t.toLowerCase()))))
+              .toList(),
           onChanged: (v) => setState(() => _animalType = v),
-          validator: (v) => _selectedCategory == 'animals' && v == null ? 'Required' : null,
+          validator: (v) => _selectedCategory == 'animals' && v == null
+              ? context.translate('field_required', defaultValue: 'Required')
+              : null,
         ),
         const SizedBox(height: 16),
         Row(
@@ -266,16 +361,33 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               child: DropdownButtonFormField<String>(
                 value: _lactation,
                 decoration: InputDecoration(
-                  labelText: 'Lactation', prefixIcon: const Icon(Icons.numbers, color: Color(0xFF2E7D32)),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey[200]!)),
-                  filled: true, fillColor: Colors.grey[50],
+                  labelText: context.translate('lactation'),
+                  prefixIcon:
+                      const Icon(Icons.numbers, color: Color(0xFF2E7D32)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: Colors.grey[200]!)),
+                  filled: true,
+                  fillColor: Colors.grey[50],
                 ),
-                items: _lactationOptions.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+                items: _lactationOptions
+                    .map((t) => DropdownMenuItem(
+                        value: t,
+                        child: Text(context.translate(t.toLowerCase()))))
+                    .toList(),
                 onChanged: (v) => setState(() => _lactation = v),
               ),
             ),
             const SizedBox(width: 16),
-            Expanded(child: _buildTextField(_milkPerDayController, 'Milk/Day (L)', Icons.water_drop, keyboardType: TextInputType.number, isOptional: true)),
+            Expanded(
+              child: _buildTextField(
+                _milkPerDayController,
+                context.translate('milk_per_day'),
+                Icons.water_drop,
+                keyboardType: TextInputType.number,
+                isOptional: true,
+              ),
+            ),
           ],
         ),
       ],

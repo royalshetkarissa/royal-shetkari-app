@@ -4,12 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/api_service.dart';
+import '../../services/language_api_service.dart';
 import 'package:dio/dio.dart';
 
 class AuthProvider extends ChangeNotifier {
   final ApiService _api = ApiService();
   final _storage = const FlutterSecureStorage();
-  
+
   bool _isLoading = false;
   String? _token;
   Map<String, dynamic>? _user;
@@ -29,8 +30,9 @@ class AuthProvider extends ChangeNotifier {
   Future<void> initialize() async {
     final prefs = await SharedPreferences.getInstance();
     // Dual-read for reliability
-    _token = await _storage.read(key: 'accessToken') ?? prefs.getString('token');
-    
+    _token =
+        await _storage.read(key: 'accessToken') ?? prefs.getString('token');
+
     final userJson = prefs.getString('user');
     if (userJson != null) {
       _user = jsonDecode(userJson);
@@ -65,11 +67,11 @@ class AuthProvider extends ChangeNotifier {
         latitude: latitude,
         longitude: longitude,
       );
-      
+
       _pendingMobile = mobile;
       _pendingPurpose = 'registration';
       _devOtp = response['devOtp'];
-      
+
       return true;
     } catch (e) {
       _error = _formatError(e);
@@ -87,11 +89,11 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       final response = await _api.login(mobile: mobile, password: password);
-      
+
       _pendingMobile = mobile;
       _pendingPurpose = 'login';
       _devOtp = response['devOtp'];
-      
+
       return true;
     } catch (e) {
       _error = _formatError(e);
@@ -114,24 +116,40 @@ class AuthProvider extends ChangeNotifier {
         otp: otp,
         purpose: _pendingPurpose!,
       );
-      
+
       _token = response['token'] ?? response['accessToken'];
       _user = response['user'];
       _pendingMobile = null;
       _pendingPurpose = null;
       _devOtp = null;
-      
+
       // Persist Token Securely
       await _storage.write(key: 'accessToken', value: _token!);
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('token', _token!);
       await prefs.setString('user', jsonEncode(_user!));
-      
+
       if (response['refreshToken'] != null) {
-        await _storage.write(key: 'refreshToken', value: response['refreshToken']);
+        await _storage.write(
+            key: 'refreshToken', value: response['refreshToken']);
         await prefs.setString('refreshToken', response['refreshToken']);
       }
-      
+
+      // Sync active language preference with backend on login
+      final String? backendPreference = _user?['language_preference'];
+      final String localPreference =
+          prefs.getString('selected_language_code') ?? 'en';
+
+      if (backendPreference != null &&
+          backendPreference.isNotEmpty &&
+          backendPreference != localPreference) {
+        // Backend preference overrides local default if it's set
+        await prefs.setString('selected_language_code', backendPreference);
+      } else {
+        // Otherwise, upload our local preference to backend
+        LanguageApiService().updateLanguagePreference(localPreference);
+      }
+
       return true;
     } catch (e) {
       _error = _formatError(e);
@@ -163,11 +181,11 @@ class AuthProvider extends ChangeNotifier {
         state: state,
         pincode: pincode,
       );
-      
+
       _user = response['user'];
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user', jsonEncode(_user!));
-      
+
       return true;
     } catch (e) {
       _error = _formatError(e);
@@ -186,10 +204,10 @@ class AuthProvider extends ChangeNotifier {
     try {
       final response = await _api.updateProfilePhoto(imagePath);
       _user!['profile_photo_url'] = response['photoUrl'];
-      
+
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user', jsonEncode(_user!));
-      
+
       return true;
     } catch (e) {
       _error = _formatError(e);
@@ -221,7 +239,8 @@ class AuthProvider extends ChangeNotifier {
     await prefs.remove('token');
     await prefs.remove('refreshToken');
     await prefs.remove('user');
-    _token = null; _user = null;
+    _token = null;
+    _user = null;
     notifyListeners();
   }
 
@@ -237,7 +256,8 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> resetPassword({required String mobile, required String newPassword}) async {
+  Future<bool> resetPassword(
+      {required String mobile, required String newPassword}) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -262,15 +282,18 @@ class AuthProvider extends ChangeNotifier {
           return data['message'].toString();
         }
       }
-      if (e.type == DioExceptionType.connectionTimeout || e.type == DioExceptionType.receiveTimeout) {
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
         return 'Connection timeout. Please check if the backend is running and matches the correct IP.';
       }
       if (e.type == DioExceptionType.connectionError) {
         return 'Connection error. Please check your network or backend IP configuration.';
       }
     }
-    if (e.toString().contains('401')) return 'Unauthorized: Please check your credentials.';
-    if (e.toString().contains('400')) return 'Bad Request: Please check your input.';
+    if (e.toString().contains('401'))
+      return 'Unauthorized: Please check your credentials.';
+    if (e.toString().contains('400'))
+      return 'Bad Request: Please check your input.';
     return e.toString();
   }
 }

@@ -124,3 +124,45 @@ exports.getMissingTranslationsReport = async (req, res, next) => {
     next(err);
   }
 };
+
+/**
+ * Update user language preference
+ */
+exports.updateUserPreference = async (req, res, next) => {
+  try {
+    const { lang } = req.body;
+
+    if (!lang) {
+      return next(new AppError('Please provide a lang field in the request body', 400));
+    }
+
+    const result = await translationService.updateUserLanguage(req.user.id, lang);
+    res.json({
+      success: true,
+      message: 'Language preference updated successfully',
+      data: result,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Translate a single key
+ */
+exports.translateKey = async (req, res, next) => {
+  try {
+    const { key } = req.params;
+    const lang = req.query.lang || req.language || 'en';
+
+    const value = await translationService.getTranslation(lang, key);
+    res.json({
+      success: true,
+      key,
+      lang,
+      value,
+    });
+  } catch (err) {
+    next(err);
+  }
+};

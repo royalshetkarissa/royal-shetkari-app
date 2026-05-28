@@ -6,6 +6,7 @@ import '../models/post_model.dart';
 import '../widgets/swipeable_image_slider.dart';
 import 'create_post_screen.dart';
 import 'post_detail_screen.dart';
+import '../localization/app_localizations.dart';
 
 class CommunityScreen extends StatefulWidget {
   final VoidCallback? onBackToHome;
@@ -266,7 +267,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Community', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+        title: Text(context.translate('community_title'), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
         backgroundColor: Colors.white,
         elevation: 0.5,
         leading: IconButton(
@@ -305,6 +306,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 itemBuilder: (context, index) {
                   final category = _categories[index];
                   final isSelected = _selectedCategory == category;
+                  String categoryLabel = category.toUpperCase();
+                  if (category == 'all') categoryLabel = context.translate('all_category');
+                  if (category == 'animals') categoryLabel = context.translate('animals_category');
+                  if (category == 'farming') categoryLabel = context.translate('farming_category');
+                  if (category == 'equipment') categoryLabel = context.translate('equipment_category');
+                  if (category == 'land') categoryLabel = context.translate('land_category');
                   return Padding(
                     padding: const EdgeInsets.only(right: 12),
                     child: InkWell(
@@ -321,7 +328,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                         ),
                         alignment: Alignment.center,
                         child: Text(
-                          category.toUpperCase(),
+                          categoryLabel,
                           style: TextStyle(
                             color: isSelected ? Colors.white : Colors.black87,
                             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,

@@ -11,6 +11,8 @@ import 'admin_dashboard_screen.dart';
 import 'post_detail_screen.dart';
 import '../models/post_model.dart';
 import 'coin_benefits_screen.dart';
+import '../localization/app_localizations.dart';
+import '../widgets/language_selector_widget.dart';
 
 class ProfileScreen extends StatefulWidget {
   final VoidCallback? onBackToHome;
@@ -20,7 +22,8 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateMixin {
+class _ProfileScreenState extends State<ProfileScreen>
+    with TickerProviderStateMixin {
   final ApiService _api = ApiService();
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
@@ -51,7 +54,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       final saved = await _api.getSavedPosts();
       setState(() {
         _socialStats = stats['stats'] ?? {'total_likes': 0, 'total_views': 0};
-        _savedPosts = (saved as List).map((p) => PostModel.fromJson(p)).toList();
+        _savedPosts =
+            (saved as List).map((p) => PostModel.fromJson(p)).toList();
         _isStatsLoading = false;
       });
     } catch (e) {
@@ -81,7 +85,12 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   Future<void> _saveProfile() async {
     if (_formKey.currentState!.validate()) {
       final auth = Provider.of<AuthProvider>(context, listen: false);
-      final success = await auth.updateProfile(fullName: _nameController.text, email: _emailController.text, village: _villageController.text, state: _stateController.text, pincode: _pincodeController.text);
+      final success = await auth.updateProfile(
+          fullName: _nameController.text,
+          email: _emailController.text,
+          village: _villageController.text,
+          state: _stateController.text,
+          pincode: _pincodeController.text);
       if (success) setState(() => _isEditing = false);
     }
   }
@@ -95,7 +104,22 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          Positioned.fill(child: Container(decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xFF1B5E20), Color(0xFF2E7D32), Color(0xFFF1F8E9)], stops: [0.0, 0.4, 1.0])))),
+          Positioned.fill(
+              child: Container(
+                  decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                Color(0xFF1B5E20),
+                Color(0xFF2E7D32),
+                Color(0xFFF1F8E9)
+              ],
+                          stops: [
+                0.0,
+                0.4,
+                1.0
+              ])))),
           CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
@@ -107,17 +131,30 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                     children: [
                       _buildProfileHeader(user, auth),
                       const SizedBox(height: 24),
-                      _isStatsLoading ? _buildStatsSkeleton() : _buildSocialStatsGrid(user),
+                      _isStatsLoading
+                          ? _buildStatsSkeleton()
+                          : _buildSocialStatsGrid(user),
                       const SizedBox(height: 32),
                       _buildModernCard([
-                        _buildField(Icons.person_outline, 'Full Name', _nameController),
-                        _buildField(Icons.alternate_email, 'Email Address', _emailController),
-                        _buildField(Icons.location_on_outlined, 'Village', _villageController),
-                        _buildField(Icons.map_outlined, 'State', _stateController),
-                        _buildField(Icons.pin_drop_outlined, 'Pincode', _pincodeController),
+                        _buildField(Icons.person_outline,
+                            context.translate('full_name'), _nameController),
+                        _buildField(Icons.alternate_email, 'Email Address',
+                            _emailController),
+                        _buildField(
+                            Icons.location_on_outlined,
+                            context.translate('location_label'),
+                            _villageController),
+                        _buildField(
+                            Icons.map_outlined, 'State', _stateController),
+                        _buildField(Icons.pin_drop_outlined, 'Pincode',
+                            _pincodeController),
                       ]),
                       const SizedBox(height: 24),
-                      if (_isEditing) AnimatedButton(text: 'SAVE CHANGES', color: const Color(0xFF2E7D32), onPressed: _saveProfile),
+                      if (_isEditing)
+                        AnimatedButton(
+                            text: 'SAVE CHANGES',
+                            color: const Color(0xFF2E7D32),
+                            onPressed: _saveProfile),
                       const SizedBox(height: 32),
                       _buildSavedPostsSection(),
                       const SizedBox(height: 32),
@@ -181,10 +218,18 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           }
         },
       ),
-      title: const Text('My Profile', style: TextStyle(fontWeight: FontWeight.w900, color: Colors.white)),
+      title: Text(context.translate('profile_title'),
+          style: const TextStyle(
+              fontWeight: FontWeight.w900, color: Colors.white)),
       actions: [
         IconButton(
-          icon: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(12)), child: Icon(_isEditing ? Icons.close : Icons.edit, color: Colors.white, size: 20)),
+          icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(12)),
+              child: Icon(_isEditing ? Icons.close : Icons.edit,
+                  color: Colors.white, size: 20)),
           onPressed: () => setState(() => _isEditing = !_isEditing),
         ),
         const SizedBox(width: 16),
@@ -199,14 +244,48 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           onTap: _pickImage,
           child: Stack(
             children: [
-              Container(padding: const EdgeInsets.all(4), decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle), child: CircleAvatar(radius: 60, backgroundColor: Colors.grey[200], child: auth.isLoading ? const CircularProgressIndicator() : ClipRRect(borderRadius: BorderRadius.circular(60), child: user?['profile_photo_url'] != null ? Image.network(ApiService().getImageUrl(user!['profile_photo_url']), width: 120, height: 120, fit: BoxFit.cover) : const Icon(Icons.person, size: 60, color: Colors.grey)))),
-              Positioned(bottom: 0, right: 0, child: Container(padding: const EdgeInsets.all(8), decoration: const BoxDecoration(color: Color(0xFFFF9800), shape: BoxShape.circle), child: const Icon(Icons.camera_alt, color: Colors.white, size: 16))),
+              Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                      color: Colors.white, shape: BoxShape.circle),
+                  child: CircleAvatar(
+                      radius: 60,
+                      backgroundColor: Colors.grey[200],
+                      child: auth.isLoading
+                          ? const CircularProgressIndicator()
+                          : ClipRRect(
+                              borderRadius: BorderRadius.circular(60),
+                              child: user?['profile_photo_url'] != null
+                                  ? Image.network(
+                                      ApiService().getImageUrl(
+                                          user!['profile_photo_url']),
+                                      width: 120,
+                                      height: 120,
+                                      fit: BoxFit.cover)
+                                  : const Icon(Icons.person,
+                                      size: 60, color: Colors.grey)))),
+              Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: const BoxDecoration(
+                          color: Color(0xFFFF9800), shape: BoxShape.circle),
+                      child: const Icon(Icons.camera_alt,
+                          color: Colors.white, size: 16))),
             ],
           ),
         ),
         const SizedBox(height: 16),
-        Text(user?['full_name'] ?? 'User', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white)),
-        Text(user?['mobile'] ?? '', style: TextStyle(color: Colors.white.withOpacity(0.8), fontWeight: FontWeight.w500)),
+        Text(user?['full_name'] ?? 'User',
+            style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+                color: Colors.white)),
+        Text(user?['mobile'] ?? '',
+            style: TextStyle(
+                color: Colors.white.withOpacity(0.8),
+                fontWeight: FontWeight.w500)),
       ],
     );
   }
@@ -222,12 +301,17 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildStatItem(Icons.favorite, 'Likes', _socialStats['total_likes'].toString()),
-          _buildStatItem(Icons.visibility, 'Views', _socialStats['total_views'].toString()),
-          _buildStatItem(Icons.bookmark, 'Saved', _savedPosts.length.toString()),
+          _buildStatItem(Icons.favorite, context.translate('likes'),
+              _socialStats['total_likes'].toString()),
+          _buildStatItem(Icons.visibility, context.translate('views'),
+              _socialStats['total_views'].toString()),
+          _buildStatItem(Icons.bookmark, context.translate('saved'),
+              _savedPosts.length.toString()),
           GestureDetector(
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const CoinBenefitsScreen())),
-            child: _buildStatItem(Icons.monetization_on, 'Coins', user?['coins']?.toString() ?? '0'),
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (c) => const CoinBenefitsScreen())),
+            child: _buildStatItem(Icons.monetization_on,
+                context.translate('coins'), user?['coins']?.toString() ?? '0'),
           ),
         ],
       ),
@@ -239,8 +323,14 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       children: [
         Icon(icon, color: Colors.white, size: 24),
         const SizedBox(height: 4),
-        Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
+        Text(value,
+            style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 18)),
+        Text(label,
+            style:
+                TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
       ],
     );
   }
@@ -248,7 +338,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   Widget _buildStatsSkeleton() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: List.generate(4, (_) => ShimmerSkeleton(width: 70, height: 50, borderRadius: 12)),
+      children: List.generate(
+          4, (_) => ShimmerSkeleton(width: 70, height: 50, borderRadius: 12)),
     );
   }
 
@@ -257,7 +348,11 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Saved Posts', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2E7D32))),
+        Text(context.translate('saved'),
+            style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2E7D32))),
         const SizedBox(height: 16),
         SizedBox(
           height: 120,
@@ -267,13 +362,34 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
             itemBuilder: (context, i) {
               final post = _savedPosts[i];
               return InkWell(
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => PostDetailScreen(post: post))),
+                onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (c) => PostDetailScreen(post: post))),
                 child: Container(
-                  width: 120, margin: const EdgeInsets.only(right: 12),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), image: (post.images != null && post.images!.isNotEmpty) ? DecorationImage(image: NetworkImage(_api.getImageUrl(post.images!.first)), fit: BoxFit.cover) : null),
+                  width: 120,
+                  margin: const EdgeInsets.only(right: 12),
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      image: (post.images != null && post.images!.isNotEmpty)
+                          ? DecorationImage(
+                              image: NetworkImage(
+                                  _api.getImageUrl(post.images!.first)),
+                              fit: BoxFit.cover)
+                          : null),
                   alignment: Alignment.bottomLeft,
                   padding: const EdgeInsets.all(8),
-                  child: Text(post.title ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10, shadows: [Shadow(blurRadius: 4, color: Colors.black)])),
+                  child: Text(post.title ?? '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                          shadows: [
+                            Shadow(blurRadius: 4, color: Colors.black)
+                          ])),
                 ),
               );
             },
@@ -306,7 +422,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildField(IconData icon, String label, TextEditingController controller) {
+  Widget _buildField(
+      IconData icon, String label, TextEditingController controller) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: TextFormField(
@@ -326,8 +443,11 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
             fontSize: 13,
           ),
           filled: true,
-          fillColor: _isEditing ? const Color(0xFF2E7D32).withOpacity(0.03) : Colors.grey[50],
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          fillColor: _isEditing
+              ? const Color(0xFF2E7D32).withOpacity(0.03)
+              : Colors.grey[50],
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
@@ -365,11 +485,78 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       ),
       child: Column(
         children: [
-          _buildActionTile(Icons.history_rounded, 'My Posts', const Color(0xFF2E7D32), () => Navigator.push(context, MaterialPageRoute(builder: (c) => const MyPostsScreen())), showDivider: true),
-          _buildActionTile(Icons.stars, 'Coins & Health Benefits (नाणी व आरोग्य लाभ)', const Color(0xFF2E7D32), () => Navigator.push(context, MaterialPageRoute(builder: (c) => const CoinBenefitsScreen())), showDivider: isAdmin),
+          _buildActionTile(
+              Icons.history_rounded,
+              context.translate('my_posts'),
+              const Color(0xFF2E7D32),
+              () => Navigator.push(context,
+                  MaterialPageRoute(builder: (c) => const MyPostsScreen())),
+              showDivider: true),
+          _buildActionTile(
+              Icons.stars,
+              'Coins & Health Benefits (नाणी व आरोग्य लाभ)',
+              const Color(0xFF2E7D32),
+              () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (c) => const CoinBenefitsScreen())),
+              showDivider: true),
+          _buildActionTile(
+            Icons.translate_rounded,
+            context.translate('choose_language'),
+            const Color(0xFF2E7D32),
+            () {
+              showModalBottomSheet(
+                context: context,
+                backgroundColor: Colors.white,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+                builder: (c) => SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const LanguageSelectorWidget(),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(c),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF2E7D32),
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(double.infinity, 44),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            context.translate('ok'),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+            showDivider: isAdmin,
+          ),
           if (isAdmin)
-            _buildActionTile(Icons.admin_panel_settings_rounded, 'Owner Control Panel', Colors.black, () => Navigator.push(context, MaterialPageRoute(builder: (c) => const AdminDashboardScreen())), isSpecial: true, showDivider: true),
-          _buildActionTile(Icons.logout_rounded, 'Sign Out Account', Colors.redAccent, _confirmLogout, showDivider: false),
+            _buildActionTile(
+                Icons.admin_panel_settings_rounded,
+                'Owner Control Panel',
+                Colors.black,
+                () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (c) => const AdminDashboardScreen())),
+                isSpecial: true,
+                showDivider: true),
+          _buildActionTile(Icons.logout_rounded, context.translate('logout'),
+              Colors.redAccent, _confirmLogout,
+              showDivider: false),
         ],
       ),
     );
@@ -377,39 +564,47 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
   Future<void> _confirmLogout() async {
     final bool logoutConfirmed = await showDialog<bool>(
-      context: context,
-      builder: (c) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: const [
-            Icon(Icons.logout_rounded, color: Colors.redAccent),
-            SizedBox(width: 12),
-            Text(
-              'लॉग आउट / Log Out?',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          context: context,
+          builder: (c) => AlertDialog(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: const [
+                Icon(Icons.logout_rounded, color: Colors.redAccent),
+                SizedBox(width: 12),
+                Text(
+                  'लॉग आउट / Log Out?',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+              ],
             ),
-          ],
-        ),
-        content: const Text(
-          'तुम्हाला रॉयल शेतकरी ॲपमधून लॉग आउट करायचे आहे का?\nDo you want to sign out from the application?',
-          style: TextStyle(fontSize: 13, height: 1.4, color: Colors.black87),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(c, false),
-            child: const Text('नाही / NO', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(c, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            content: const Text(
+              'तुम्हाला रॉयल शेतकरी ॲपमधून लॉग आउट करायचे आहे का?\nDo you want to sign out from the application?',
+              style:
+                  TextStyle(fontSize: 13, height: 1.4, color: Colors.black87),
             ),
-            child: const Text('होय / YES', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(c, false),
+                child: const Text('नाही / NO',
+                    style: TextStyle(
+                        color: Colors.grey, fontWeight: FontWeight.bold)),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(c, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+                child: const Text('होय / YES',
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ],
           ),
-        ],
-      ),
-    ) ?? false;
+        ) ??
+        false;
 
     if (logoutConfirmed && mounted) {
       Provider.of<AuthProvider>(context, listen: false).logout();
@@ -417,15 +612,19 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     }
   }
 
-  Widget _buildActionTile(IconData icon, String label, Color color, VoidCallback onTap, {bool isSpecial = false, bool showDivider = true}) {
+  Widget _buildActionTile(
+      IconData icon, String label, Color color, VoidCallback onTap,
+      {bool isSpecial = false, bool showDivider = true}) {
     return Column(
       children: [
         ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
           leading: Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: isSpecial ? color.withOpacity(0.15) : color.withOpacity(0.1),
+              color:
+                  isSpecial ? color.withOpacity(0.15) : color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(icon, color: color, size: 22),
@@ -438,7 +637,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
               fontSize: 14,
             ),
           ),
-          trailing: Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey[400]),
+          trailing:
+              Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey[400]),
           onTap: onTap,
         ),
         if (showDivider)

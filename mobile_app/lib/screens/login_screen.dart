@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../core/providers/auth_provider.dart';
 import '../widgets/animated_button.dart';
 import '../widgets/custom_text_field.dart';
+import '../localization/app_localizations.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -270,7 +271,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Login'),
+        title: Text(context.translate('login_title')),
         backgroundColor: const Color(0xFF2E7D32),
         foregroundColor: Colors.white,
         elevation: 0,
@@ -294,8 +295,8 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 32),
             CustomTextField(
               controller: _mobileController,
-              label: 'Mobile Number',
-              hint: 'Enter 10-digit mobile number',
+              label: context.translate('mobile_number'),
+              hint: context.translate('enter_mobile'),
               icon: Icons.phone_android,
               keyboardType: TextInputType.phone,
               maxLength: 10,
@@ -311,8 +312,8 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 16),
             CustomTextField(
               controller: _passwordController,
-              label: 'Password',
-              hint: 'Enter your password',
+              label: context.translate('password'),
+              hint: context.translate('enter_password'),
               icon: Icons.lock_outline,
               obscureText: _obscurePassword,
               errorText: _passwordError,
@@ -366,7 +367,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ],
             const SizedBox(height: 32),
             AnimatedButton(
-              text: 'LOGIN',
+              text: context.translate('login_button'),
               color: const Color(0xFFFF9800),
               isLoading: auth.isLoading,
               onPressed: auth.isLoading ? null : _login,
@@ -375,12 +376,12 @@ class _LoginScreenState extends State<LoginScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text("Don't have an account? "),
+                Text(context.translate('dont_have_account') + " "),
                 TextButton(
                   onPressed: () => Navigator.pushNamed(context, '/register'),
-                  child: const Text(
-                    'Register',
-                    style: TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold),
+                  child: Text(
+                    context.translate('register_now'),
+                    style: const TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold),
                   ),
                 ),
               ],

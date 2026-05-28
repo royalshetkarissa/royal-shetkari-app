@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import '../core/providers/auth_provider.dart';
 import '../widgets/animated_button.dart';
 import '../widgets/custom_text_field.dart';
+import '../localization/app_localizations.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -150,7 +151,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Register'),
+        title: Text(context.translate('register_title')),
         backgroundColor: const Color(0xFF2E7D32),
         foregroundColor: Colors.white,
         elevation: 0,
@@ -174,8 +175,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SizedBox(height: 32),
             CustomTextField(
               controller: _fullNameController,
-              label: 'Full Name',
-              hint: 'Enter your full name',
+              label: context.translate('full_name'),
+              hint: context.translate('enter_full_name'),
               icon: Icons.person_outline,
               errorText: _fullNameError,
               isRequired: true,
@@ -188,8 +189,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SizedBox(height: 16),
             CustomTextField(
               controller: _mobileController,
-              label: 'Mobile Number',
-              hint: 'Enter 10-digit mobile number',
+              label: context.translate('mobile_number'),
+              hint: context.translate('enter_mobile'),
               icon: Icons.phone_android,
               keyboardType: TextInputType.phone,
               maxLength: 10,
@@ -212,8 +213,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SizedBox(height: 16),
             CustomTextField(
               controller: _passwordController,
-              label: 'Password',
-              hint: 'Minimum 6 characters',
+              label: context.translate('password'),
+              hint: context.translate('enter_password'),
               icon: Icons.lock_outline,
               obscureText: _obscurePassword,
               errorText: _passwordError,
@@ -286,7 +287,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
             const SizedBox(height: 32),
             AnimatedButton(
-              text: 'REGISTER',
+              text: context.translate('register_button'),
               color: const Color(0xFF2E7D32),
               isLoading: auth.isLoading,
               onPressed: auth.isLoading ? null : _register,
@@ -295,12 +296,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text("Already have an account? "),
                 TextButton(
                   onPressed: () => Navigator.pushNamed(context, '/login'),
-                  child: const Text(
-                    'Login',
-                    style: TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold),
+                  child: Text(
+                    context.translate('already_have_account'),
+                    style: const TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold),
                   ),
                 ),
               ],

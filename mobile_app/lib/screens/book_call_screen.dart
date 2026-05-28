@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../core/providers/auth_provider.dart';
 import '../core/providers/booking_provider.dart';
 import '../widgets/animated_button.dart';
+import '../localization/app_localizations.dart';
 
 class BookCallScreen extends StatefulWidget {
   const BookCallScreen({super.key});
@@ -15,7 +16,7 @@ class _BookCallScreenState extends State<BookCallScreen> with TickerProviderStat
   final _formKey = GlobalKey<FormState>();
   DateTime? _selectedDate;
   String? _selectedTime;
-  String _selectedHelpType = 'Farm help';
+  String _selectedHelpType = 'farm_help';
   bool _isSuccess = false;
   bool _isFlying = false;
   
@@ -25,7 +26,7 @@ class _BookCallScreenState extends State<BookCallScreen> with TickerProviderStat
   late Animation<double> _checkScale;
   late Animation<double> _opacityAnimation;
 
-  final List<String> _helpOptions = ['Farm help', 'Market sell help', 'Your problem'];
+  final List<String> _helpOptions = ['farm_help', 'market_sell_help', 'your_problem'];
   final List<String> _timeSlots = [
     '10:00:00', '11:00:00', '12:00:00', '13:00:00', 
     '14:00:00', '15:00:00', '16:00:00', '17:00:00'
@@ -75,7 +76,7 @@ class _BookCallScreenState extends State<BookCallScreen> with TickerProviderStat
 
   void _showPreview() {
     if (_selectedDate == null || _selectedTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select date and time first!')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.translate('select_date_time_first'))));
       return;
     }
     showModalBottomSheet(
@@ -96,14 +97,14 @@ class _BookCallScreenState extends State<BookCallScreen> with TickerProviderStat
         children: [
           Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
           const SizedBox(height: 24),
-          const Text('Confirm Booking', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          Text(context.translate('confirm_booking'), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
           const SizedBox(height: 32),
-          _buildPreviewRow(Icons.calendar_month, 'Date', "${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}"),
-          _buildPreviewRow(Icons.access_time_filled, 'Time', _selectedTime!.substring(0, 5)),
-          _buildPreviewRow(Icons.help_center, 'Topic', _selectedHelpType),
+          _buildPreviewRow(Icons.calendar_month, context.translate('date'), "${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}"),
+          _buildPreviewRow(Icons.access_time_filled, context.translate('time'), _selectedTime!.substring(0, 5)),
+          _buildPreviewRow(Icons.help_center, context.translate('topic'), context.translate(_selectedHelpType)),
           const SizedBox(height: 40),
           AnimatedButton(
-            text: 'CONFIRM & BOOK',
+            text: context.translate('confirm_and_book'),
             color: const Color(0xFF2E7D32),
             onPressed: () {
               Navigator.pop(context);
@@ -151,7 +152,7 @@ class _BookCallScreenState extends State<BookCallScreen> with TickerProviderStat
       await booking.bookCall(
         date: dateStr,
         time: _selectedTime!,
-        helpType: _selectedHelpType,
+        helpType: context.translate(_selectedHelpType),
         mobile: auth.user?['mobile'] ?? '',
       );
 
@@ -172,7 +173,7 @@ class _BookCallScreenState extends State<BookCallScreen> with TickerProviderStat
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Book Expert Call', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(context.translate('book_expert_call'), style: const TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -187,26 +188,26 @@ class _BookCallScreenState extends State<BookCallScreen> with TickerProviderStat
                 _buildHeader(),
                 const SizedBox(height: 32),
                 _buildSelectionCard(
-                  label: 'Choose Date',
+                  label: context.translate('choose_date'),
                   icon: Icons.calendar_today,
-                  value: _selectedDate == null ? 'Select Date' : "${_selectedDate!.day} ${_getMonth(_selectedDate!.month)}",
+                  value: _selectedDate == null ? context.translate('select_date') : "${_selectedDate!.day} ${_getMonth(_selectedDate!.month)}",
                   onTap: () => _selectDate(context),
                   isSelected: _selectedDate != null,
                 ),
                 const SizedBox(height: 32),
                 if (_selectedDate != null) ...[
-                  const Text('Available Slots', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  Text(context.translate('available_slots'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                   const SizedBox(height: 16),
                   _buildTimeGrid(booking),
                 ],
                 const SizedBox(height: 32),
-                const Text('What help do you need?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                Text(context.translate('what_help_need'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                 const SizedBox(height: 12),
                 _buildHelpSelector(),
                 const SizedBox(height: 60),
                 booking.isLoading 
                   ? const Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32))) 
-                  : AnimatedButton(text: 'BOOK NOW', color: const Color(0xFF2E7D32), onPressed: _showPreview),
+                  : AnimatedButton(text: context.translate('book_now'), color: const Color(0xFF2E7D32), onPressed: _showPreview),
               ],
             ),
           ),
@@ -247,12 +248,12 @@ class _BookCallScreenState extends State<BookCallScreen> with TickerProviderStat
             child: const CircleAvatar(radius: 30, backgroundColor: Colors.white24, child: Icon(Icons.support_agent, color: Colors.white, size: 30)),
           ),
           const SizedBox(width: 16),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Agricultural Expert', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                Text('Get professional advice for your farm', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                Text(context.translate('agricultural_expert'), style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                Text(context.translate('get_professional_help'), style: const TextStyle(color: Colors.white70, fontSize: 12)),
               ],
             ),
           )
@@ -323,7 +324,7 @@ class _BookCallScreenState extends State<BookCallScreen> with TickerProviderStat
       children: _helpOptions.map((opt) {
         bool isSel = _selectedHelpType == opt;
         return ChoiceChip(
-          label: Text(opt),
+          label: Text(context.translate(opt)),
           selected: isSel,
           onSelected: (s) => setState(() => _selectedHelpType = opt),
           selectedColor: const Color(0xFF2E7D32),
@@ -345,12 +346,12 @@ class _BookCallScreenState extends State<BookCallScreen> with TickerProviderStat
             child: Container(
               padding: const EdgeInsets.all(40),
               decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.green.withOpacity(0.3), blurRadius: 40, spreadRadius: 10)]),
-              child: const Column(
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.check_circle, color: Color(0xFF2E7D32), size: 120),
-                  SizedBox(height: 16),
-                  Text('BOOKED!', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF2E7D32), letterSpacing: 2)),
+                  const Icon(Icons.check_circle, color: Color(0xFF2E7D32), size: 120),
+                  const SizedBox(height: 16),
+                  Text(context.translate('booked_success'), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF2E7D32), letterSpacing: 2)),
                 ],
               ),
             ),

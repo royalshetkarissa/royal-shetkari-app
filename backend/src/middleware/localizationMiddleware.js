@@ -18,7 +18,15 @@ module.exports = (req, res, next) => {
     }
   }
 
-  // 2. Check Accept-Language header
+  // 2. Check request body 'lang'
+  if (!detectedLang && req.body && req.body.lang) {
+    const bodyLang = req.body.lang.toString().toLowerCase().trim();
+    if (SUPPORTED_LANGUAGES.includes(bodyLang)) {
+      detectedLang = bodyLang;
+    }
+  }
+
+  // 3. Check Accept-Language header
   if (!detectedLang && req.headers && req.headers['accept-language']) {
     const acceptHeader = req.headers['accept-language'];
     // Format is typically: en-US,en;q=0.9,mr;q=0.8
@@ -33,6 +41,14 @@ module.exports = (req, res, next) => {
         detectedLang = code;
         break;
       }
+    }
+  }
+
+  // 4. Check user profile preference if authenticated
+  if (!detectedLang && req.user && req.user.language_preference) {
+    const userLang = req.user.language_preference.toLowerCase().trim();
+    if (SUPPORTED_LANGUAGES.includes(userLang)) {
+      detectedLang = userLang;
     }
   }
 
