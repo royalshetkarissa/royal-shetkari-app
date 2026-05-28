@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import '../services/api_service.dart';
@@ -173,10 +174,15 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
 
     setState(() => _isLoading = true);
     try {
+      // Determine contentType from file extension for correct MIME type
+      String profileExt = _profilePhoto!.name.split('.').last.toLowerCase();
+      String profileMime = profileExt == 'png' ? 'png' : profileExt == 'webp' ? 'webp' : 'jpeg';
+
       final profilePhotoBytes = await _profilePhoto!.readAsBytes();
       final profilePhotoMultipart = MultipartFile.fromBytes(
         profilePhotoBytes,
         filename: _profilePhoto!.name,
+        contentType: MediaType('image', profileMime),
       );
 
       FormData formData = FormData.fromMap({
@@ -198,11 +204,14 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
 
       for (int i = 0; i < _shopImages.length; i++) {
         final imgBytes = await _shopImages[i].readAsBytes();
+        String imgExt = _shopImages[i].name.split('.').last.toLowerCase();
+        String imgMime = imgExt == 'png' ? 'png' : imgExt == 'webp' ? 'webp' : 'jpeg';
         formData.files.add(MapEntry(
           'images',
           MultipartFile.fromBytes(
             imgBytes,
             filename: _shopImages[i].name,
+            contentType: MediaType('image', imgMime),
           ),
         ));
       }
@@ -1024,7 +1033,13 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
                 MultipartFile? profilePhotoMultipart;
                 if (editProfilePhoto != null) {
                   final bytes = await editProfilePhoto!.readAsBytes();
-                  profilePhotoMultipart = MultipartFile.fromBytes(bytes, filename: editProfilePhoto!.name);
+                  String ext = editProfilePhoto!.name.split('.').last.toLowerCase();
+                  String mime = ext == 'png' ? 'png' : ext == 'webp' ? 'webp' : 'jpeg';
+                  profilePhotoMultipart = MultipartFile.fromBytes(
+                    bytes,
+                    filename: editProfilePhoto!.name,
+                    contentType: MediaType('image', mime),
+                  );
                 }
 
                 FormData formData = FormData.fromMap({
@@ -1045,9 +1060,15 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
 
                 for (int i = 0; i < editShopImages.length; i++) {
                   final imgBytes = await editShopImages[i].readAsBytes();
+                  String imgExt = editShopImages[i].name.split('.').last.toLowerCase();
+                  String imgMime = imgExt == 'png' ? 'png' : imgExt == 'webp' ? 'webp' : 'jpeg';
                   formData.files.add(MapEntry(
                     'images',
-                    MultipartFile.fromBytes(imgBytes, filename: editShopImages[i].name),
+                    MultipartFile.fromBytes(
+                      imgBytes,
+                      filename: editShopImages[i].name,
+                      contentType: MediaType('image', imgMime),
+                    ),
                   ));
                 }
 
