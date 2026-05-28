@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const shopController = require('../../controllers/shopController');
 const { verifyToken, verifyAdmin: isAdmin } = require('../../middleware/auth');
-const upload = require('../../middleware/upload');
+const b2Upload = require('../../middleware/b2Upload');
 
 // Public/Farmer Market Routes
 router.get('/nearby', shopController.getNearbyShops);
@@ -16,7 +16,7 @@ router.post(
   '/admin/add',
   verifyToken,
   isAdmin,
-  upload.fields([
+  b2Upload.fields([
     { name: 'profile_photo', maxCount: 1 },
     { name: 'images', maxCount: 10 },
   ]),
@@ -34,7 +34,7 @@ router.put(
   '/admin/edit/:id',
   verifyToken,
   isAdmin,
-  upload.fields([
+  b2Upload.fields([
     { name: 'profile_photo', maxCount: 1 },
     { name: 'images', maxCount: 10 },
   ]),

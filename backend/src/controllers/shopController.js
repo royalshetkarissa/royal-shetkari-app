@@ -1,5 +1,6 @@
 const shopService = require('../services/shopService');
 const { logActivity } = require('../utils/logger');
+const { uploadToB2 } = require('../utils/b2Uploader');
 
 exports.addShop = async (req, res, next) => {
   try {
@@ -23,11 +24,14 @@ exports.addShop = async (req, res, next) => {
     let images = [];
 
     if (req.files) {
-      if (req.files['profile_photo']) {
-        profilePhoto = `/uploads/${req.files['profile_photo'][0].filename}`;
+      if (req.files['profile_photo'] && req.files['profile_photo'][0]) {
+        profilePhoto = await uploadToB2(req.files['profile_photo'][0]);
       }
-      if (req.files['images']) {
-        images = req.files['images'].map((f) => `/uploads/${f.filename}`);
+      if (req.files['images'] && req.files['images'].length > 0) {
+        images = await Promise.all(
+          req.files['images'].map((f) => uploadToB2(f))
+        );
+        images = images.filter(Boolean);
       }
     }
 
@@ -189,11 +193,14 @@ exports.editShop = async (req, res, next) => {
     let images = [];
 
     if (req.files) {
-      if (req.files['profile_photo']) {
-        profilePhoto = `/uploads/${req.files['profile_photo'][0].filename}`;
+      if (req.files['profile_photo'] && req.files['profile_photo'][0]) {
+        profilePhoto = await uploadToB2(req.files['profile_photo'][0]);
       }
-      if (req.files['images']) {
-        images = req.files['images'].map((f) => `/uploads/${f.filename}`);
+      if (req.files['images'] && req.files['images'].length > 0) {
+        images = await Promise.all(
+          req.files['images'].map((f) => uploadToB2(f))
+        );
+        images = images.filter(Boolean);
       }
     }
 

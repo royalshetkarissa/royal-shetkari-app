@@ -15,6 +15,7 @@ describe('Posts Integration Tests', () => {
     await pool.query('DELETE FROM saved_posts');
     await pool.query('DELETE FROM deleted_posts_history');
     await pool.query('DELETE FROM posts');
+    await pool.query('DELETE FROM shops');
     await pool.query('DELETE FROM users');
 
     // Create a test user
@@ -41,6 +42,7 @@ describe('Posts Integration Tests', () => {
     await pool.query('DELETE FROM saved_posts');
     await pool.query('DELETE FROM deleted_posts_history');
     await pool.query('DELETE FROM posts');
+    await pool.query('DELETE FROM shops');
     await pool.query('DELETE FROM users');
   });
 
