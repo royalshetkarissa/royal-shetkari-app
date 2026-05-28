@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:royal_shetkari/widgets/shimmer_skeleton.dart';
 import '../core/providers/post_provider.dart';
 import '../models/post_model.dart';
+import '../widgets/swipeable_image_slider.dart';
 import 'create_post_screen.dart';
 import 'post_detail_screen.dart';
 
@@ -421,25 +422,13 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 ],
               ),
             ),
-            GestureDetector(
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => PostDetailScreen(post: post))),
-              child: Hero(
-                tag: 'post-image-${post.id}',
-                child: AspectRatio(
-                  aspectRatio: 1,
-                  child: post.imageUrl != null && post.imageUrl!.isNotEmpty
-                      ? Image.network(
-                          post.imageUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            color: Colors.grey[200],
-                            child: const Icon(Icons.broken_image, size: 50, color: Colors.grey),
-                          ),
-                        )
-                      : Container(
-                          color: Colors.grey[100],
-                          child: const Icon(Icons.image, size: 80, color: Colors.grey),
-                        ),
+            SwipeableImageSlider(
+              imageUrls: post.images.isNotEmpty ? post.images : (post.imageUrl != null ? <String>[post.imageUrl!] : <String>[]),
+              heroTagPrefix: 'post-image-${post.id}',
+              onTapImage: (index) => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (c) => PostDetailScreen(post: post),
                 ),
               ),
             ),

@@ -5,6 +5,8 @@ import '../core/providers/auth_provider.dart';
 import '../models/post_model.dart';
 import '../services/api_service.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../widgets/swipeable_image_slider.dart';
+import 'full_screen_gallery_screen.dart';
 
 class PostDetailScreen extends StatefulWidget {
   final PostModel post;
@@ -83,11 +85,22 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             expandedHeight: 400,
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
-              background: Hero(
-                tag: 'post-image-${widget.post.id}',
-                child: widget.post.imageUrl != null && widget.post.imageUrl!.isNotEmpty
-                    ? Image.network(widget.post.imageUrl!, fit: BoxFit.cover)
-                    : Container(color: Colors.grey[200], child: const Icon(Icons.image, size: 100, color: Colors.grey)),
+              background: SwipeableImageSlider(
+                imageUrls: widget.post.images.isNotEmpty ? widget.post.images : (widget.post.imageUrl != null ? <String>[widget.post.imageUrl!] : <String>[]),
+                heroTagPrefix: 'post-image-${widget.post.id}',
+                onTapImage: (index) {
+                  final List<String> urls = widget.post.images.isNotEmpty ? widget.post.images : (widget.post.imageUrl != null ? <String>[widget.post.imageUrl!] : <String>[]);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FullScreenGalleryScreen(
+                        imageUrls: urls,
+                        initialIndex: index,
+                        heroTagPrefix: 'post-image-${widget.post.id}',
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ),

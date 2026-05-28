@@ -66,5 +66,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app requires access to your photo library to choose profile and post images.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>This app requires access to save downloaded images to your photo library.</string>
 </dict>
 </plist>
