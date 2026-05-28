@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:royal_shetkari/widgets/shimmer_skeleton.dart';
 import '../core/providers/post_provider.dart';
+import '../core/providers/auth_provider.dart';
 import '../models/post_model.dart';
 import '../widgets/swipeable_image_slider.dart';
 import 'create_post_screen.dart';
 import 'post_detail_screen.dart';
+import '../services/api_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../localization/app_localizations.dart';
 
 class CommunityScreen extends StatefulWidget {
@@ -17,6 +20,10 @@ class CommunityScreen extends StatefulWidget {
 }
 
 class _CommunityScreenState extends State<CommunityScreen> {
+  final ApiService _api = ApiService();
+  final Set<int> _likedPosts = {};
+  final Map<int, int> _localLikesCount = {};
+
   String _selectedCategory = 'all';
   String? _animalType;
   double? _minPrice;
@@ -361,6 +368,245 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
   }
 
+  Future<void> _toggleLike(PostModel post) async {
+    final postId = post.id;
+    final isCurrentlyLiked = _likedPosts.contains(postId);
+    
+    setState(() {
+      if (isCurrentlyLiked) {
+        _likedPosts.remove(postId);
+        _localLikesCount[postId] = (_localLikesCount[postId] ?? post.likesCount) - 1;
+      } else {
+        _likedPosts.add(postId);
+        _localLikesCount[postId] = (_localLikesCount[postId] ?? post.likesCount) + 1;
+      }
+    });
+
+    try {
+      await _api.likePost(postId);
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          if (isCurrentlyLiked) {
+            _likedPosts.add(postId);
+            _localLikesCount[postId] = (_localLikesCount[postId] ?? post.likesCount) + 1;
+          } else {
+            _likedPosts.remove(postId);
+            _localLikesCount[postId] = (_localLikesCount[postId] ?? post.likesCount) - 1;
+          }
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.translate('failed_add_comment'))),
+        );
+      }
+    }
+  }
+
+  Future<void> _launchCall(PostModel post) async {
+    try {
+      await _api.trackCallClick(post.id);
+    } catch (_) {}
+    final Uri url = Uri(scheme: 'tel', path: post.contactMobile);
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.translate('could_not_launch_dialer'))),
+        );
+      }
+    }
+  }
+
+  Future<void> _launchWhatsApp(PostModel post) async {
+    try {
+      await _api.trackWpClick(post.id);
+    } catch (_) {}
+    final Uri url = Uri.parse(
+        "https://wa.me/91${post.contactMobile}?text=Hi, I saw your post '${post.title}' on Royal Shetkari.");
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.translate('could_not_launch_whatsapp'))),
+        );
+      }
+    }
+  }
+
+  void _showPostOptions(PostModel post) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final currentUser = authProvider.user;
+    final bool isOwnPost = currentUser != null &&
+        (post.userId == currentUser['id'] || post.contactMobile == currentUser['mobile']);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 5,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              if (isOwnPost) ...[
+                ListTile(
+                  leading: const Icon(Icons.delete_outline, color: Colors.red),
+                  title: const Text('Delete Post', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _confirmDeletePost(post);
+                  },
+                ),
+              ] else ...[
+                ListTile(
+                  leading: const Icon(Icons.share_outlined, color: Color(0xFF2E7D32)),
+                  title: const Text('Share Post', style: TextStyle(fontWeight: FontWeight.bold)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _sharePost(post);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.report_problem_outlined, color: Colors.orange),
+                  title: const Text('Report Post', style: TextStyle(fontWeight: FontWeight.bold)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _reportPost(post);
+                  },
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _confirmDeletePost(PostModel post) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          title: const Text('Delete Post'),
+          content: const Text('Are you sure you want to delete this post? This action cannot be undone.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            ),
+            TextButton(
+              onPressed: () async {
+                final scaffoldMessenger = ScaffoldMessenger.of(context);
+                Navigator.pop(dialogContext);
+                final postProvider = Provider.of<PostProvider>(context, listen: false);
+                final success = await postProvider.deletePost(post.id);
+                if (success) {
+                  scaffoldMessenger.showSnackBar(
+                    const SnackBar(content: Text('Post deleted successfully')),
+                  );
+                } else {
+                  scaffoldMessenger.showSnackBar(
+                    const SnackBar(content: Text('Failed to delete post')),
+                  );
+                }
+              },
+              child: const Text('Delete', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _sharePost(PostModel post) {
+    final Uri whatsappUrl = Uri.parse(
+        "https://wa.me/?text=Check out this post: '${post.title}' on Royal Shetkari app! Price: ₹${post.price}. Contact: ${post.contactMobile}");
+    launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
+  }
+
+  void _reportPost(PostModel post) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          title: const Text('Report Post'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: const Text('Spam or Duplicate'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _submitReport(post, 'Spam');
+                },
+              ),
+              ListTile(
+                title: const Text('Fraud or Scam'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _submitReport(post, 'Fraud');
+                },
+              ),
+              ListTile(
+                title: const Text('Inappropriate Content'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _submitReport(post, 'Inappropriate');
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _submitReport(PostModel post, String reason) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Thank you! Post reported for: $reason')),
+    );
+  }
+
+  Widget _buildLikeButton(PostModel post) {
+    final isLiked = _likedPosts.contains(post.id);
+    final likesCount = _localLikesCount[post.id] ?? post.likesCount;
+
+    return Row(
+      children: [
+        IconButton(
+          icon: Icon(
+            isLiked ? Icons.favorite : Icons.favorite_border,
+            color: isLiked ? Colors.red : Colors.black87,
+          ),
+          onPressed: () => _toggleLike(post),
+        ),
+        Text(
+          '$likesCount',
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+        ),
+      ],
+    );
+  }
+
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -424,7 +670,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.more_vert, size: 20),
-                    onPressed: () {},
+                    onPressed: () => _showPostOptions(post),
                   ),
                 ],
               ),
@@ -443,11 +689,16 @@ class _CommunityScreenState extends State<CommunityScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
               child: Row(
                 children: [
-                  IconButton(icon: const Icon(Icons.favorite_border), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (c) => PostDetailScreen(post: post)))),
-                  Text('${post.likesCount}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                  IconButton(icon: const Icon(Icons.mode_comment_outlined), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (c) => PostDetailScreen(post: post)))),
+                  _buildLikeButton(post),
+                  IconButton(
+                    icon: const Icon(Icons.mode_comment_outlined), 
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (c) => PostDetailScreen(post: post)))
+                  ),
                   const Spacer(),
-                  IconButton(icon: const Icon(Icons.bookmark_border), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (c) => PostDetailScreen(post: post)))),
+                  IconButton(
+                    icon: const Icon(Icons.bookmark_border), 
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (c) => PostDetailScreen(post: post)))
+                  ),
                 ],
               ),
             ),
@@ -494,6 +745,43 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   Text(
                     _getTimeAgo(post.createdAt),
                     style: TextStyle(color: Colors.grey[400], fontSize: 10),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _launchCall(post),
+                          icon: const Icon(Icons.call, size: 16, color: Color(0xFF2E7D32)),
+                          label: Text(
+                            context.translate('call'),
+                            style: const TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFF2E7D32)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () => _launchWhatsApp(post),
+                          icon: const Icon(Icons.chat, size: 16, color: Colors.white),
+                          label: Text(
+                            context.translate('whatsapp'),
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF25D366),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
