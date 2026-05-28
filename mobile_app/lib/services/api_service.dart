@@ -132,21 +132,23 @@ class ApiService {
       if (milkPerDay != null) 'milk_per_day': milkPerDay,
     };
     
-    if (isWeb && imageBytesList != null && imageBytesList.isNotEmpty) {
-      List<MultipartFile> files = [];
-      for (var bytes in imageBytesList) {
-        files.add(MultipartFile.fromBytes(bytes, filename: 'upload.jpg'));
-      }
-      fields['images'] = files;
-    } else if (imagePaths != null && imagePaths.isNotEmpty) {
-      List<MultipartFile> files = [];
-      for (var path in imagePaths) {
-        files.add(await MultipartFile.fromFile(path));
-      }
-      fields['images'] = files;
-    }
-
     FormData formData = FormData.fromMap(fields);
+
+    if (isWeb && imageBytesList != null && imageBytesList.isNotEmpty) {
+      for (var bytes in imageBytesList) {
+        formData.files.add(MapEntry(
+          'images',
+          MultipartFile.fromBytes(bytes, filename: 'upload.jpg'),
+        ));
+      }
+    } else if (imagePaths != null && imagePaths.isNotEmpty) {
+      for (var path in imagePaths) {
+        formData.files.add(MapEntry(
+          'images',
+          await MultipartFile.fromFile(path, filename: path.split('/').last),
+        ));
+      }
+    }
     final response = await _dio.post('/posts', data: formData);
     return Map<String, dynamic>.from(_handleResponse(response));
   }
