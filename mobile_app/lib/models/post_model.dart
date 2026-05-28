@@ -1,3 +1,5 @@
+import '../config/app_config.dart';
+
 class PostModel {
   final int id;
   final int userId;
@@ -63,8 +65,8 @@ class PostModel {
       status: json['status'],
       location: json['location'],
       contactMobile: json['contact_mobile'] ?? '',
-      imageUrl: json['image_url'],
-      images: _parseImages(json['images']),
+      imageUrl: _resolveImageUrl(json['image_url']),
+      images: _parseImages(json['images']).map((img) => _resolveImageUrl(img) ?? '').where((img) => img.isNotEmpty).toList(),
       createdAt: DateTime.parse(json['created_at']),
       farmerName: json['farmer_name'],
       village: json['village'],
@@ -99,5 +101,12 @@ class PostModel {
       }
     }
     return [];
+  }
+
+  static String? _resolveImageUrl(String? path) {
+    if (path == null || path.isEmpty) return null;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    final cleanPath = path.startsWith('/') ? path : '/$path';
+    return '${AppConfig.serverUrl}$cleanPath';
   }
 }
