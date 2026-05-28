@@ -952,6 +952,8 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
         ],
       ),
     );
+  }
+
   void _showEditShopDialog(ShopModel shop) {
     final editFormKey = GlobalKey<FormState>();
     final nameEdit = TextEditingController(text: shop.name);
