@@ -172,12 +172,12 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
         'latitude': 19.0760,
         'longitude': 72.8777,
         'categories': selectedCats.join(','),
-        'profilePhoto': await MultipartFile.fromFile(_profilePhoto!.path),
+        'profile_photo': await MultipartFile.fromFile(_profilePhoto!.path),
       });
 
       for (int i = 0; i < _shopImages.length; i++) {
         formData.files.add(MapEntry(
-          'shopImages',
+          'images',
           await MultipartFile.fromFile(_shopImages[i].path),
         ));
       }
@@ -187,7 +187,7 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
       _fetchShops();
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Shop Registered Successfully!'), backgroundColor: Colors.green));
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to add shop, please verify details.'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to add shop: $e'), backgroundColor: Colors.red));
     } finally {
       setState(() => _isLoading = false);
     }
