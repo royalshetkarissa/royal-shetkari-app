@@ -359,6 +359,61 @@ class ShopRepository {
     `);
     return result.rows;
   }
+
+  async getFeaturedShopForDate(dateStr) {
+    const result = await pool.query(
+      `SELECT fss.*, s.name as shop_name, s.owner_name, s.contact_mobile, s.address, s.profile_photo, s.images, s.redeem_coin_cost, s.discount_percentage, s.city, s.pincode
+       FROM featured_shop_schedules fss
+       JOIN shops s ON fss.shop_id = s.id
+       WHERE fss.featured_date = $1`,
+      [dateStr]
+    );
+    return result.rows[0];
+  }
+
+  async createFeaturedSchedule(shopId, dateStr, isNewArrival) {
+    const result = await pool.query(
+      `INSERT INTO featured_shop_schedules (shop_id, featured_date, is_new_arrival)
+       VALUES ($1, $2, $3)
+       RETURNING *`,
+      [shopId, dateStr, isNewArrival]
+    );
+    return result.rows[0];
+  }
+
+  async getLastScheduledEntry() {
+    const result = await pool.query(
+      `SELECT * FROM featured_shop_schedules ORDER BY featured_date DESC LIMIT 1`
+    );
+    return result.rows[0];
+  }
+
+  async getFeaturedHistory() {
+    const result = await pool.query(
+      `SELECT fss.id, fss.featured_date, fss.is_new_arrival, fss.created_at,
+              s.name as shop_name, s.owner_name, s.city
+       FROM featured_shop_schedules fss
+       JOIN shops s ON fss.shop_id = s.id
+       ORDER BY fss.featured_date DESC`
+    );
+    return result.rows;
+  }
+
+  async getActiveShopsSorted() {
+    const result = await pool.query(
+      `SELECT * FROM shops WHERE status = 'active' ORDER BY id ASC`
+    );
+    return result.rows;
+  }
+
+  async getNewArrivalShop() {
+    const result = await pool.query(
+      `SELECT * FROM shops 
+       WHERE status = 'active' AND created_at >= NOW() - INTERVAL '24 hours'
+       ORDER BY created_at DESC LIMIT 1`
+    );
+    return result.rows[0];
+  }
 }
 
 module.exports = new ShopRepository();

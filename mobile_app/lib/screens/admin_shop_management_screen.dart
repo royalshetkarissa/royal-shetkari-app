@@ -66,12 +66,16 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
   List<Map<String, dynamic>> _auditLogs = [];
   bool _auditLogsLoading = false;
 
+  List<Map<String, dynamic>> _featuredHistory = [];
+  bool _featuredHistoryLoading = false;
+
   @override
   void initState() {
     super.initState();
     _fetchShops();
     _fetchClaims();
     _fetchAuditLogs();
+    _fetchFeaturedHistory();
   }
 
   @override
@@ -321,7 +325,7 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 4,
+      length: 5,
       child: Scaffold(
         appBar: RoyalAppBar(
           title: 'शेतकरी मार्केट व्यवस्थापन / Admin Shops',
@@ -330,11 +334,13 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
             indicatorWeight: 3,
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,
+            isScrollable: true,
             tabs: [
               Tab(text: 'नवीन नोंदणी / ADD SHOP'),
               Tab(text: 'व्यवस्थापन / MANAGE'),
               Tab(text: 'नाणी क्लेम लॉग / COIN CLAIMS'),
               Tab(text: 'बदल इतिहास / AUDIT LOGS'),
+              Tab(text: 'प्रदर्शन इतिहास / FEATURED CYCLE'),
             ],
           ),
         ),
@@ -344,6 +350,7 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
             _buildManageShopsTab(),
             _buildCoinClaimsTab(),
             _buildAuditLogsTab(),
+            _buildFeaturedHistoryTab(),
           ],
         ),
       ),
@@ -1365,6 +1372,122 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
                         ),
                       ),
                     ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _fetchFeaturedHistory() async {
+    setState(() => _featuredHistoryLoading = true);
+    try {
+      final history = await _api.getFeaturedHistory();
+      setState(() {
+        _featuredHistory = history;
+        _featuredHistoryLoading = false;
+      });
+    } catch (_) {
+      setState(() => _featuredHistoryLoading = false);
+    }
+  }
+
+  Widget _buildFeaturedHistoryTab() {
+    if (_featuredHistoryLoading) {
+      return const Center(child: CircularProgressIndicator(color: Color(0xFF1B5E20)));
+    }
+
+    if (_featuredHistory.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.history, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text('कोणताही प्रदर्शन इतिहास नाही \nNo display history found.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _fetchFeaturedHistory,
+      color: const Color(0xFF1B5E20),
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _featuredHistory.length,
+        itemBuilder: (context, index) {
+          final item = _featuredHistory[index];
+          final String shopName = item['shop_name'] ?? 'Unknown Shop';
+          final String ownerName = item['owner_name'] ?? '';
+          final String city = item['city'] ?? '';
+          final bool isNew = item['is_new_arrival'] == true;
+          
+          final String dateStr = item['featured_date'] != null 
+              ? DateTime.parse(item['featured_date'].toString()).toLocal().toString().split(' ').first 
+              : '';
+
+          return Card(
+            elevation: 1,
+            margin: const EdgeInsets.only(bottom: 12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 24,
+                    backgroundColor: isNew ? Colors.orange.shade50 : Colors.green.shade50,
+                    child: Icon(
+                      isNew ? Icons.local_fire_department : Icons.storefront,
+                      color: isNew ? Colors.orange.shade800 : Colors.green.shade800,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          shopName,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'मालक: $ownerName | शहर: $city',
+                          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Text(
+                              'तारीख: $dateStr',
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black87),
+                            ),
+                            const SizedBox(width: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: isNew ? Colors.orange.shade50 : Colors.green.shade50,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                isNew ? 'नवीन (New Arrival)' : 'चक्र (Cycle Rotation)',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: isNew ? Colors.orange.shade800 : Colors.green.shade800,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),

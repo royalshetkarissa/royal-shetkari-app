@@ -270,3 +270,22 @@ exports.getAuditLogs = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.getFeaturedShop = async (req, res, next) => {
+  try {
+    const shop = await shopService.getFeaturedShop();
+    res.json({ success: true, shop });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.getFeaturedHistory = async (req, res, next) => {
+  try {
+    const history = await shopService.getFeaturedHistory();
+    res.json({ success: true, history });
+  } catch (err) {
+    next(err);
+  }
+};
+

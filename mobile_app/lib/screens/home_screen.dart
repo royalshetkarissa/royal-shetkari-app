@@ -21,6 +21,8 @@ import 'dart:async';
 import '../models/post_model.dart';
 import 'post_detail_screen.dart';
 import 'package:intl/intl.dart';
+import '../models/shop_model.dart';
+import 'shop_details_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -157,6 +159,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // Dynamic Dashboard and Slider variables
   List<PostModel> _recentAnimalPosts = [];
   List<Map<String, dynamic>> _shops = [];
+  Map<String, dynamic>? _featuredShop;
   int _activeShopIndex = 0;
   PageController? _shopPageController;
   Timer? _shopSliderTimer;
@@ -430,6 +433,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       } catch (shopErr) {
         debugPrint('Error fetching dynamic shops: $shopErr');
         _shops = [];
+      }
+
+      try {
+        _featuredShop = await _api.getFeaturedShop();
+      } catch (fErr) {
+        debugPrint('Error fetching featured shop: $fErr');
+        _featuredShop = null;
       }
 
       _updateActiveDashboardCardSession();
@@ -977,6 +987,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
+                    _buildFeaturedShopMarquee(),
                     if (_dailyTasks.isNotEmpty) ...[
                       Text(context.translate('tasks_today'),
                           style: const TextStyle(
@@ -2037,6 +2048,138 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Widget _buildFeaturedShopMarquee() {
+    final hasFeatured = _featuredShop != null;
+    final isNewArrival = hasFeatured && (_featuredShop!['is_new_arrival'] == true);
+    
+    final gradient = hasFeatured
+        ? const LinearGradient(
+            colors: [Color(0xFF004D40), Color(0xFF00796B)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          )
+        : const LinearGradient(
+            colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          );
+
+    final title = hasFeatured
+        ? (isNewArrival ? "🔥 नवीन दुकान (New Shop): " : "🛍️ आजचे विशेष दुकान (Featured Shop): ")
+        : "🌱 सेंद्रिय शेती प्रोत्साहन (Organic Farming): ";
+
+    final marqueeText = hasFeatured
+        ? "${_featuredShop!['shop_name']} - ${_featuredShop!['city']} | 💰 ${_featuredShop!['discount_percentage']}% सवलत! 🪙 नाणी किंमत: ${_featuredShop!['redeem_coin_cost']} नाणी. पत्ता: ${_featuredShop!['address']} | संपर्क: ${_featuredShop!['contact_mobile']} । "
+        : "सेंद्रिय शेती संवर्धनासाठी सेंद्रिय खतांचा वापर करा व ५% सवलत मिळवा! रासायनिक खते टाळा, माती वाचवा! ";
+
+    return GestureDetector(
+      onTap: () {
+        if (hasFeatured) {
+          final model = ShopModel.fromJson(_featuredShop!);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ShopDetailsScreen(shop: model),
+            ),
+          );
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const OrganicTipsScreen(),
+            ),
+          );
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 20),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          gradient: gradient,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: (hasFeatured ? Colors.teal : Colors.green).withOpacity(0.25),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          border: Border.all(
+            color: Colors.white.withOpacity(0.15),
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: isNewArrival
+                    ? const Color(0xFFD84315)
+                    : (hasFeatured ? const Color(0xFF00897B) : const Color(0xFF43A047)),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.15),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  )
+                ]
+              ),
+              child: Text(
+                isNewArrival
+                    ? "नवीन (New)"
+                    : (hasFeatured ? "वैशिष्ट्यीकृत" : "सेंद्रिय"),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.amberAccent,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  SizedBox(
+                    height: 20,
+                    child: MarqueeText(
+                      text: marqueeText,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      speed: 60.0,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(
+              Icons.chevron_right,
+              color: Colors.white70,
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildTopMenuButton(
       {required IconData icon,
       required String label,
@@ -2070,6 +2213,76 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class MarqueeText extends StatefulWidget {
+  final String text;
+  final TextStyle style;
+  final double speed;
+
+  const MarqueeText({
+    Key? key,
+    required this.text,
+    required this.style,
+    this.speed = 50.0,
+  }) : super(key: key);
+
+  @override
+  State<MarqueeText> createState() => _MarqueeTextState();
+}
+
+class _MarqueeTextState extends State<MarqueeText> {
+  late ScrollController _scrollController;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startScrolling();
+    });
+  }
+
+  void _startScrolling() {
+    _timer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
+      if (!mounted) return;
+      if (_scrollController.hasClients) {
+        double maxScroll = _scrollController.position.maxScrollExtent;
+        double currentScroll = _scrollController.position.pixels;
+        if (maxScroll <= 0) return;
+        if (currentScroll >= maxScroll) {
+          _scrollController.jumpTo(0.0);
+        } else {
+          _scrollController.jumpTo(currentScroll + (widget.speed * 0.05));
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      controller: _scrollController,
+      scrollDirection: Axis.horizontal,
+      physics: const NeverScrollableScrollPhysics(),
+      child: Row(
+        children: [
+          Text(widget.text, style: widget.style),
+          SizedBox(width: MediaQuery.of(context).size.width * 0.5),
+          Text(widget.text, style: widget.style),
+          SizedBox(width: MediaQuery.of(context).size.width * 0.5),
+        ],
       ),
     );
   }

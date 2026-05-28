@@ -6,10 +6,12 @@ const upload = require('../../middleware/upload');
 
 // Public/Farmer Market Routes
 router.get('/nearby', shopController.getNearbyShops);
+router.get('/featured', shopController.getFeaturedShop);
 router.post('/:id/click', verifyToken, shopController.trackClick);
 router.post('/:id/redeem', verifyToken, shopController.redeemShopCoins);
 
 // Admin Routes
+router.get('/admin/featured-history', verifyToken, isAdmin, shopController.getFeaturedHistory);
 router.post(
   '/admin/add',
   verifyToken,

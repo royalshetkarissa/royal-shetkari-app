@@ -360,6 +360,23 @@ class ApiService {
     return List<Map<String, dynamic>>.from(data['logs']);
   }
 
+  Future<Map<String, dynamic>?> getFeaturedShop() async {
+    try {
+      final response = await _dio.get('/shops/featured');
+      final data = _handleResponse(response);
+      if (data['shop'] == null) return null;
+      return Map<String, dynamic>.from(data['shop']);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getFeaturedHistory() async {
+    final response = await _dio.get('/shops/admin/featured-history');
+    final data = _handleResponse(response);
+    return List<Map<String, dynamic>>.from(data['history']);
+  }
+
   Future<void> activateShop(int id) async {
     await _dio.post('/shops/admin/$id/activate');
   }
