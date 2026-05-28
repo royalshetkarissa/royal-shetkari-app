@@ -22,6 +22,7 @@ class CommunityScreen extends StatefulWidget {
 class _CommunityScreenState extends State<CommunityScreen> {
   final ApiService _api = ApiService();
   final Set<int> _likedPosts = {};
+  final Set<int> _savedPostsSet = {};
   final Map<int, int> _localLikesCount = {};
 
   String _selectedCategory = 'all';
@@ -49,6 +50,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
   Future<void> _loadPosts() async {
     final postProvider = Provider.of<PostProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
     await postProvider.fetchPosts(
       category: _selectedCategory,
       animalType: _selectedCategory == 'animals' ? _animalType : null,
@@ -60,6 +63,22 @@ class _CommunityScreenState extends State<CommunityScreen> {
       dateFilter: _dateFilter,
       hasImages: _hasImagesOnly,
     );
+
+    if (authProvider.isAuthenticated) {
+      try {
+        final saved = await _api.getSavedPosts();
+        setState(() {
+          _savedPostsSet.clear();
+          for (var p in saved) {
+            if (p['id'] != null) {
+              _savedPostsSet.add(p['id']);
+            }
+          }
+        });
+      } catch (e) {
+        debugPrint('Error loading saved posts: $e');
+      }
+    }
   }
 
   void _showFilterBottomSheet() {
@@ -607,6 +626,60 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
   }
 
+  Future<void> _toggleSave(PostModel post) async {
+    final postId = post.id;
+    final isCurrentlySaved = _savedPostsSet.contains(postId);
+
+    setState(() {
+      if (isCurrentlySaved) {
+        _savedPostsSet.remove(postId);
+      } else {
+        _savedPostsSet.add(postId);
+      }
+    });
+
+    try {
+      await _api.savePost(postId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isCurrentlySaved 
+                ? 'Post removed from saved list' 
+                : 'Post saved successfully!'
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          if (isCurrentlySaved) {
+            _savedPostsSet.add(postId);
+          } else {
+            _savedPostsSet.remove(postId);
+          }
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.translate('failed_add_comment'))),
+        );
+      }
+    }
+  }
+
+  Widget _buildSaveButton(PostModel post) {
+    final isSaved = _savedPostsSet.contains(post.id);
+
+    return IconButton(
+      icon: Icon(
+        isSaved ? Icons.bookmark : Icons.bookmark_border,
+        color: isSaved ? const Color(0xFF2E7D32) : Colors.black87,
+      ),
+      onPressed: () => _toggleSave(post),
+    );
+  }
+
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -695,10 +768,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (c) => PostDetailScreen(post: post)))
                   ),
                   const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.bookmark_border), 
-                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (c) => PostDetailScreen(post: post)))
-                  ),
+                  _buildSaveButton(post),
                 ],
               ),
             ),

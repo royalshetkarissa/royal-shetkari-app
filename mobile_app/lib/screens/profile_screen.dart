@@ -120,10 +120,15 @@ class _ProfileScreenState extends State<ProfileScreen>
                 0.4,
                 1.0
               ])))),
-          CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              _buildAppBar(),
+          RefreshIndicator(
+            onRefresh: _fetchSocialData,
+            color: const Color(0xFF2E7D32),
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
+              ),
+              slivers: [
+                _buildAppBar(),
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
@@ -186,9 +191,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ),
                 ),
               ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -372,15 +377,15 @@ class _ProfileScreenState extends State<ProfileScreen>
                   decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
-                      image: (post.images != null && post.images!.isNotEmpty)
+                      image: post.images.isNotEmpty
                           ? DecorationImage(
                               image: NetworkImage(
-                                  _api.getImageUrl(post.images!.first)),
+                                  _api.getImageUrl(post.images.first)),
                               fit: BoxFit.cover)
                           : null),
                   alignment: Alignment.bottomLeft,
                   padding: const EdgeInsets.all(8),
-                  child: Text(post.title ?? '',
+                  child: Text(post.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
