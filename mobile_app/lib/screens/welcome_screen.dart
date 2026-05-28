@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../core/providers/auth_provider.dart';
 import '../widgets/animated_button.dart';
+import '../widgets/language_selector_widget.dart';
+import '../localization/app_localizations.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -117,14 +119,15 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                   },
                   child: Column(
                     children: [
-                      const Text(
-                        'Welcome to Royal Shetkari App',
-                        style: TextStyle(
+                      Text(
+                        context.translate('welcome'),
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF1B5E20),
                           letterSpacing: 0.5,
                         ),
+                        textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8),
                       const Text(
@@ -134,17 +137,19 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                           color: Colors.black54,
                         ),
                       ),
-                      const SizedBox(height: 48),
+                      const SizedBox(height: 32),
                       
                       // NEXT Button
                       AnimatedButton(
-                        text: 'NEXT',
+                        text: context.translate('next').toUpperCase(),
                         color: const Color(0xFFFF9800),
                         onPressed: () {
                           HapticFeedback.lightImpact();
                           Navigator.pushNamed(context, '/login');
                         },
                       ),
+                      const SizedBox(height: 24),
+                      const LanguageSelectorWidget(),
                     ],
                   ),
                 ),
