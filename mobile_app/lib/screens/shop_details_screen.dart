@@ -577,7 +577,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
           ),
           const Divider(height: 24),
           Row(
-            mainAxisAlignment: MainAxisAlignment.between,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
                 children: [
