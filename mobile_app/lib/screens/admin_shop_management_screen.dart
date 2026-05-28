@@ -28,6 +28,8 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
   final _servicesController = TextEditingController();
   final _pincodeController = TextEditingController();
   final _cityController = TextEditingController();
+  final _coinCostController = TextEditingController(text: '50');
+  final _discountController = TextEditingController(text: '5');
   
   XFile? _profilePhoto;
   List<XFile> _shopImages = [];
@@ -61,11 +63,15 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
   bool _claimsLoading = false;
   final _claimsSearchController = TextEditingController();
 
+  List<Map<String, dynamic>> _auditLogs = [];
+  bool _auditLogsLoading = false;
+
   @override
   void initState() {
     super.initState();
     _fetchShops();
     _fetchClaims();
+    _fetchAuditLogs();
   }
 
   @override
@@ -79,6 +85,8 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
     _pincodeController.dispose();
     _cityController.dispose();
     _claimsSearchController.dispose();
+    _coinCostController.dispose();
+    _discountController.dispose();
     super.dispose();
   }
 
@@ -180,6 +188,8 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
         'longitude': 72.8777,
         'categories': selectedCats.join(','),
         'profile_photo': profilePhotoMultipart,
+        'redeem_coin_cost': _coinCostController.text.trim(),
+        'discount_percentage': _discountController.text.trim(),
       });
 
       for (int i = 0; i < _shopImages.length; i++) {
@@ -213,6 +223,8 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
     _servicesController.clear();
     _pincodeController.clear();
     _cityController.clear();
+    _coinCostController.text = '50';
+    _discountController.text = '5';
     setState(() {
       _profilePhoto = null;
       _shopImages = [];
@@ -309,7 +321,7 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         appBar: RoyalAppBar(
           title: 'शेतकरी मार्केट व्यवस्थापन / Admin Shops',
@@ -322,6 +334,7 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
               Tab(text: 'नवीन नोंदणी / ADD SHOP'),
               Tab(text: 'व्यवस्थापन / MANAGE'),
               Tab(text: 'नाणी क्लेम लॉग / COIN CLAIMS'),
+              Tab(text: 'बदल इतिहास / AUDIT LOGS'),
             ],
           ),
         ),
@@ -330,6 +343,7 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
             _buildAddShopTab(),
             _buildManageShopsTab(),
             _buildCoinClaimsTab(),
+            _buildAuditLogsTab(),
           ],
         ),
       ),
@@ -470,6 +484,40 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
               validator: (v) => v == null || v.isEmpty ? 'कृपया सेवांचा तपशील टाका' : null,
               maxLines: 3,
               decoration: _buildInputDecoration('उदा. सर्व प्रकारचे खते, औषधे, अवजारे व हार्डवेअर साहित्य वाजवी दरात उपलब्ध.'),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildLabel('नाणी आवश्यकता / Redeem Coin Cost *'),
+                      TextFormField(
+                        controller: _coinCostController,
+                        keyboardType: TextInputType.number,
+                        validator: (v) => v == null || v.isEmpty ? 'आवश्यक' : null,
+                        decoration: _buildInputDecoration('उदा. 50'),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildLabel('सवलत टक्केवारी / Discount % *'),
+                      TextFormField(
+                        controller: _discountController,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        validator: (v) => v == null || v.isEmpty ? 'आवश्यक' : null,
+                        decoration: _buildInputDecoration('उदा. 5'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 24),
             _buildLabel('वर्ग / Shop Categories *'),
@@ -644,6 +692,12 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
                         ),
                       );
                     },
+                  ),
+                  // ✏️ Edit Button
+                  IconButton(
+                    icon: const Icon(Icons.edit, color: Color(0xFF1B5E20)),
+                    tooltip: 'Edit details & coins',
+                    onPressed: () => _showEditShopDialog(shop),
                   ),
                   if (!isActive)
                     IconButton(
@@ -896,6 +950,425 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
                   ),
           ),
         ],
+      ),
+    );
+  void _showEditShopDialog(ShopModel shop) {
+    final editFormKey = GlobalKey<FormState>();
+    final nameEdit = TextEditingController(text: shop.name);
+    final ownerEdit = TextEditingController(text: shop.ownerName ?? '');
+    final addressEdit = TextEditingController(text: shop.address);
+    final mobileEdit = TextEditingController(text: shop.contactMobile);
+    final whatsappEdit = TextEditingController(text: shop.whatsappNumber ?? '');
+    final servicesEdit = TextEditingController(text: shop.services ?? '');
+    final pincodeEdit = TextEditingController(text: shop.pincode ?? '');
+    final cityEdit = TextEditingController(text: shop.city ?? '');
+    final coinCostEdit = TextEditingController(text: (shop.redeemCoinCost ?? 50).toString());
+    final discountEdit = TextEditingController(text: (shop.discountPercentage ?? 5.0).toString());
+    String currentStatus = shop.status;
+
+    final Map<String, bool> editSelectedCats = Map.fromEntries(
+      _categories.keys.map((k) => MapEntry(k, shop.categories.contains(k)))
+    );
+
+    XFile? editProfilePhoto;
+    List<XFile> editShopImages = [];
+    bool editLoading = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            Future<void> pickEditProfilePhoto() async {
+              final picker = ImagePicker();
+              final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+              if (picked != null) {
+                setDialogState(() => editProfilePhoto = picked);
+              }
+            }
+
+            Future<void> pickEditShopImages() async {
+              final picker = ImagePicker();
+              final picked = await picker.pickMultiImage(imageQuality: 70);
+              if (picked != null) {
+                setDialogState(() => editShopImages = picked);
+              }
+            }
+
+            Future<void> submitEdit() async {
+              if (!editFormKey.currentState!.validate()) return;
+
+              final selectedCats = editSelectedCats.entries
+                  .where((e) => e.value)
+                  .map((e) => e.key)
+                  .toList();
+
+              if (selectedCats.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select at least one shop category'), backgroundColor: Colors.red));
+                return;
+              }
+
+              setDialogState(() => editLoading = true);
+
+              try {
+                MultipartFile? profilePhotoMultipart;
+                if (editProfilePhoto != null) {
+                  final bytes = await editProfilePhoto!.readAsBytes();
+                  profilePhotoMultipart = MultipartFile.fromBytes(bytes, filename: editProfilePhoto!.name);
+                }
+
+                FormData formData = FormData.fromMap({
+                  'name': nameEdit.text.trim(),
+                  'owner_name': ownerEdit.text.trim(),
+                  'address': addressEdit.text.trim(),
+                  'contact_mobile': mobileEdit.text.trim(),
+                  'whatsapp_number': whatsappEdit.text.isNotEmpty ? whatsappEdit.text.trim() : mobileEdit.text.trim(),
+                  'services': servicesEdit.text.trim(),
+                  'pincode': pincodeEdit.text.trim(),
+                  'city': cityEdit.text.trim(),
+                  'categories': selectedCats.join(','),
+                  if (profilePhotoMultipart != null) 'profile_photo': profilePhotoMultipart,
+                  'redeem_coin_cost': coinCostEdit.text.trim(),
+                  'discount_percentage': discountEdit.text.trim(),
+                  'status': currentStatus,
+                });
+
+                for (int i = 0; i < editShopImages.length; i++) {
+                  final imgBytes = await editShopImages[i].readAsBytes();
+                  formData.files.add(MapEntry(
+                    'images',
+                    MultipartFile.fromBytes(imgBytes, filename: editShopImages[i].name),
+                  ));
+                }
+
+                await _api.editShopApi(shop.id, formData);
+                Navigator.pop(ctx);
+                _fetchShops();
+                _fetchAuditLogs();
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Shop Updated Successfully!'), backgroundColor: Colors.green));
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update shop: $e'), backgroundColor: Colors.red));
+              } finally {
+                setDialogState(() => editLoading = false);
+              }
+            }
+
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              titlePadding: const EdgeInsets.all(0),
+              title: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF1B5E20),
+                  borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('दुकान माहिती दुरुस्ती / EDIT SHOP DETAILS', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.pop(ctx),
+                    )
+                  ],
+                ),
+              ),
+              content: SizedBox(
+                width: MediaQuery.of(context).size.width * 0.9,
+                height: MediaQuery.of(context).size.height * 0.75,
+                child: editLoading
+                    ? const Center(child: CircularProgressIndicator(color: Color(0xFF1B5E20)))
+                    : Form(
+                        key: editFormKey,
+                        child: SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 12),
+                              _buildLabel('दुकानाचे नाव / Shop Name *'),
+                              TextFormField(
+                                controller: nameEdit,
+                                validator: (v) => v == null || v.isEmpty ? 'दुकानाचे नाव आवश्यक आहे' : null,
+                                decoration: _buildInputDecoration('उदा. पाटील फर्टिलायझर'),
+                              ),
+                              const SizedBox(height: 12),
+                              _buildLabel('मालकाचे नाव / Owner Name *'),
+                              TextFormField(
+                                controller: ownerEdit,
+                                validator: (v) => v == null || v.isEmpty ? 'मालकाचे नाव आवश्यक आहे' : null,
+                                decoration: _buildInputDecoration('उदा. रामचंद्र पाटील'),
+                              ),
+                              const SizedBox(height: 12),
+                              _buildLabel('संपूर्ण पत्ता / Full Address *'),
+                              TextFormField(
+                                controller: addressEdit,
+                                maxLines: 2,
+                                validator: (v) => v == null || v.isEmpty ? 'पत्ता आवश्यक आहे' : null,
+                                decoration: _buildInputDecoration('उदा. शॉप नं ५, मुख्य रस्ता, सांगली'),
+                              ),
+                              const SizedBox(height: 12),
+                              _buildLabel('मोबाईल नंबर / Mobile Number *'),
+                              TextFormField(
+                                controller: mobileEdit,
+                                keyboardType: TextInputType.phone,
+                                validator: (v) => v == null || v.length != 10 ? '१० अंकी मोबाईल नंबर आवश्यक' : null,
+                                decoration: _buildInputDecoration('उदा. 9876543210'),
+                              ),
+                              const SizedBox(height: 12),
+                              _buildLabel('व्हॉट्सॲप नंबर / WhatsApp Number (पर्यायी)'),
+                              TextFormField(
+                                controller: whatsappEdit,
+                                keyboardType: TextInputType.phone,
+                                decoration: _buildInputDecoration('उदा. 9876543210 (रिकामे सोडल्यास मोबाईल नंबर वापरला जाईल)'),
+                              ),
+                              const SizedBox(height: 12),
+                              _buildLabel('पिनकोड / Pincode *'),
+                              TextFormField(
+                                controller: pincodeEdit,
+                                keyboardType: TextInputType.number,
+                                validator: (v) => v == null || v.length != 6 ? '६ अंकी पिनकोड आवश्यक' : null,
+                                decoration: _buildInputDecoration('उदा. 416416'),
+                              ),
+                              const SizedBox(height: 12),
+                              _buildLabel('शहर / तालुका / City *'),
+                              TextFormField(
+                                controller: cityEdit,
+                                validator: (v) => v == null || v.isEmpty ? 'शहर किंवा तालुका आवश्यक' : null,
+                                decoration: _buildInputDecoration('उदा. सांगली'),
+                              ),
+                              const SizedBox(height: 12),
+                              _buildLabel('नाणी आवश्यकता / Redeem Coin Cost *'),
+                              TextFormField(
+                                controller: coinCostEdit,
+                                keyboardType: TextInputType.number,
+                                validator: (v) => v == null || v.isEmpty ? 'आवश्यक' : null,
+                                decoration: _buildInputDecoration('उदा. 50'),
+                              ),
+                              const SizedBox(height: 12),
+                              _buildLabel('सवलत टक्केवारी / Discount % *'),
+                              TextFormField(
+                                controller: discountEdit,
+                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                validator: (v) => v == null || v.isEmpty ? 'आवश्यक' : null,
+                                decoration: _buildInputDecoration('उदा. 5'),
+                              ),
+                              const SizedBox(height: 12),
+                              _buildLabel('स्थिती / Status *'),
+                              DropdownButtonFormField<String>(
+                                value: currentStatus,
+                                items: const [
+                                  DropdownMenuItem(value: 'active', child: Text('Active (सक्रिय)')),
+                                  DropdownMenuItem(value: 'inactive', child: Text('Inactive (निष्क्रिय)')),
+                                ],
+                                onChanged: (v) {
+                                  if (v != null) {
+                                    setDialogState(() => currentStatus = v);
+                                  }
+                                },
+                                decoration: _buildInputDecoration('स्थिती निवडा'),
+                              ),
+                              const SizedBox(height: 16),
+                              _buildLabel('दुकानाची वर्गवारी / Categories (किमान एक निवडा)'),
+                              ..._categories.entries.map((entry) {
+                                return CheckboxListTile(
+                                  title: Text(entry.value['mr'] ?? entry.key),
+                                  subtitle: Text(entry.value['en'] ?? ''),
+                                  value: editSelectedCats[entry.key],
+                                  activeColor: const Color(0xFF1B5E20),
+                                  onChanged: (val) {
+                                    setDialogState(() {
+                                      editSelectedCats[entry.key] = val ?? false;
+                                    });
+                                  },
+                                );
+                              }).toList(),
+                              const SizedBox(height: 16),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: OutlinedButton.icon(
+                                      onPressed: pickEditProfilePhoto,
+                                      icon: const Icon(Icons.add_a_photo_outlined),
+                                      label: Text(editProfilePhoto != null ? 'बदलेल (Changed)' : 'प्रोफाइल फोटो / PROFILE PHOTO'),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: OutlinedButton.icon(
+                                      onPressed: pickEditShopImages,
+                                      icon: const Icon(Icons.add_photo_alternate_outlined),
+                                      label: Text(editShopImages.isNotEmpty ? '${editShopImages.length} निवडले' : 'गॅलरी फोटो / GALLERY'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 24),
+                            ],
+                          ),
+                        ),
+                      ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('रद्द करा / CANCEL', style: TextStyle(color: Colors.grey)),
+                ),
+                ElevatedButton(
+                  onPressed: editLoading ? null : submitEdit,
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B5E20)),
+                  child: const Text('जतन करा / SAVE CHANGES', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _fetchAuditLogs() async {
+    setState(() => _auditLogsLoading = true);
+    try {
+      final logs = await _api.getShopAuditLogs();
+      setState(() {
+        _auditLogs = logs;
+        _auditLogsLoading = false;
+      });
+    } catch (_) {
+      setState(() => _auditLogsLoading = false);
+    }
+  }
+
+  Widget _buildAuditLogsTab() {
+    if (_auditLogsLoading) {
+      return const Center(child: CircularProgressIndicator(color: Color(0xFF1B5E20)));
+    }
+
+    if (_auditLogs.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.history_toggle_off, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text('कोणताही बदल इतिहास नाही \nNo audit logs found.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _fetchAuditLogs,
+      color: const Color(0xFF1B5E20),
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _auditLogs.length,
+        itemBuilder: (context, index) {
+          final log = _auditLogs[index];
+          final String shopName = log['shop_name'] ?? 'Unknown Shop';
+          final String changerName = log['changer_name'] ?? 'Admin';
+          final String fieldName = log['field_name'] ?? '';
+          final String? oldValue = log['old_value'];
+          final String? newValue = log['new_value'];
+          final String createdAt = log['created_at'] != null 
+              ? DateTime.parse(log['created_at'].toString()).toLocal().toString().split('.').first 
+              : '';
+
+          IconData logIcon = Icons.edit_note;
+          Color iconColor = Colors.blue;
+          String MarathiDescription = '';
+
+          if (fieldName == 'registration') {
+            logIcon = Icons.app_registration;
+            iconColor = Colors.green;
+            MarathiDescription = 'नवीन दुकानाची नोंदणी करण्यात आली.';
+          } else {
+            MarathiDescription = 'फिल्ड "$fieldName" बदलले: $oldValue ➔ $newValue';
+          }
+
+          return Card(
+            elevation: 1,
+            margin: const EdgeInsets.only(bottom: 12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 18,
+                        backgroundColor: iconColor.withOpacity(0.1),
+                        child: Icon(logIcon, color: iconColor, size: 18),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              shopName,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Colors.black87),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'बदल कर्ता (Changer): $changerName',
+                              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 20),
+                  Text(
+                    MarathiDescription,
+                    style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: Colors.black87),
+                  ),
+                  if (fieldName != 'registration') ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Text('Old: ', style: TextStyle(fontSize: 11, color: Colors.grey[600], fontWeight: FontWeight.bold)),
+                        Expanded(child: Text(oldValue ?? 'None', style: const TextStyle(fontSize: 11, color: Colors.red))),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Text('New: ', style: TextStyle(fontSize: 11, color: Colors.grey[600], fontWeight: FontWeight.bold)),
+                        Expanded(child: Text(newValue ?? 'None', style: const TextStyle(fontSize: 11, color: Colors.green))),
+                      ],
+                    ),
+                  ],
+                  const Divider(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'वेळ: $createdAt',
+                        style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          fieldName.toUpperCase(),
+                          style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.blue.shade800),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }

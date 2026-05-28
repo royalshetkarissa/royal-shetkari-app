@@ -350,6 +350,16 @@ class ApiService {
     await _dio.post('/shops/admin/add', data: formData);
   }
 
+  Future<void> editShopApi(int id, FormData formData) async {
+    await _dio.put('/shops/admin/edit/$id', data: formData);
+  }
+
+  Future<List<Map<String, dynamic>>> getShopAuditLogs() async {
+    final response = await _dio.get('/shops/admin/audit-logs');
+    final data = _handleResponse(response);
+    return List<Map<String, dynamic>>.from(data['logs']);
+  }
+
   Future<void> activateShop(int id) async {
     await _dio.post('/shops/admin/$id/activate');
   }

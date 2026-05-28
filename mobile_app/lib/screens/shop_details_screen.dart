@@ -500,6 +500,10 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
   }
 
   Widget _buildCoinRedemptionCard(BuildContext context, bool isLoggedIn, int userCoins, AuthProvider authProvider) {
+    final double discount = widget.shop.discountPercentage ?? 5.0;
+    final int coinCost = widget.shop.redeemCoinCost ?? 50;
+    final String formattedDiscount = discount % 1 == 0 ? discount.toInt().toString() : discount.toStringAsFixed(1);
+
     if (!isLoggedIn) {
       return Container(
         width: double.infinity,
@@ -510,13 +514,13 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
           border: Border.all(color: Colors.grey.shade300),
         ),
         child: Row(
-          children: const [
-            Icon(Icons.info_outline, color: Colors.grey),
-            SizedBox(width: 12),
+          children: [
+            const Icon(Icons.info_outline, color: Colors.grey),
+            const SizedBox(width: 12),
             Expanded(
               child: Text(
-                'Login to claim 5% coin discount offers!',
-                style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w600),
+                'Login to claim $formattedDiscount% coin discount offers!',
+                style: const TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -524,7 +528,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
       );
     }
 
-    final bool canRedeem = userCoins >= 50;
+    final bool canRedeem = userCoins >= coinCost;
 
     return Container(
       width: double.infinity,
@@ -560,15 +564,15 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
-                      '5% Coins Discount Offer',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
+                      '$formattedDiscount% Coins Discount Offer',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
                     ),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text(
-                      'Redeem 50 coins to claim 5% discount at this shop',
-                      style: TextStyle(fontSize: 11, color: Colors.grey),
+                      'Redeem $coinCost coins to claim $formattedDiscount% discount at this shop',
+                      style: const TextStyle(fontSize: 11, color: Colors.grey),
                     ),
                   ],
                 ),
@@ -606,7 +610,7 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       ),
                       child: Text(
-                        canRedeem ? 'REDEEM' : 'NEED ${50 - userCoins} MORE',
+                        canRedeem ? 'REDEEM' : 'NEED ${coinCost - userCoins} MORE',
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                       ),
                     ),

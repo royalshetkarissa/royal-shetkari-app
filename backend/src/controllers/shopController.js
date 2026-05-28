@@ -15,6 +15,8 @@ exports.addShop = async (req, res, next) => {
       services,
       pincode,
       city,
+      redeem_coin_cost,
+      discount_percentage,
     } = req.body;
 
     let profilePhoto = null;
@@ -64,6 +66,8 @@ exports.addShop = async (req, res, next) => {
       services,
       pincode,
       city,
+      redeem_coin_cost,
+      discount_percentage,
     });
 
     await logActivity(req.userId, 'ADD_SHOP', 'shop', shop.id, { name });
@@ -156,6 +160,112 @@ exports.getAdminCoinClaims = async (req, res, next) => {
   try {
     const claims = await shopService.getAllCoinClaims();
     res.json({ success: true, claims });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.editShop = async (req, res, next) => {
+  try {
+    const shopId = parseInt(req.params.id);
+    const {
+      name,
+      address,
+      contact_mobile,
+      whatsapp_number,
+      categories,
+      latitude,
+      longitude,
+      owner_name,
+      services,
+      pincode,
+      city,
+      redeem_coin_cost,
+      discount_percentage,
+      status,
+    } = req.body;
+
+    let profilePhoto = null;
+    let images = [];
+
+    if (req.files) {
+      if (req.files['profile_photo']) {
+        profilePhoto = `/uploads/${req.files['profile_photo'][0].filename}`;
+      }
+      if (req.files['images']) {
+        images = req.files['images'].map((f) => `/uploads/${f.filename}`);
+      }
+    }
+
+    const updatedData = {
+      name,
+      address,
+      contact_mobile,
+      whatsapp_number,
+      latitude:
+        latitude !== undefined && !isNaN(parseFloat(latitude)) ? parseFloat(latitude) : undefined,
+      longitude:
+        longitude !== undefined && !isNaN(parseFloat(longitude))
+          ? parseFloat(longitude)
+          : undefined,
+      owner_name,
+      services,
+      pincode,
+      city,
+      redeem_coin_cost:
+        redeem_coin_cost !== undefined && !isNaN(parseInt(redeem_coin_cost))
+          ? parseInt(redeem_coin_cost)
+          : undefined,
+      discount_percentage:
+        discount_percentage !== undefined && !isNaN(parseFloat(discount_percentage))
+          ? parseFloat(discount_percentage)
+          : undefined,
+      status,
+    };
+
+    if (categories !== undefined) {
+      updatedData.categories = (() => {
+        if (!categories) return [];
+        if (typeof categories === 'string') {
+          const trimmed = categories.trim();
+          if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+            try {
+              return JSON.parse(trimmed);
+            } catch (e) {
+              return trimmed
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean);
+            }
+          }
+          return trimmed
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean);
+        }
+        return Array.isArray(categories) ? categories : [categories];
+      })();
+    }
+
+    if (profilePhoto) {
+      updatedData.profile_photo = profilePhoto;
+    }
+    if (images.length > 0) {
+      updatedData.images = images;
+    }
+
+    const shop = await shopService.updateShop(shopId, updatedData, req.userId);
+    await logActivity(req.userId, 'EDIT_SHOP', 'shop', shopId, { name: shop.name });
+    res.json({ success: true, shop });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.getAuditLogs = async (req, res, next) => {
+  try {
+    const logs = await shopService.getAuditLogs();
+    res.json({ success: true, logs });
   } catch (err) {
     next(err);
   }

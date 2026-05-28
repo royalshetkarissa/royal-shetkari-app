@@ -17,28 +17,205 @@ class ShopRepository {
       services,
       pincode,
       city,
+      redeem_coin_cost,
+      discount_percentage,
     } = data;
-    const result = await pool.query(
-      `INSERT INTO shops (name, profile_photo, address, contact_mobile, whatsapp_number, categories, images, latitude, longitude, owner_id, owner_name, services, pincode, city) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
-      [
-        name,
-        profile_photo,
-        address,
-        contact_mobile,
-        whatsapp_number,
-        JSON.stringify(categories),
-        JSON.stringify(images),
-        latitude,
-        longitude,
-        ownerId,
-        owner_name,
-        services,
-        pincode,
-        city,
-      ]
-    );
-    return result.rows[0];
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const result = await client.query(
+        `INSERT INTO shops (name, profile_photo, address, contact_mobile, whatsapp_number, categories, images, latitude, longitude, owner_id, owner_name, services, pincode, city, redeem_coin_cost, discount_percentage) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING *`,
+        [
+          name,
+          profile_photo,
+          address,
+          contact_mobile,
+          whatsapp_number,
+          JSON.stringify(categories),
+          JSON.stringify(images),
+          latitude,
+          longitude,
+          ownerId,
+          owner_name,
+          services,
+          pincode,
+          city,
+          redeem_coin_cost !== undefined ? parseInt(redeem_coin_cost) : 50,
+          discount_percentage !== undefined ? parseFloat(discount_percentage) : 5.0,
+        ]
+      );
+      const shop = result.rows[0];
+
+      // Insert audit log for registration
+      await client.query(
+        `INSERT INTO shop_audit_logs (shop_id, changed_by_user_id, field_name, old_value, new_value) 
+         VALUES ($1, $2, $3, $4, $5)`,
+        [shop.id, ownerId, 'registration', null, 'registered']
+      );
+
+      await client.query('COMMIT');
+      return shop;
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
+  async update(id, data, changedByUserId) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const oldResult = await client.query('SELECT * FROM shops WHERE id = $1', [id]);
+      if (oldResult.rows.length === 0) {
+        throw new Error('Shop not found');
+      }
+      const oldShop = oldResult.rows[0];
+
+      const updates = [];
+      const values = [];
+      let valIdx = 1;
+
+      const auditLogs = [];
+
+      const fieldsToCompare = [
+        { key: 'name', type: 'string' },
+        { key: 'owner_name', type: 'string' },
+        { key: 'address', type: 'string' },
+        { key: 'contact_mobile', type: 'string' },
+        { key: 'whatsapp_number', type: 'string' },
+        { key: 'services', type: 'string' },
+        { key: 'pincode', type: 'string' },
+        { key: 'city', type: 'string' },
+        { key: 'status', type: 'string' },
+        { key: 'redeem_coin_cost', type: 'integer' },
+        { key: 'discount_percentage', type: 'numeric' },
+        { key: 'latitude', type: 'numeric' },
+        { key: 'longitude', type: 'numeric' },
+      ];
+
+      for (const field of fieldsToCompare) {
+        const { key, type } = field;
+        if (data[key] !== undefined) {
+          let newVal = data[key];
+          let oldVal = oldShop[key];
+
+          if (type === 'integer') {
+            newVal = parseInt(newVal);
+            oldVal = oldVal ? parseInt(oldVal) : 0;
+          } else if (type === 'numeric') {
+            newVal = parseFloat(newVal);
+            oldVal = oldVal ? parseFloat(oldVal) : 0.0;
+          } else if (type === 'string') {
+            newVal = newVal ? newVal.toString().trim() : '';
+            oldVal = oldVal ? oldVal.toString().trim() : '';
+          }
+
+          if (newVal !== oldVal) {
+            updates.push(`${key} = $${valIdx}`);
+            values.push(newVal);
+            valIdx++;
+
+            auditLogs.push({
+              field_name: key,
+              old_value: oldShop[key] !== null ? oldShop[key].toString() : null,
+              new_value: newVal !== null ? newVal.toString() : null,
+            });
+          }
+        }
+      }
+
+      // Compare categories
+      if (data.categories !== undefined) {
+        const newCats = Array.isArray(data.categories) ? [...data.categories].sort() : [];
+        const oldCats = Array.isArray(oldShop.categories) ? [...oldShop.categories].sort() : [];
+        if (JSON.stringify(newCats) !== JSON.stringify(oldCats)) {
+          updates.push(`categories = $${valIdx}`);
+          values.push(JSON.stringify(newCats));
+          valIdx++;
+
+          auditLogs.push({
+            field_name: 'categories',
+            old_value: JSON.stringify(oldCats),
+            new_value: JSON.stringify(newCats),
+          });
+        }
+      }
+
+      // Compare profile_photo (only if a new one is uploaded/provided)
+      if (data.profile_photo) {
+        if (data.profile_photo !== oldShop.profile_photo) {
+          updates.push(`profile_photo = $${valIdx}`);
+          values.push(data.profile_photo);
+          valIdx++;
+
+          auditLogs.push({
+            field_name: 'profile_photo',
+            old_value: oldShop.profile_photo,
+            new_value: data.profile_photo,
+          });
+        }
+      }
+
+      // Compare images (only if new images are uploaded/provided)
+      if (data.images && data.images.length > 0) {
+        const newImgs = [...data.images].sort();
+        const oldImgs = Array.isArray(oldShop.images) ? [...oldShop.images].sort() : [];
+        if (JSON.stringify(newImgs) !== JSON.stringify(oldImgs)) {
+          updates.push(`images = $${valIdx}`);
+          values.push(JSON.stringify(newImgs));
+          valIdx++;
+
+          auditLogs.push({
+            field_name: 'images',
+            old_value: JSON.stringify(oldImgs),
+            new_value: JSON.stringify(newImgs),
+          });
+        }
+      }
+
+      if (updates.length > 0) {
+        values.push(id);
+        const query = `UPDATE shops SET ${updates.join(', ')}, updated_at = NOW() WHERE id = $${valIdx} RETURNING *`;
+        const updateRes = await client.query(query, values);
+
+        // Insert audit logs
+        for (const log of auditLogs) {
+          await client.query(
+            `INSERT INTO shop_audit_logs (shop_id, changed_by_user_id, field_name, old_value, new_value)
+              VALUES ($1, $2, $3, $4, $5)`,
+            [id, changedByUserId, log.field_name, log.old_value, log.new_value]
+          );
+        }
+
+        await client.query('COMMIT');
+        return updateRes.rows[0];
+      }
+
+      await client.query('COMMIT');
+      return oldShop;
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
+  async getAuditLogs() {
+    const result = await pool.query(`
+      SELECT al.id, al.shop_id, al.changed_by_user_id, al.field_name, al.old_value, al.new_value, al.created_at,
+             s.name as shop_name, u.full_name as changer_name, u.mobile as changer_mobile
+      FROM shop_audit_logs al
+      JOIN shops s ON al.shop_id = s.id
+      LEFT JOIN users u ON al.changed_by_user_id = u.id
+      ORDER BY al.created_at DESC
+    `);
+    return result.rows;
   }
 
   async findAll(filters) {
@@ -120,29 +297,44 @@ class ShopRepository {
     return result.rows;
   }
 
-  async redeemCoins(userId, shopId, coins = 50) {
+  async redeemCoins(userId, shopId) {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
 
-      // 1. Deduct coins from user
+      // 1. Get the shop's configured coins and discount
+      const shopRes = await client.query(
+        'SELECT redeem_coin_cost, discount_percentage FROM shops WHERE id = $1',
+        [shopId]
+      );
+      if (shopRes.rows.length === 0) {
+        throw new Error('Shop not found');
+      }
+      const coinCost =
+        shopRes.rows[0].redeem_coin_cost !== null ? parseInt(shopRes.rows[0].redeem_coin_cost) : 50;
+      const discount =
+        shopRes.rows[0].discount_percentage !== null
+          ? parseFloat(shopRes.rows[0].discount_percentage)
+          : 5.0;
+
+      // 2. Deduct coins from user
       const updateResult = await client.query(
         `UPDATE users SET coins = coins - $1 WHERE id = $2 RETURNING coins`,
-        [coins, userId]
+        [coinCost, userId]
       );
       if (updateResult.rows.length === 0) {
         throw new Error('User not found');
       }
       const newCoins = updateResult.rows[0].coins;
 
-      // 2. Generate claim code
-      const claimCode = `RS-5%-CLAIM-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      // 3. Generate claim code
+      const claimCode = `RS-${parseInt(discount)}%-CLAIM-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
-      // 3. Insert claim record
+      // 4. Insert claim record
       const claimResult = await client.query(
         `INSERT INTO shop_coin_claims (user_id, shop_id, coins_redeemed, discount_percentage, claim_code)
-         VALUES ($1, $2, $3, 5.0, $4) RETURNING *`,
-        [userId, shopId, coins, claimCode]
+         VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+        [userId, shopId, coinCost, discount, claimCode]
       );
 
       await client.query('COMMIT');

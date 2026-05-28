@@ -27,5 +27,16 @@ router.delete('/admin/:id', verifyToken, isAdmin, shopController.deleteShop);
 router.get('/admin/analytics', verifyToken, isAdmin, shopController.getAnalytics);
 router.get('/admin/shop-clicks/:shopId', verifyToken, isAdmin, shopController.getShopClicks);
 router.get('/admin/coin-claims', verifyToken, isAdmin, shopController.getAdminCoinClaims);
+router.get('/admin/audit-logs', verifyToken, isAdmin, shopController.getAuditLogs);
+router.put(
+  '/admin/edit/:id',
+  verifyToken,
+  isAdmin,
+  upload.fields([
+    { name: 'profile_photo', maxCount: 1 },
+    { name: 'images', maxCount: 10 },
+  ]),
+  shopController.editShop
+);
 
 module.exports = router;

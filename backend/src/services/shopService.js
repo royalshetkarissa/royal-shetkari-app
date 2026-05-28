@@ -45,12 +45,26 @@ class ShopService {
     return await shopRepository.getShopClicks(shopId);
   }
 
+  async updateShop(id, data, changedByUserId) {
+    const shop = await shopRepository.update(id, data, changedByUserId);
+    await cache.invalidatePattern('shops:list:*');
+    return shop;
+  }
+
+  async getAuditLogs() {
+    return await shopRepository.getAuditLogs();
+  }
+
   async redeemCoins(userId, shopId) {
+    const shop = await shopRepository.findById(shopId);
+    if (!shop) throw new Error('Shop not found');
+
+    const coinCost = shop.redeem_coin_cost !== null ? parseInt(shop.redeem_coin_cost) : 50;
     const userCoins = await shopRepository.getUserCoins(userId);
-    if (userCoins < 50) {
-      throw new Error('Insufficient coins. Minimum 50 coins required for redemption.');
+    if (userCoins < coinCost) {
+      throw new Error(`Insufficient coins. Minimum ${coinCost} coins required for redemption.`);
     }
-    return await shopRepository.redeemCoins(userId, shopId, 50);
+    return await shopRepository.redeemCoins(userId, shopId);
   }
 
   async getAllCoinClaims() {
