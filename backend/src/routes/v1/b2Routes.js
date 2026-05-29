@@ -27,6 +27,22 @@ const dangerousExtensions = [
 ];
 
 const fileFilter = (req, file, cb) => {
+  const ext = path.extname(file.originalname).toLowerCase();
+
+  // Fallback: if mimetype is generic or missing, infer from file extension
+  if ((file.mimetype === 'application/octet-stream' || !file.mimetype) && ext) {
+    const mimeMap = {
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.webp': 'image/webp',
+      '.pdf': 'application/pdf',
+    };
+    if (mimeMap[ext]) {
+      file.mimetype = mimeMap[ext];
+    }
+  }
+
   // 1. Verify MIME type
   if (!allowedMimeTypes.includes(file.mimetype)) {
     return cb(
@@ -39,7 +55,6 @@ const fileFilter = (req, file, cb) => {
   }
 
   // 2. Verify file extension to prevent bypasses/obfuscation
-  const ext = path.extname(file.originalname).toLowerCase();
   if (dangerousExtensions.includes(ext) || !ext) {
     return cb(new AppError('Dangerous or unsupported file extension rejected.', 400), false);
   }

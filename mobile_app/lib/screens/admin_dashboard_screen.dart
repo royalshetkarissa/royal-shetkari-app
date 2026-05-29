@@ -414,20 +414,43 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
       itemCount: _modLogs.length,
       itemBuilder: (context, i) {
         final log = _modLogs[i];
+        final String action = log['action_type'] ?? '';
+        
+        IconData iconData = Icons.history;
+        Color iconColor = Colors.orange;
+        
+        if (action.startsWith('DELETE_')) {
+          iconData = Icons.delete_forever;
+          iconColor = Colors.red;
+        } else if (action == 'ADD_SHOP') {
+          iconData = Icons.add_business;
+          iconColor = Colors.green;
+        } else if (action == 'UPDATE_SHOP') {
+          iconData = Icons.edit_note;
+          iconColor = Colors.blue;
+        } else if (action == 'UPDATE_USER_ACCESS') {
+          iconData = Icons.security;
+          iconColor = Colors.amber;
+        }
+
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
           child: Row(
             children: [
-              Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.delete_forever, color: Colors.red, size: 20)),
+              Container(
+                padding: const EdgeInsets.all(10), 
+                decoration: BoxDecoration(color: iconColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)), 
+                child: Icon(iconData, color: iconColor, size: 20)
+              ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(log['admin_name'], style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
-                    Text(log['action_type'], style: TextStyle(fontSize: 10, color: Colors.grey[500], fontWeight: FontWeight.bold)),
+                    Text(action, style: TextStyle(fontSize: 10, color: Colors.grey[500], fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),

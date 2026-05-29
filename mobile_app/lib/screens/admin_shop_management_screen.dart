@@ -1,13 +1,32 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:http_parser/http_parser.dart';
 import '../services/api_service.dart';
 import '../models/shop_model.dart';
 import '../widgets/royal_app_bar.dart';
 import 'admin_shop_detail_clicks_screen.dart';
+
+MediaType? _getMediaType(String filename) {
+  final ext = filename.split('.').last.toLowerCase();
+  switch (ext) {
+    case 'jpg':
+    case 'jpeg':
+      return MediaType('image', 'jpeg');
+    case 'png':
+      return MediaType('image', 'png');
+    case 'webp':
+      return MediaType('image', 'webp');
+    case 'pdf':
+      return MediaType('application', 'pdf');
+    default:
+      return null;
+  }
+}
 
 class AdminShopManagementScreen extends StatefulWidget {
   const AdminShopManagementScreen({super.key});
@@ -28,6 +47,8 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
   final _servicesController = TextEditingController();
   final _pincodeController = TextEditingController();
   final _cityController = TextEditingController();
+  final _coinsController = TextEditingController(text: '50');
+  final _discountController = TextEditingController(text: '5.0');
   
   XFile? _profilePhoto;
   List<XFile> _shopImages = [];
@@ -79,6 +100,8 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
     _pincodeController.dispose();
     _cityController.dispose();
     _claimsSearchController.dispose();
+    _coinsController.dispose();
+    _discountController.dispose();
     super.dispose();
   }
 
@@ -164,9 +187,11 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
       String getSafeFilename(String name) => name.contains('.') ? name : '$name.jpg';
 
       final profilePhotoBytes = await _profilePhoto!.readAsBytes();
+      final profilePhotoFname = getSafeFilename(_profilePhoto!.name);
       final profilePhotoMultipart = MultipartFile.fromBytes(
         profilePhotoBytes,
-        filename: getSafeFilename(_profilePhoto!.name),
+        filename: profilePhotoFname,
+        contentType: _getMediaType(profilePhotoFname),
       );
 
       FormData formData = FormData.fromMap({
@@ -180,17 +205,21 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
         'city': _cityController.text.trim(),
         'latitude': 19.0760,
         'longitude': 72.8777,
-        'categories': selectedCats.join(','),
+        'coins_required': int.tryParse(_coinsController.text.trim()) ?? 50,
+        'discount_percentage': double.tryParse(_discountController.text.trim()) ?? 5.0,
+        'categories': jsonEncode(selectedCats),
         'profile_photo': profilePhotoMultipart,
       });
 
       for (int i = 0; i < _shopImages.length; i++) {
         final imgBytes = await _shopImages[i].readAsBytes();
+        final imgFname = getSafeFilename(_shopImages[i].name);
         formData.files.add(MapEntry(
           'images',
           MultipartFile.fromBytes(
             imgBytes,
-            filename: getSafeFilename(_shopImages[i].name),
+            filename: imgFname,
+            contentType: _getMediaType(imgFname),
           ),
         ));
       }
@@ -215,6 +244,8 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
     _servicesController.clear();
     _pincodeController.clear();
     _cityController.clear();
+    _coinsController.text = '50';
+    _discountController.text = '5.0';
     setState(() {
       _profilePhoto = null;
       _shopImages = [];
@@ -466,6 +497,40 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
               ],
             ),
             const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildLabel('आवश्यक कॉईन्स / Coins Required *'),
+                      TextFormField(
+                        controller: _coinsController,
+                        keyboardType: TextInputType.number,
+                        validator: (v) => v == null || v.isEmpty || int.tryParse(v) == null ? 'संख्या आवश्यक' : null,
+                        decoration: _buildInputDecoration('उदा. 50'),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildLabel('सवलत टक्केवारी / Discount % *'),
+                      TextFormField(
+                        controller: _discountController,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        validator: (v) => v == null || v.isEmpty || double.tryParse(v) == null ? 'टक्केवारी आवश्यक' : null,
+                        decoration: _buildInputDecoration('उदा. 5.0'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
             _buildLabel('सेवांचा तपशील / Services Provided *'),
             TextFormField(
               controller: _servicesController,
@@ -636,7 +701,7 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
                 children: [
                   // 📊 Analytics Button
                   IconButton(
-                    icon: const Icon(Icons.bar_chart, color: Colors.blueAccent),
+                    icon: const Icon(Icons.bar_chart, color: Colors.blue),
                     tooltip: 'Engagement logs',
                     onPressed: () {
                       Navigator.push(
@@ -646,6 +711,11 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
                         ),
                       );
                     },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.edit, color: Colors.orange),
+                    tooltip: 'Edit Profile',
+                    onPressed: () => _openEditShopBottomSheet(shop),
                   ),
                   if (!isActive)
                     IconButton(
@@ -662,6 +732,21 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
               ),
             ),
           );
+        },
+      ),
+    );
+  }
+
+  void _openEditShopBottomSheet(ShopModel shop) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => EditShopBottomSheet(
+        shop: shop,
+        api: _api,
+        onSaved: () {
+          _fetchShops();
         },
       ),
     );
@@ -898,6 +983,616 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
                   ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class EditShopBottomSheet extends StatefulWidget {
+  final ShopModel shop;
+  final ApiService api;
+  final VoidCallback onSaved;
+
+  const EditShopBottomSheet({
+    super.key,
+    required this.shop,
+    required this.api,
+    required this.onSaved,
+  });
+
+  @override
+  State<EditShopBottomSheet> createState() => _EditShopBottomSheetState();
+}
+
+class _EditShopBottomSheetState extends State<EditShopBottomSheet> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _nameController;
+  late TextEditingController _ownerNameController;
+  late TextEditingController _addressController;
+  late TextEditingController _mobileController;
+  late TextEditingController _whatsappController;
+  late TextEditingController _servicesController;
+  late TextEditingController _pincodeController;
+  late TextEditingController _cityController;
+  late TextEditingController _coinsController;
+  late TextEditingController _discountController;
+
+  XFile? _newProfilePhoto;
+  bool _profileCleared = false;
+  List<XFile> _newGalleryImages = [];
+  List<String> _existingGalleryImages = [];
+  bool _isLoading = false;
+
+  final Map<String, Map<String, String>> _categories = {
+    'fertilizers': {'mr': 'खते व बियाणे', 'en': 'Fertilizers & Seeds'},
+    'crop': {'mr': 'धान्य व पीक बाजार', 'en': 'Crop Market'},
+    'equipment_repair': {'mr': 'शेती अवजारे दुरुस्ती', 'en': 'Equipment Repairing'},
+    'hardware': {'mr': 'कृषी हार्डवेअर', 'en': 'Hardware Shop'},
+    'organic_farming': {'mr': 'सेंद्रिय शेती साहित्य', 'en': 'Organic Farming'},
+    'animal_doctor': {'mr': 'पशुवैद्यकीय डॉक्टर', 'en': 'Animal Doctor / Vet'},
+    'produce_buyer': {'mr': 'शेतमाल खरेदीदार', 'en': 'Agricultural Produce Buyer'},
+  };
+  late Map<String, bool> _selectedCategories;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.shop.name);
+    _ownerNameController = TextEditingController(text: widget.shop.ownerName ?? '');
+    _addressController = TextEditingController(text: widget.shop.address);
+    _mobileController = TextEditingController(text: widget.shop.contactMobile);
+    _whatsappController = TextEditingController(text: widget.shop.whatsappNumber ?? '');
+    _servicesController = TextEditingController(text: widget.shop.services ?? '');
+    _pincodeController = TextEditingController(text: widget.shop.pincode ?? '');
+    _cityController = TextEditingController(text: widget.shop.city ?? '');
+    _coinsController = TextEditingController(text: (widget.shop.coinsRequired ?? 50).toString());
+    _discountController = TextEditingController(text: (widget.shop.discountPercentage ?? 5.0).toString());
+
+    _selectedCategories = {
+      'fertilizers': widget.shop.categories.contains('fertilizers'),
+      'crop': widget.shop.categories.contains('crop'),
+      'equipment_repair': widget.shop.categories.contains('equipment_repair'),
+      'hardware': widget.shop.categories.contains('hardware'),
+      'organic_farming': widget.shop.categories.contains('organic_farming'),
+      'animal_doctor': widget.shop.categories.contains('animal_doctor'),
+      'produce_buyer': widget.shop.categories.contains('produce_buyer'),
+    };
+
+    _existingGalleryImages = List<String>.from(widget.shop.images);
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _ownerNameController.dispose();
+    _addressController.dispose();
+    _mobileController.dispose();
+    _whatsappController.dispose();
+    _servicesController.dispose();
+    _pincodeController.dispose();
+    _cityController.dispose();
+    _coinsController.dispose();
+    _discountController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickProfilePhoto() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+    if (picked != null) {
+      setState(() {
+        _newProfilePhoto = picked;
+        _profileCleared = false;
+      });
+    }
+  }
+
+  Future<void> _pickGalleryImages() async {
+    final picker = ImagePicker();
+    final pickedList = await picker.pickMultiImage(imageQuality: 70);
+    if (pickedList != null) {
+      setState(() {
+        _newGalleryImages.addAll(pickedList);
+      });
+    }
+  }
+
+  Future<void> _saveShop() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final selectedCats = _selectedCategories.entries
+        .where((e) => e.value)
+        .map((e) => e.key)
+        .toList();
+
+    if (selectedCats.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select at least one category'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      String getSafeFilename(String name) => name.contains('.') ? name : '$name.jpg';
+
+      final Map<String, dynamic> fields = {
+        'name': _nameController.text.trim(),
+        'owner_name': _ownerNameController.text.trim(),
+        'address': _addressController.text.trim(),
+        'contact_mobile': _mobileController.text.trim(),
+        'whatsapp_number': _whatsappController.text.isNotEmpty ? _whatsappController.text.trim() : _mobileController.text.trim(),
+        'services': _servicesController.text.trim(),
+        'pincode': _pincodeController.text.trim(),
+        'city': _cityController.text.trim(),
+        'latitude': 19.0760,
+        'longitude': 72.8777,
+        'coins_required': int.tryParse(_coinsController.text.trim()) ?? 50,
+        'discount_percentage': double.tryParse(_discountController.text.trim()) ?? 5.0,
+        'categories': jsonEncode(selectedCats),
+        'existing_images': jsonEncode(_existingGalleryImages),
+      };
+
+      if (_profileCleared) {
+        fields['profile_photo'] = '';
+      }
+
+      FormData formData = FormData.fromMap(fields);
+
+      if (_newProfilePhoto != null) {
+        final profileBytes = await _newProfilePhoto!.readAsBytes();
+        final profileFname = getSafeFilename(_newProfilePhoto!.name);
+        formData.files.add(MapEntry(
+          'profile_photo',
+          MultipartFile.fromBytes(
+            profileBytes,
+            filename: profileFname,
+            contentType: _getMediaType(profileFname),
+          ),
+        ));
+      }
+
+      for (var file in _newGalleryImages) {
+        final imgBytes = await file.readAsBytes();
+        final imgFname = getSafeFilename(file.name);
+        formData.files.add(MapEntry(
+          'images',
+          MultipartFile.fromBytes(
+            imgBytes,
+            filename: imgFname,
+            contentType: _getMediaType(imgFname),
+          ),
+        ));
+      }
+
+      await widget.api.updateShopApi(widget.shop.id, formData);
+      widget.onSaved();
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Shop Updated Successfully!'), backgroundColor: Colors.green),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to update shop: $e'), backgroundColor: Colors.red),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.85,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 12),
+            width: 48,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'तपशील दुरुस्ती / Edit Shop Profile',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1B5E20)),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+          const Divider(),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 54,
+                            backgroundColor: Colors.green.shade50,
+                            backgroundImage: _newProfilePhoto != null
+                                ? (kIsWeb
+                                    ? NetworkImage(_newProfilePhoto!.path) as ImageProvider
+                                    : FileImage(File(_newProfilePhoto!.path)) as ImageProvider)
+                                : (!_profileCleared && widget.shop.profilePhoto != null
+                                    ? NetworkImage(widget.api.getImageUrl(widget.shop.profilePhoto))
+                                    : null),
+                            child: (_newProfilePhoto == null && (_profileCleared || widget.shop.profilePhoto == null))
+                                ? const Icon(Icons.store, size: 36, color: Color(0xFF1B5E20))
+                                : null,
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 18,
+                                  backgroundColor: const Color(0xFF1B5E20),
+                                  child: IconButton(
+                                    icon: const Icon(Icons.edit, size: 14, color: Colors.white),
+                                    onPressed: _pickProfilePhoto,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                if (_newProfilePhoto != null || (!_profileCleared && widget.shop.profilePhoto != null))
+                                  CircleAvatar(
+                                    radius: 18,
+                                    backgroundColor: Colors.red,
+                                    child: IconButton(
+                                      icon: const Icon(Icons.delete, size: 14, color: Colors.white),
+                                      onPressed: () {
+                                        setState(() {
+                                          _newProfilePhoto = null;
+                                          _profileCleared = true;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    _buildLabel('दुकानदाराचे नाव / Owner Name *'),
+                    TextFormField(
+                      controller: _ownerNameController,
+                      validator: (v) => v == null || v.isEmpty ? 'कृपया मालकाचे नाव प्रविष्ट करा' : null,
+                      decoration: _buildInputDecoration('उदा. ज्ञानेश्वर पाटील'),
+                    ),
+                    const SizedBox(height: 16),
+
+                    _buildLabel('दुकानाचे नाव / Shop Name *'),
+                    TextFormField(
+                      controller: _nameController,
+                      validator: (v) => v == null || v.isEmpty ? 'कृपया दुकानाचे नाव प्रविष्ट करा' : null,
+                      decoration: _buildInputDecoration('उदा. रॉयल शेती सेवा केंद्र'),
+                    ),
+                    const SizedBox(height: 16),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildLabel('शहर / City Name *'),
+                              TextFormField(
+                                controller: _cityController,
+                                validator: (v) => v == null || v.isEmpty ? 'शहर आवश्यक' : null,
+                                decoration: _buildInputDecoration('उदा. बारामती'),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildLabel('पिनकोड / Pincode *'),
+                              TextFormField(
+                                controller: _pincodeController,
+                                keyboardType: TextInputType.number,
+                                validator: (v) => v == null || v.length != 6 ? '६ अंकी पिनकोड आवश्यक' : null,
+                                decoration: _buildInputDecoration('उदा. 411001'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    _buildLabel('पत्ता / Full Address *'),
+                    TextFormField(
+                      controller: _addressController,
+                      validator: (v) => v == null || v.isEmpty ? 'पत्ता प्रविष्ट करा' : null,
+                      maxLines: 2,
+                      decoration: _buildInputDecoration('दुकानाचा संपूर्ण पत्ता प्रविष्ट करा'),
+                    ),
+                    const SizedBox(height: 16),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildLabel('मोबाईल नंबर / Mobile *'),
+                              TextFormField(
+                                controller: _mobileController,
+                                keyboardType: TextInputType.phone,
+                                validator: (v) => v == null || v.length < 10 ? '१० अंकी मोबाईल नंबर आवश्यक' : null,
+                                decoration: _buildInputDecoration('उदा. 9876543210'),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildLabel('व्हॉट्सॲप नंबर / WhatsApp'),
+                              TextFormField(
+                                controller: _whatsappController,
+                                keyboardType: TextInputType.phone,
+                                decoration: _buildInputDecoration('उदा. 9876543210'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildLabel('आवश्यक कॉईन्स / Coins Required *'),
+                              TextFormField(
+                                controller: _coinsController,
+                                keyboardType: TextInputType.number,
+                                validator: (v) => v == null || v.isEmpty || int.tryParse(v) == null ? 'संख्या आवश्यक' : null,
+                                decoration: _buildInputDecoration('उदा. 50'),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildLabel('सवलत टक्केवारी / Discount % *'),
+                              TextFormField(
+                                controller: _discountController,
+                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                validator: (v) => v == null || v.isEmpty || double.tryParse(v) == null ? 'टक्केवारी आवश्यक' : null,
+                                decoration: _buildInputDecoration('उदा. 5.0'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    _buildLabel('सेवांचा तपशील / Services Provided *'),
+                    TextFormField(
+                      controller: _servicesController,
+                      validator: (v) => v == null || v.isEmpty ? 'कृपया सेवांचा तपशील टाका' : null,
+                      maxLines: 3,
+                      decoration: _buildInputDecoration('उदा. खते व औषधे उपलब्ध...'),
+                    ),
+                    const SizedBox(height: 24),
+
+                    _buildLabel('वर्ग / Shop Categories *'),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: Column(
+                        children: _categories.keys.map((catKey) {
+                          final details = _categories[catKey]!;
+                          return CheckboxListTile(
+                            title: Text(details['mr']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+                            subtitle: Text(details['en']!, style: const TextStyle(fontSize: 11)),
+                            value: _selectedCategories[catKey],
+                            activeColor: const Color(0xFF1B5E20),
+                            onChanged: (v) => setState(() => _selectedCategories[catKey] = v!),
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    _buildLabel('गॅलरीचे फोटो / Gallery Photos'),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        ..._existingGalleryImages.map((imgUrl) {
+                          return Stack(
+                            children: [
+                              Container(
+                                width: 80,
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  image: DecorationImage(
+                                    image: NetworkImage(widget.api.getImageUrl(imgUrl)),
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                top: 2,
+                                right: 2,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _existingGalleryImages.remove(imgUrl);
+                                    });
+                                  },
+                                  child: const CircleAvatar(
+                                    radius: 10,
+                                    backgroundColor: Colors.red,
+                                    child: Icon(Icons.close, size: 10, color: Colors.white),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        }),
+                        ..._newGalleryImages.map((file) {
+                          return Stack(
+                            children: [
+                              Container(
+                                width: 80,
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.amber, width: 2),
+                                  image: DecorationImage(
+                                    image: FileImage(File(file.path)),
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                top: 2,
+                                right: 2,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _newGalleryImages.remove(file);
+                                    });
+                                  },
+                                  child: const CircleAvatar(
+                                    radius: 10,
+                                    backgroundColor: Colors.red,
+                                    child: Icon(Icons.close, size: 10, color: Colors.white),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        }),
+                        GestureDetector(
+                          onTap: _pickGalleryImages,
+                          child: Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.grey.shade300),
+                            ),
+                            child: const Icon(Icons.add_a_photo_outlined, color: Colors.grey),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 54,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _saveShop,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1B5E20),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: _isLoading
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : const Text('बदल जतन करा / SAVE CHANGES', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLabel(String label) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6, left: 4),
+      child: Text(
+        label,
+        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black87),
+      ),
+    );
+  }
+
+  InputDecoration _buildInputDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(color: Colors.grey[400], fontSize: 12.5),
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF1B5E20), width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
       ),
     );
   }

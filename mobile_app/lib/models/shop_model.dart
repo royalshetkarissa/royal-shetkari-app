@@ -15,6 +15,8 @@ class ShopModel {
   final String? services;
   final String? pincode;
   final String? city;
+  final int? coinsRequired;
+  final double? discountPercentage;
 
   ShopModel({
     required this.id,
@@ -33,6 +35,8 @@ class ShopModel {
     this.services,
     this.pincode,
     this.city,
+    this.coinsRequired,
+    this.discountPercentage,
   });
 
   factory ShopModel.fromJson(Map<String, dynamic> json) {
@@ -53,6 +57,8 @@ class ShopModel {
       services: json['services'],
       pincode: json['pincode'],
       city: json['city'],
+      coinsRequired: json['coins_required'] != null ? int.tryParse(json['coins_required'].toString()) : 50,
+      discountPercentage: json['discount_percentage'] != null ? double.tryParse(json['discount_percentage'].toString()) : 5.0,
     );
   }
 

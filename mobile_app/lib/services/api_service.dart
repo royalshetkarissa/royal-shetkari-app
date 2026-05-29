@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
 import './dio_client.dart';
 import '../config/app_config.dart';
 
@@ -138,7 +139,11 @@ class ApiService {
       for (var bytes in imageBytesList) {
         formData.files.add(MapEntry(
           'images',
-          MultipartFile.fromBytes(bytes, filename: 'upload.jpg'),
+          MultipartFile.fromBytes(
+            bytes,
+            filename: 'upload.jpg',
+            contentType: MediaType('image', 'jpeg'),
+          ),
         ));
       }
     } else if (imagePaths != null && imagePaths.isNotEmpty) {
@@ -348,6 +353,10 @@ class ApiService {
 
   Future<void> addShopApi(FormData formData) async {
     await _dio.post('/shops/admin/add', data: formData);
+  }
+
+  Future<void> updateShopApi(int id, FormData formData) async {
+    await _dio.put('/shops/admin/$id/update', data: formData);
   }
 
   Future<void> activateShop(int id) async {
