@@ -39,8 +39,8 @@ const dangerousExtensions = [
 const fileFilter = (req, file, cb) => {
   const ext = path.extname(file.originalname).toLowerCase();
 
-  // Fallback: if mimetype is generic or missing, infer from file extension
-  if ((file.mimetype === 'application/octet-stream' || !file.mimetype) && ext) {
+  // Fallback: if mimetype is generic, wrong, or missing, normalize/infer from extension
+  if (!allowedMimeTypes.includes(file.mimetype) && ext) {
     const mimeMap = {
       '.jpg': 'image/jpeg',
       '.jpeg': 'image/jpeg',
