@@ -21,7 +21,7 @@ class ShopRepository {
       discount_percentage = 5.0,
     } = data;
     const result = await pool.query(
-      `INSERT INTO shops (name, profile_photo, address, contact_mobile, whatsapp_number, categories, images, latitude, longitude, owner_id, owner_name, services, pincode, city, coins_required, discount_percentage) 
+      `INSERT INTO shops (name, profile_photo, address, contact_mobile, whatsapp_number, categories, images, latitude, longitude, owner_id, owner_name, services, pincode, city, redeem_coin_cost, discount_percentage) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING *`,
       [
         name,
@@ -42,7 +42,11 @@ class ShopRepository {
         discount_percentage,
       ]
     );
-    return result.rows[0];
+    const row = result.rows[0];
+    if (row) {
+      row.coins_required = row.redeem_coin_cost;
+    }
+    return row;
   }
 
   async findAll(filters) {
@@ -57,6 +61,9 @@ class ShopRepository {
     `;
 
     const result = await pool.query(query, [userLat || 0, userLng || 0, status]);
+    result.rows.forEach(row => {
+      if (row) row.coins_required = row.redeem_coin_cost;
+    });
     return result.rows;
   }
 
@@ -64,6 +71,9 @@ class ShopRepository {
     const result = await pool.query(
       `SELECT * FROM shops WHERE status != 'deleted' ORDER BY created_at DESC`
     );
+    result.rows.forEach(row => {
+      if (row) row.coins_required = row.redeem_coin_cost;
+    });
     return result.rows;
   }
 
@@ -72,7 +82,11 @@ class ShopRepository {
       `UPDATE shops SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
       [status, id]
     );
-    return result.rows[0];
+    const row = result.rows[0];
+    if (row) {
+      row.coins_required = row.redeem_coin_cost;
+    }
+    return row;
   }
 
   async delete(id) {
@@ -81,7 +95,11 @@ class ShopRepository {
 
   async findById(id) {
     const result = await pool.query(`SELECT * FROM shops WHERE id = $1`, [id]);
-    return result.rows[0];
+    const row = result.rows[0];
+    if (row) {
+      row.coins_required = row.redeem_coin_cost;
+    }
+    return row;
   }
 
   async getUserCoins(userId) {
@@ -131,13 +149,13 @@ class ShopRepository {
 
       // Fetch dynamic coin offer and discount settings for this shop
       const shopRes = await client.query(
-        'SELECT coins_required, discount_percentage FROM shops WHERE id = $1',
+        'SELECT redeem_coin_cost, discount_percentage FROM shops WHERE id = $1',
         [shopId]
       );
       if (shopRes.rows.length === 0) {
         throw new Error('Shop not found');
       }
-      const coinsRequired = shopRes.rows[0].coins_required || 50;
+      const coinsRequired = shopRes.rows[0].redeem_coin_cost || 50;
       const discountPercentage = parseFloat(shopRes.rows[0].discount_percentage) || 5.0;
 
       // 1. Deduct coins from user
@@ -190,7 +208,11 @@ class ShopRepository {
 
     for (const [key, val] of Object.entries(data)) {
       if (val === undefined) continue; // Skip undefined values
-      fields.push(`${key} = $${queryIndex}`);
+      
+      let dbKey = key;
+      if (key === 'coins_required') dbKey = 'redeem_coin_cost';
+      
+      fields.push(`${dbKey} = $${queryIndex}`);
       if (key === 'categories' || key === 'images') {
         values.push(JSON.stringify(val));
       } else {
@@ -204,7 +226,11 @@ class ShopRepository {
     values.push(id);
     const query = `UPDATE shops SET ${fields.join(', ')} WHERE id = $${queryIndex} RETURNING *`;
     const result = await pool.query(query, values);
-    return result.rows[0];
+    const row = result.rows[0];
+    if (row) {
+      row.coins_required = row.redeem_coin_cost;
+    }
+    return row;
   }
 }
 

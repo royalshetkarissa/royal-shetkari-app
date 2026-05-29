@@ -66,7 +66,7 @@ class AdminRepository {
     const result = await pool.query(`
       SELECT l.*, u.full_name as admin_name 
       FROM activity_logs l JOIN users u ON l.user_id = u.id 
-      WHERE l.action_type LIKE 'DELETE_%' OR l.action_type = 'UPDATE_USER_ACCESS'
+      WHERE l.action_type LIKE 'DELETE_%' OR l.action_type = 'UPDATE_USER_ACCESS' OR l.action_type LIKE '%_SHOP'
       ORDER BY l.created_at DESC`);
     return result.rows;
   }
