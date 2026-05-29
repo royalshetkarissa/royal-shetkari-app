@@ -500,7 +500,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               showDivider: true),
           _buildActionTile(
               Icons.stars,
-              'Coins & Health Benefits (नाणी व आरोग्य लाभ)',
+              context.translate('coins_health_benefits'),
               const Color(0xFF2E7D32),
               () => Navigator.push(
                   context,

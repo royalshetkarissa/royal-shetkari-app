@@ -8,6 +8,7 @@ import 'admin_access_management_screen.dart';
 import 'admin_shop_management_screen.dart';
 import 'admin_shop_analytics_screen.dart';
 import 'admin_hospital_management_screen.dart';
+import '../localization/app_localizations.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -67,11 +68,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
     bool? confirm = await showDialog(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text('Delete User?'),
-        content: const Text('This will permanently remove the user and all their data.'),
+        title: Text(context.translate('delete_user_title')),
+        content: Text(context.translate('delete_user_confirm')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('CANCEL')),
-          TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('DELETE', style: TextStyle(color: Colors.red))),
+          TextButton(onPressed: () => Navigator.pop(c, false), child: Text(context.translate('cancel').toUpperCase())),
+          TextButton(onPressed: () => Navigator.pop(c, true), child: Text(context.translate('delete').toUpperCase(), style: const TextStyle(color: Colors.red))),
         ],
       ),
     );
@@ -110,7 +111,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
   Widget _buildElegantAppBar(bool isSuperUser) {
     return SliverAppBar(
       expandedHeight: 120, pinned: true, backgroundColor: const Color(0xFF0F172A), elevation: 0,
-      flexibleSpace: FlexibleSpaceBar(title: const Text('Admin Console', style: TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 20)), centerTitle: false),
+      flexibleSpace: FlexibleSpaceBar(title: Text(context.translate('admin_console'), style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 20)), centerTitle: false),
       actions: [
         if (isSuperUser) IconButton(icon: const Icon(Icons.security, color: Colors.amberAccent), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const AdminAccessManagementScreen()))),
         IconButton(icon: const Icon(Icons.refresh_rounded, color: Colors.white), onPressed: _fetchData),
@@ -125,7 +126,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(padding: EdgeInsets.fromLTRB(20, 20, 20, 10), child: Text('LEADERSHIP: TOP COMMENTERS', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1.2, color: Colors.grey))),
+          Padding(padding: const EdgeInsets.fromLTRB(20, 20, 20, 10), child: Text(context.translate('top_commenters'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1.2, color: Colors.grey))),
           SizedBox(
             height: 100,
             child: ListView.builder(
@@ -170,9 +171,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
           children: [
             Row(
               children: [
-                _buildStatCard('Users', _users.length.toString(), Icons.group, const Color(0xFF6366F1)),
+                _buildStatCard(context.translate('users_count_label'), _users.length.toString(), Icons.group, const Color(0xFF6366F1)),
                 const SizedBox(width: 12),
-                _buildStatCard('Engagement', _modLogs.length.toString(), Icons.history, const Color(0xFF10B981)),
+                _buildStatCard(context.translate('engagement_label'), _modLogs.length.toString(), Icons.history, const Color(0xFF10B981)),
               ],
             ),
             const SizedBox(height: 16),
@@ -207,12 +208,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
               child: const Icon(Icons.security, color: Colors.amber, size: 24),
             ),
             const SizedBox(width: 16),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('SYSTEM SECURITY & ACCESS', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 1)),
-                  Text('Manage administrative roles & permissions', style: TextStyle(color: Colors.white60, fontSize: 11)),
+                  Text(context.translate('system_security_access'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 1)),
+                  Text(context.translate('manage_roles_permissions'), style: const TextStyle(color: Colors.white60, fontSize: 11)),
                 ],
               ),
             ),
@@ -235,7 +236,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
           InkWell(
             onTap: hasPostAccess
                 ? () => Navigator.push(context, MaterialPageRoute(builder: (c) => const AdminShopManagementScreen()))
-                : () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Access Denied: Requires "Inventory & Posts" permission.'))),
+                : () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.translate('access_denied_inventory')))),
             child: Opacity(
               opacity: hasPostAccess ? 1.0 : 0.4,
               child: Row(
@@ -246,12 +247,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                     child: const Icon(Icons.store, color: Colors.white, size: 24),
                   ),
                   const SizedBox(width: 16),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('SHOP INFRASTRUCTURE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 1)),
-                        Text('Add fertilizer shops & manage inventory', style: TextStyle(color: Colors.white60, fontSize: 11)),
+                        Text(context.translate('shop_infrastructure'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 1)),
+                        Text(context.translate('add_shops_inventory'), style: const TextStyle(color: Colors.white60, fontSize: 11)),
                       ],
                     ),
                   ),
@@ -264,7 +265,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
           InkWell(
             onTap: hasAnalyticsAccess
                 ? () => Navigator.push(context, MaterialPageRoute(builder: (c) => const AdminShopAnalyticsScreen()))
-                : () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Access Denied: Requires "Enterprise Analytics" permission.'))),
+                : () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.translate('access_denied_analytics')))),
             child: Opacity(
               opacity: hasAnalyticsAccess ? 1.0 : 0.4,
               child: Row(
@@ -275,12 +276,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                     child: const Icon(Icons.analytics, color: Colors.white, size: 24),
                   ),
                   const SizedBox(width: 16),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('MARKET ANALYTICS', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 1)),
-                        Text('Track farmer clicks & engagement', style: TextStyle(color: Colors.white60, fontSize: 11)),
+                        Text(context.translate('market_analytics_title'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 1)),
+                        Text(context.translate('track_clicks_engagement'), style: const TextStyle(color: Colors.white60, fontSize: 11)),
                       ],
                     ),
                   ),
@@ -304,7 +305,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
       child: InkWell(
         onTap: hasBookingAccess
             ? () => Navigator.push(context, MaterialPageRoute(builder: (c) => const AdminHospitalManagementScreen()))
-            : () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Access Denied: Requires "Booking Control" permission.'))),
+            : () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.translate('access_denied_booking')))),
         child: Opacity(
           opacity: hasBookingAccess ? 1.0 : 0.4,
           child: Row(
@@ -315,12 +316,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                 child: const Icon(Icons.local_hospital, color: Colors.white, size: 24),
               ),
               const SizedBox(width: 16),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('HOSPITALS & CLAIMS', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 1)),
-                    Text('Add active hospitals & view user redemptions', style: TextStyle(color: Colors.white60, fontSize: 11)),
+                    Text(context.translate('hospitals_claims_title'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 1)),
+                    Text(context.translate('add_hospitals_redemptions'), style: const TextStyle(color: Colors.white60, fontSize: 11)),
                   ],
                 ),
               ),
@@ -349,7 +350,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
         TabBar(
           controller: _tabController,
           labelColor: Colors.black, unselectedLabelColor: Colors.grey, indicatorColor: Colors.black,
-          tabs: const [Tab(text: 'USERS'), Tab(text: 'MODERATION'), Tab(text: 'AUDIT')],
+          tabs: [
+            Tab(text: context.translate('users_tab')),
+            Tab(text: context.translate('moderation_tab')),
+            Tab(text: context.translate('audit_tab')),
+          ],
         ),
       ),
     );
@@ -392,7 +397,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      'SUPER USER',
+                      context.translate('super_user_label'),
                       style: TextStyle(color: Colors.amber.shade900, fontWeight: FontWeight.bold, fontSize: 8),
                     ),
                   ),
@@ -463,7 +468,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
   }
 
   Widget _buildAuditView() {
-    return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.verified_user, size: 60, color: Colors.grey), const SizedBox(height: 16), const Text('Complete System Audit History', style: TextStyle(fontWeight: FontWeight.bold)), Text('Visible to authorized administrators', style: TextStyle(color: Colors.grey[400]))]));
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.verified_user, size: 60, color: Colors.grey),
+          const SizedBox(height: 16),
+          Text(
+            context.translate('complete_system_audit_history'),
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          Text(
+            context.translate('visible_to_authorized_admins'),
+            style: TextStyle(color: Colors.grey[400]),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildSkeleton() => ListView.builder(padding: const EdgeInsets.all(20), itemCount: 5, itemBuilder: (c, i) => Padding(padding: const EdgeInsets.only(bottom: 12), child: SkeletonLoader(width: double.infinity, height: 80, borderRadius: 20)));
