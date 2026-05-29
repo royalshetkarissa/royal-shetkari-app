@@ -57,7 +57,7 @@ const fileFilter = (req, file, cb) => {
   if (!allowedMimeTypes.includes(file.mimetype)) {
     return cb(
       new AppError(
-        'Invalid file type. Only JPEG, PNG, WEBP images and PDF documents are allowed.',
+        `Invalid file type: ${file.mimetype} (file: ${file.originalname}). Only JPEG, PNG, WEBP images and PDF documents are allowed.`,
         400
       ),
       false

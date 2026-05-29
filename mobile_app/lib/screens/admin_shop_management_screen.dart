@@ -186,14 +186,6 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
     try {
       String getSafeFilename(String name) => name.contains('.') ? name : '$name.jpg';
 
-      final profilePhotoBytes = await _profilePhoto!.readAsBytes();
-      final profilePhotoFname = getSafeFilename(_profilePhoto!.name);
-      final profilePhotoMultipart = MultipartFile.fromBytes(
-        profilePhotoBytes,
-        filename: profilePhotoFname,
-        contentType: _getMediaType(profilePhotoFname),
-      );
-
       FormData formData = FormData.fromMap({
         'name': _nameController.text.trim(),
         'owner_name': _ownerNameController.text.trim(),
@@ -208,20 +200,50 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
         'coins_required': int.tryParse(_coinsController.text.trim()) ?? 50,
         'discount_percentage': double.tryParse(_discountController.text.trim()) ?? 5.0,
         'categories': jsonEncode(selectedCats),
-        'profile_photo': profilePhotoMultipart,
       });
 
-      for (int i = 0; i < _shopImages.length; i++) {
-        final imgBytes = await _shopImages[i].readAsBytes();
-        final imgFname = getSafeFilename(_shopImages[i].name);
+      if (kIsWeb) {
+        final profilePhotoBytes = await _profilePhoto!.readAsBytes();
+        final profilePhotoFname = getSafeFilename(_profilePhoto!.name);
         formData.files.add(MapEntry(
-          'images',
+          'profile_photo',
           MultipartFile.fromBytes(
-            imgBytes,
-            filename: imgFname,
-            contentType: _getMediaType(imgFname),
+            profilePhotoBytes,
+            filename: profilePhotoFname,
+            contentType: _getMediaType(profilePhotoFname),
           ),
         ));
+
+        for (int i = 0; i < _shopImages.length; i++) {
+          final imgBytes = await _shopImages[i].readAsBytes();
+          final imgFname = getSafeFilename(_shopImages[i].name);
+          formData.files.add(MapEntry(
+            'images',
+            MultipartFile.fromBytes(
+              imgBytes,
+              filename: imgFname,
+              contentType: _getMediaType(imgFname),
+            ),
+          ));
+        }
+      } else {
+        formData.files.add(MapEntry(
+          'profile_photo',
+          await MultipartFile.fromFile(
+            _profilePhoto!.path,
+            filename: _profilePhoto!.name.split('/').last,
+          ),
+        ));
+
+        for (var file in _shopImages) {
+          formData.files.add(MapEntry(
+            'images',
+            await MultipartFile.fromFile(
+              file.path,
+              filename: file.name.split('/').last,
+            ),
+          ));
+        }
       }
 
       await _api.addShopApi(formData);
@@ -1140,30 +1162,52 @@ class _EditShopBottomSheetState extends State<EditShopBottomSheet> {
 
       FormData formData = FormData.fromMap(fields);
 
-      if (_newProfilePhoto != null) {
-        final profileBytes = await _newProfilePhoto!.readAsBytes();
-        final profileFname = getSafeFilename(_newProfilePhoto!.name);
-        formData.files.add(MapEntry(
-          'profile_photo',
-          MultipartFile.fromBytes(
-            profileBytes,
-            filename: profileFname,
-            contentType: _getMediaType(profileFname),
-          ),
-        ));
-      }
+      if (kIsWeb) {
+        if (_newProfilePhoto != null) {
+          final profileBytes = await _newProfilePhoto!.readAsBytes();
+          final profileFname = getSafeFilename(_newProfilePhoto!.name);
+          formData.files.add(MapEntry(
+            'profile_photo',
+            MultipartFile.fromBytes(
+              profileBytes,
+              filename: profileFname,
+              contentType: _getMediaType(profileFname),
+            ),
+          ));
+        }
 
-      for (var file in _newGalleryImages) {
-        final imgBytes = await file.readAsBytes();
-        final imgFname = getSafeFilename(file.name);
-        formData.files.add(MapEntry(
-          'images',
-          MultipartFile.fromBytes(
-            imgBytes,
-            filename: imgFname,
-            contentType: _getMediaType(imgFname),
-          ),
-        ));
+        for (var file in _newGalleryImages) {
+          final imgBytes = await file.readAsBytes();
+          final imgFname = getSafeFilename(file.name);
+          formData.files.add(MapEntry(
+            'images',
+            MultipartFile.fromBytes(
+              imgBytes,
+              filename: imgFname,
+              contentType: _getMediaType(imgFname),
+            ),
+          ));
+        }
+      } else {
+        if (_newProfilePhoto != null) {
+          formData.files.add(MapEntry(
+            'profile_photo',
+            await MultipartFile.fromFile(
+              _newProfilePhoto!.path,
+              filename: _newProfilePhoto!.name.split('/').last,
+            ),
+          ));
+        }
+
+        for (var file in _newGalleryImages) {
+          formData.files.add(MapEntry(
+            'images',
+            await MultipartFile.fromFile(
+              file.path,
+              filename: file.name.split('/').last,
+            ),
+          ));
+        }
       }
 
       await widget.api.updateShopApi(widget.shop.id, formData);
