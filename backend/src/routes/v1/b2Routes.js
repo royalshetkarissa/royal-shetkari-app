@@ -34,6 +34,7 @@ const fileFilter = (req, file, cb) => {
     const mimeMap = {
       '.jpg': 'image/jpeg',
       '.jpeg': 'image/jpeg',
+      '.jfif': 'image/jpeg',
       '.png': 'image/png',
       '.webp': 'image/webp',
       '.pdf': 'application/pdf',

@@ -16,6 +16,7 @@ MediaType? _getMediaType(String filename) {
   switch (ext) {
     case 'jpg':
     case 'jpeg':
+    case 'jfif':
       return MediaType('image', 'jpeg');
     case 'png':
       return MediaType('image', 'png');
