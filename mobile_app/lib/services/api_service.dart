@@ -350,33 +350,6 @@ class ApiService {
     await _dio.post('/shops/admin/add', data: formData);
   }
 
-  Future<void> editShopApi(int id, FormData formData) async {
-    await _dio.put('/shops/admin/edit/$id', data: formData);
-  }
-
-  Future<List<Map<String, dynamic>>> getShopAuditLogs() async {
-    final response = await _dio.get('/shops/admin/audit-logs');
-    final data = _handleResponse(response);
-    return List<Map<String, dynamic>>.from(data['logs']);
-  }
-
-  Future<Map<String, dynamic>?> getFeaturedShop() async {
-    try {
-      final response = await _dio.get('/shops/featured');
-      final data = _handleResponse(response);
-      if (data['shop'] == null) return null;
-      return Map<String, dynamic>.from(data['shop']);
-    } catch (_) {
-      return null;
-    }
-  }
-
-  Future<List<Map<String, dynamic>>> getFeaturedHistory() async {
-    final response = await _dio.get('/shops/admin/featured-history');
-    final data = _handleResponse(response);
-    return List<Map<String, dynamic>>.from(data['history']);
-  }
-
   Future<void> activateShop(int id) async {
     await _dio.post('/shops/admin/$id/activate');
   }

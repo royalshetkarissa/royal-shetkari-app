@@ -76,6 +76,7 @@ app.use(localizationMiddleware);
 
 // 2. Static Files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/admin-dashboard', express.static(path.join(__dirname, '../public/admin')));
 
 // 3. Health Routes
 app.get('/', (req, res) => {

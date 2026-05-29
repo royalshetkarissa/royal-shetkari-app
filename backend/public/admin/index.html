@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>रॉयल शेतकरी | Admin Command Center</title>
+  <!-- Google Fonts & FontAwesome Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Background Animated Elements -->
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <!-- Real-time Toast Notifications -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- SECTION 1: AUTHENTICATION SCREEN -->
+  <div id="login-screen" class="auth-wrapper">
+    <div class="auth-card">
+      <div class="brand-logo">
+        <i class="fa-solid fa-crown"></i>
+      </div>
+      <h2>रॉयल शेतकरी</h2>
+      <p class="subtitle">Admin Command Center</p>
+      
+      <div id="login-error" class="alert alert-danger hidden"></div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label for="login-mobile">मोबाईल नंबर / Mobile Number</label>
+          <div class="input-icon-wrapper">
+            <i class="fa-solid fa-phone"></i>
+            <input type="text" id="login-mobile" placeholder="उदा. 9876543210" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="login-password">पासवर्ड / Password</label>
+          <div class="input-icon-wrapper">
+            <i class="fa-solid fa-lock"></i>
+            <input type="password" id="login-password" placeholder="••••••••" required>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">
+          प्रवेश करा / Login <i class="fa-solid fa-arrow-right-to-bracket"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- SECTION 2: ADMIN DASHBOARD PANEL -->
+  <div id="admin-panel" class="dashboard-wrapper hidden">
+    <!-- Top Header Bar -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="brand">
+          <i class="fa-solid fa-crown gold-text"></i>
+          <h1>रॉयल शेतकरी <span>बाजार</span></h1>
+        </div>
+        <div class="connection-status">
+          <span class="status-dot pulsing" id="status-dot"></span>
+          <span id="status-text">Real-time Connected</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="admin-profile">
+          <i class="fa-solid fa-circle-user"></i>
+          <span id="admin-name">Administrator</span>
+        </div>
+        <button id="logout-btn" class="btn btn-logout">
+          <i class="fa-solid fa-power-off"></i> Logout
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace Container -->
+    <div class="workspace">
+      <!-- Left Sidebar Navigation -->
+      <aside class="sidebar">
+        <nav class="nav-menu">
+          <a href="#" class="nav-item active" data-tab="dashboard">
+            <i class="fa-solid fa-chart-line"></i> Dashboard
+          </a>
+          <a href="#" class="nav-item" data-tab="shops">
+            <i class="fa-solid fa-store"></i> Shop Management
+          </a>
+          <a href="#" class="nav-item" data-tab="claims">
+            <i class="fa-solid fa-tags"></i> Coin Claims & Offers
+          </a>
+        </nav>
+      </aside>
+
+      <!-- Right Active Workspace Page -->
+      <main class="content-area">
+        
+        <!-- TAB 1: OVERVIEW DASHBOARD -->
+        <section id="tab-dashboard" class="tab-pane active">
+          <div class="welcome-banner">
+            <h2>स्वागत आहे, रॉयल ॲडमिनिस्ट्रेटर! 👋</h2>
+            <p>येथून तुम्ही दुकानांची नोंदणी, माहिती संपादन, फोटो व्यवस्थापन आणि कॉईन क्लेम्सचे नियंत्रण करू शकता.</p>
+          </div>
+
+          <!-- Stats Grid -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon bg-success">
+                <i class="fa-solid fa-store"></i>
+              </div>
+              <div class="stat-info">
+                <h3>एकूण नोंदणीकृत दुकाने</h3>
+                <p id="stat-total-shops">0</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon bg-warning">
+                <i class="fa-solid fa-circle-check"></i>
+              </div>
+              <div class="stat-info">
+                <h3>सक्रिय दुकाने / Active</h3>
+                <p id="stat-active-shops">0</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon bg-info">
+                <i class="fa-solid fa-ticket"></i>
+              </div>
+              <div class="stat-info">
+                <h3>एकूण कॉईन क्लेम्स (Vouchers)</h3>
+                <p id="stat-total-claims">0</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dashboard Charts / Activity Panels -->
+          <div class="dashboard-details-grid">
+            <!-- Left Panel: Live Stream Claims Activity Feed -->
+            <div class="panel card">
+              <div class="panel-header">
+                <h3><i class="fa-solid fa-satellite-dish red-text"></i> रिअल-टाइम कॉईन क्लेम फीड (Live Feed)</h3>
+                <span class="badge badge-danger badge-pulsing">LIVE</span>
+              </div>
+              <div class="panel-body">
+                <div class="live-activity-stream" id="live-claim-stream">
+                  <div class="empty-state">
+                    <i class="fa-solid fa-wave-square"></i>
+                    <p>नवीन कॉईन क्लेम्सची वाट पाहत आहे...</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Panel: Shop Categories Distribution -->
+            <div class="panel card">
+              <div class="panel-header">
+                <h3><i class="fa-solid fa-pie-chart text-green"></i> दुकान वर्गवारी विभाग (Categories)</h3>
+              </div>
+              <div class="panel-body">
+                <div class="category-list" id="category-metrics-list">
+                  <!-- Generated dynamically -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 2: SHOP MANAGEMENT -->
+        <section id="tab-shops" class="tab-pane">
+          <div class="action-bar">
+            <div class="search-box">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="shop-search" placeholder="दुकानदाराचे नाव, शहर किंवा पिनकोड शोधा...">
+            </div>
+            <div class="filter-controls">
+              <select id="filter-category">
+                <option value="">सर्व वर्गवारी / All Categories</option>
+                <option value="fertilizers">खते व बियाणे / Fertilizers</option>
+                <option value="crop">धान्य व पीक बाजार / Crop Market</option>
+                <option value="equipment_repair">शेती अवजारे दुरुस्ती / Repair</option>
+                <option value="hardware">कृषी हार्डवेअर / Hardware</option>
+                <option value="organic_farming">सेंद्रिय शेती साहित्य / Organic</option>
+                <option value="animal_doctor">पशुवैद्यकीय डॉक्टर / Vet</option>
+                <option value="produce_buyer">शेतमाल खरेदीदार / Buyers</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="shops-container">
+            <div class="card">
+              <div class="panel-header flex-between">
+                <h3>नोंदणीकृत दुकानांची यादी / Shop Registry</h3>
+                <span class="info-tag" id="shops-count-badge">एकूण: ०</span>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>दुकान / Profile</th>
+                      <th>दुकानदार / Owner</th>
+                      <th>शहर / City</th>
+                      <th>मोबाईल / Contact</th>
+                      <th>कॉईन ऑफर / Offer</th>
+                      <th>स्थिती / Status</th>
+                      <th class="text-right">कृती / Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="shop-registry-rows">
+                    <!-- Dynamic Rows -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 3: COIN CLAIMS & LOGS -->
+        <section id="tab-claims" class="tab-pane">
+          <div class="action-bar">
+            <div class="search-box">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="claims-search" placeholder="क्लेम कोड, ग्राहक नाव किंवा दुकान शोधा...">
+            </div>
+          </div>
+
+          <div class="claims-container">
+            <div class="card">
+              <div class="panel-header">
+                <h3>डिस्काउंट क्लेम इतिहास / Coin Claims & Discount Log</h3>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>क्लेम कोड / Claim Code</th>
+                      <th>ग्राहक / Farmer</th>
+                      <th>दुकान / Shop</th>
+                      <th>वापरलेले नाणी / Coins</th>
+                      <th>मिळालेली सवलत / Discount %</th>
+                      <th>तारीख / Date</th>
+                    </tr>
+                  </thead>
+                  <tbody id="claims-log-rows">
+                    <!-- Dynamic Rows -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- SECTION 3: EDIT SHOP MODAL -->
+  <div id="edit-shop-modal" class="modal-wrapper hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-pen-to-square"></i> दुकान माहिती संपादन / Edit Shop Profile</h3>
+        <button class="modal-close" id="modal-close-btn">&times;</button>
+      </div>
+      <form id="edit-shop-form" enctype="multipart/form-data">
+        <input type="hidden" id="edit-shop-id">
+        <div class="modal-body scrollable">
+          <!-- Profile Photo Grid -->
+          <div class="photo-edit-section">
+            <div class="profile-photo-container">
+              <img id="edit-profile-preview" src="" alt="Profile Photo">
+              <div class="photo-overlay">
+                <label for="edit-profile-input" class="photo-label">
+                  <i class="fa-solid fa-camera"></i>
+                </label>
+                <input type="file" id="edit-profile-input" accept="image/*" class="hidden">
+              </div>
+            </div>
+            <div class="photo-desc">
+              <h4>मुख्य प्रोफाईल फोटो / Profile Photo</h4>
+              <p>ग्राहकांना मार्केटमध्ये ओळखण्यासाठी मुख्य फोटो.</p>
+              <button type="button" id="btn-delete-profile-photo" class="btn btn-sm btn-outline-danger">
+                <i class="fa-solid fa-trash"></i> फोटो काढा / Remove Photo
+              </button>
+            </div>
+          </div>
+
+          <!-- Basic Info -->
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label for="edit-shop-name">दुकानाचे नाव / Shop Name *</label>
+              <input type="text" id="edit-shop-name" required>
+            </div>
+            <div class="form-group col-6">
+              <label for="edit-owner-name">मालकाचे नाव / Owner Name *</label>
+              <input type="text" id="edit-owner-name" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label for="edit-city">शहर / City *</label>
+              <input type="text" id="edit-city" required>
+            </div>
+            <div class="form-group col-6">
+              <label for="edit-pincode">पिनकोड / Pincode *</label>
+              <input type="text" id="edit-pincode" required maxlength="6">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-address">पत्ता / Full Address *</label>
+            <textarea id="edit-address" rows="2" required></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label for="edit-mobile">मोबाईल नंबर / Mobile *</label>
+              <input type="text" id="edit-mobile" required>
+            </div>
+            <div class="form-group col-6">
+              <label for="edit-whatsapp">व्हॉट्सॲप नंबर / WhatsApp</label>
+              <input type="text" id="edit-whatsapp">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-services">सेवांचा तपशील / Services Offered *</label>
+            <textarea id="edit-services" rows="2" required></textarea>
+          </div>
+
+          <!-- Categories -->
+          <div class="form-group">
+            <label>दुकान वर्गवारी / Shop Categories *</label>
+            <div class="category-checkboxes-grid">
+              <label class="checkbox-container">
+                <input type="checkbox" name="categories" value="fertilizers">
+                <span class="checkmark"></span> खते व बियाणे (Seeds & Fert)
+              </label>
+              <label class="checkbox-container">
+                <input type="checkbox" name="categories" value="crop">
+                <span class="checkmark"></span> धान्य व पीक बाजार (Crop Market)
+              </label>
+              <label class="checkbox-container">
+                <input type="checkbox" name="categories" value="equipment_repair">
+                <span class="checkmark"></span> शेती अवजारे दुरुस्ती (Repair)
+              </label>
+              <label class="checkbox-container">
+                <input type="checkbox" name="categories" value="hardware">
+                <span class="checkmark"></span> कृषी हार्डवेअर (Hardware)
+              </label>
+              <label class="checkbox-container">
+                <input type="checkbox" name="categories" value="organic_farming">
+                <span class="checkmark"></span> सेंद्रिय शेती साहित्य (Organic)
+              </label>
+              <label class="checkbox-container">
+                <input type="checkbox" name="categories" value="animal_doctor">
+                <span class="checkmark"></span> पशुवैद्यकीय डॉक्टर (Vet)
+              </label>
+              <label class="checkbox-container">
+                <input type="checkbox" name="categories" value="produce_buyer">
+                <span class="checkmark"></span> शेतमाल खरेदीदार (Buyers)
+              </label>
+            </div>
+          </div>
+
+          <!-- COIN AND DISCOUNT CONFIGURATION -->
+          <div class="form-section card-inner-box">
+            <h4 class="section-title"><i class="fa-solid fa-percent"></i> सवलत आणि कॉईन ऑफर व्यवस्थापन / Discount Configuration</h4>
+            <div class="form-row">
+              <div class="form-group col-6">
+                <label for="edit-coins-required">लागणारे कॉईन्स / Coins Required *</label>
+                <input type="number" id="edit-coins-required" min="1" required placeholder="उदा. 50">
+                <span class="hint-text">ग्राहकाकडे सवलत मिळवण्यासाठी लागणारे नाणी.</span>
+              </div>
+              <div class="form-group col-6">
+                <label for="edit-discount-percentage">सवलत टक्केवारी / Discount % *</label>
+                <input type="number" id="edit-discount-percentage" min="0.1" max="100" step="0.1" required placeholder="उदा. 5.0">
+                <span class="hint-text">कॉईन्स रिडीम केल्यावर मिळणारी एकूण सवलत (%).</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Gallery Images -->
+          <div class="form-group">
+            <label>दुकानाचे गॅलरी फोटो / Gallery Photos</label>
+            <div id="gallery-previews-container" class="gallery-previews-grid">
+              <!-- Rendered dynamically with delete overlay -->
+            </div>
+            <div class="gallery-upload-trigger">
+              <label for="edit-gallery-input" class="btn btn-outline-success">
+                <i class="fa-solid fa-images"></i> नवीन फोटो जोडा / Add Gallery Photos
+              </label>
+              <input type="file" id="edit-gallery-input" accept="image/*" multiple class="hidden">
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="modal-cancel-btn">रद्द करा / Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-shop">
+            बदल जतन करा / Save Changes <i class="fa-solid fa-save"></i>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Client JavaScript Application -->
+  <script src="app.js"></script>
+</body>
+</html>
