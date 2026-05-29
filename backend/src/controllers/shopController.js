@@ -1,6 +1,20 @@
 const shopService = require('../services/shopService');
 const { logActivity } = require('../utils/logger');
 
+const safeParseJson = (value) => {
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch (e) {
+      if (value.includes(',')) {
+        return value.split(',').map((s) => s.trim()).filter(Boolean);
+      }
+      return [value.trim()];
+    }
+  }
+  return value;
+};
+
 exports.addShop = async (req, res, next) => {
   try {
     const {
@@ -15,6 +29,8 @@ exports.addShop = async (req, res, next) => {
       services,
       pincode,
       city,
+      coins_required,
+      discount_percentage,
     } = req.body;
 
     let profilePhoto = null;
@@ -34,7 +50,7 @@ exports.addShop = async (req, res, next) => {
       address,
       contact_mobile,
       whatsapp_number,
-      categories: typeof categories === 'string' ? JSON.parse(categories) : categories,
+      categories: safeParseJson(categories),
       images,
       profile_photo: profilePhoto,
       latitude: latitude && !isNaN(parseFloat(latitude)) ? parseFloat(latitude) : 19.076,
@@ -44,6 +60,8 @@ exports.addShop = async (req, res, next) => {
       services,
       pincode,
       city,
+      coins_required: coins_required && !isNaN(parseInt(coins_required)) ? parseInt(coins_required) : 50,
+      discount_percentage: discount_percentage && !isNaN(parseFloat(discount_percentage)) ? parseFloat(discount_percentage) : 5.0,
     });
 
     await logActivity(req.userId, 'ADD_SHOP', 'shop', shop.id, { name });
@@ -205,9 +223,7 @@ exports.updateShop = async (req, res, next) => {
 
     let images = existingShop.images || [];
     if (req.body.existing_images !== undefined) {
-      images = typeof req.body.existing_images === 'string'
-        ? JSON.parse(req.body.existing_images)
-        : req.body.existing_images;
+      images = safeParseJson(req.body.existing_images);
     }
     if (req.files && req.files['images']) {
       const newImages = req.files['images'].map((f) => `/uploads/${f.filename}`);
@@ -220,16 +236,24 @@ exports.updateShop = async (req, res, next) => {
     if (contact_mobile !== undefined) updateData.contact_mobile = contact_mobile;
     if (whatsapp_number !== undefined) updateData.whatsapp_number = whatsapp_number;
     if (categories !== undefined) {
-      updateData.categories = typeof categories === 'string' ? JSON.parse(categories) : categories;
+      updateData.categories = safeParseJson(categories);
     }
-    if (latitude !== undefined) updateData.latitude = parseFloat(latitude);
-    if (longitude !== undefined) updateData.longitude = parseFloat(longitude);
+    if (latitude !== undefined && latitude !== '' && !isNaN(parseFloat(latitude))) {
+      updateData.latitude = parseFloat(latitude);
+    }
+    if (longitude !== undefined && longitude !== '' && !isNaN(parseFloat(longitude))) {
+      updateData.longitude = parseFloat(longitude);
+    }
     if (owner_name !== undefined) updateData.owner_name = owner_name;
     if (services !== undefined) updateData.services = services;
     if (pincode !== undefined) updateData.pincode = pincode;
     if (city !== undefined) updateData.city = city;
-    if (coins_required !== undefined) updateData.coins_required = parseInt(coins_required);
-    if (discount_percentage !== undefined) updateData.discount_percentage = parseFloat(discount_percentage);
+    if (coins_required !== undefined && coins_required !== '' && !isNaN(parseInt(coins_required))) {
+      updateData.coins_required = parseInt(coins_required);
+    }
+    if (discount_percentage !== undefined && discount_percentage !== '' && !isNaN(parseFloat(discount_percentage))) {
+      updateData.discount_percentage = parseFloat(discount_percentage);
+    }
     if (status !== undefined) updateData.status = status;
 
     updateData.profile_photo = profilePhoto;
