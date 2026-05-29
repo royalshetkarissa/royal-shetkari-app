@@ -189,6 +189,7 @@ class ShopRepository {
     let queryIndex = 1;
 
     for (const [key, val] of Object.entries(data)) {
+      if (val === undefined) continue; // Skip undefined values
       fields.push(`${key} = $${queryIndex}`);
       if (key === 'categories' || key === 'images') {
         values.push(JSON.stringify(val));
