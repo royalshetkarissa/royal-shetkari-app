@@ -267,3 +267,51 @@ exports.updateShop = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.diagnoseShopsTable = async (req, res, next) => {
+  try {
+    const pool = require('../config/db');
+    const migrationRunner = require('../utils/migrationRunner');
+    
+    let migrationError = null;
+    let migrationStatus = 'no_action_taken';
+    try {
+      await migrationRunner.up();
+      migrationStatus = 'migrations_run_successfully';
+    } catch (err) {
+      migrationError = { message: err.message, stack: err.stack };
+      migrationStatus = 'migrations_failed';
+    }
+    
+    const columnsRes = await pool.query(`
+      SELECT column_name, data_type, is_nullable, column_default
+      FROM information_schema.columns 
+      WHERE table_name = 'shops'
+      ORDER BY column_name
+    `);
+    
+    let appliedMigrations = [];
+    try {
+      const migrationsRes = await pool.query(`
+        SELECT * FROM migrations_meta ORDER BY applied_at DESC LIMIT 15
+      `);
+      appliedMigrations = migrationsRes.rows;
+    } catch (e) {
+      appliedMigrations = [{ error: e.message }];
+    }
+    
+    res.json({
+      success: true,
+      migrationStatus,
+      migrationError,
+      columns: columnsRes.rows,
+      appliedMigrations
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: err.message,
+      stack: err.stack
+    });
+  }
+};

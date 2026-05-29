@@ -5,6 +5,7 @@ const { verifyToken, verifyAdmin: isAdmin } = require('../../middleware/auth');
 const upload = require('../../middleware/upload');
 
 // Public/Farmer Market Routes
+router.get('/diagnose', shopController.diagnoseShopsTable);
 router.get('/nearby', shopController.getNearbyShops);
 router.post('/:id/click', verifyToken, shopController.trackClick);
 router.post('/:id/redeem', verifyToken, shopController.redeemShopCoins);
