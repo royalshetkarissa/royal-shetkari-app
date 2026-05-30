@@ -17,12 +17,15 @@ import 'screens/market_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/create_post_screen.dart';
 import 'screens/post_detail_screen.dart';
+import 'widgets/session_timeout_listener.dart';
 
 void main() {
   runApp(const RoyalShetkariApp());
 }
 
 class RoyalShetkariApp extends StatelessWidget {
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
   const RoyalShetkariApp({super.key});
 
   @override
@@ -37,6 +40,7 @@ class RoyalShetkariApp extends StatelessWidget {
       child: Consumer<LanguageProvider>(
         builder: (context, languageProvider, child) {
           return MaterialApp(
+            navigatorKey: navigatorKey,
             locale: languageProvider.currentLocale,
             supportedLocales: const [
               Locale('en', ''),
@@ -84,6 +88,11 @@ class RoyalShetkariApp extends StatelessWidget {
                 );
               }
               return null;
+            },
+            builder: (context, child) {
+              return SessionTimeoutListener(
+                child: child!,
+              );
             },
           );
         },
