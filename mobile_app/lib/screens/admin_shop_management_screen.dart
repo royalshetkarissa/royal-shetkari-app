@@ -856,81 +856,135 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
             elevation: 2,
             margin: const EdgeInsets.only(bottom: 12),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              leading: CircleAvatar(
-                radius: 24,
-                backgroundColor: Colors.green.shade50,
-                backgroundImage: shop.profilePhoto != null ? NetworkImage(_api.getImageUrl(shop.profilePhoto)) : null,
-                child: shop.profilePhoto == null ? const Icon(Icons.store, color: Color(0xFF1B5E20)) : null,
-              ),
-              title: Text(shop.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              subtitle: Column(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 4),
-                  Text('शहर/तालुका: ${shop.city ?? 'Maharashtra'}', style: const TextStyle(fontSize: 12)),
-                  const SizedBox(height: 2),
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: isActive ? Colors.green.shade100 : Colors.orange.shade100,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          isActive ? 'ACTIVE' : 'INACTIVE',
-                          style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: isActive ? Colors.green.shade800 : Colors.orange.shade800),
+                      CircleAvatar(
+                        radius: 28,
+                        backgroundColor: Colors.green.shade50,
+                        backgroundImage: shop.profilePhoto != null ? NetworkImage(_api.getImageUrl(shop.profilePhoto)) : null,
+                        child: shop.profilePhoto == null ? const Icon(Icons.store, size: 28, color: Color(0xFF1B5E20)) : null,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              shop.name,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87),
+                            ),
+                            const SizedBox(height: 4),
+                            if (shop.ownerName != null && shop.ownerName!.isNotEmpty) ...[
+                              Text(
+                                'मालक: ${shop.ownerName}',
+                                style: TextStyle(fontSize: 12.5, color: Colors.grey.shade700),
+                              ),
+                              const SizedBox(height: 2),
+                            ],
+                            Text(
+                              'शहर/तालुका: ${shop.city ?? 'Maharashtra'} | पिनकोड: ${shop.pincode ?? ''}',
+                              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                            ),
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: isActive ? Colors.green.shade50 : Colors.orange.shade50,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: isActive ? Colors.green.shade200 : Colors.orange.shade200),
+                              ),
+                              child: Text(
+                                isActive ? 'सक्रिय / ACTIVE' : 'निष्क्रिय / INACTIVE',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  color: isActive ? Colors.green.shade800 : Colors.orange.shade800,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 📊 Analytics Button
-                  IconButton(
-                    icon: const Icon(Icons.bar_chart, color: Colors.blue),
-                    tooltip: 'Engagement logs',
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (c) => AdminShopDetailClicksScreen(shop: shop),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 10),
+                    child: Divider(height: 1),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Edit Button
+                      TextButton.icon(
+                        onPressed: () => _openEditShopBottomSheet(shop),
+                        icon: const Icon(Icons.edit, size: 16, color: Colors.orange),
+                        label: const Text(
+                          'दुरुस्ती / Edit',
+                          style: TextStyle(color: Colors.orange, fontSize: 11.5, fontWeight: FontWeight.bold),
                         ),
-                      );
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.edit, color: Colors.orange),
-                    tooltip: 'Edit Profile',
-                    onPressed: () => _openEditShopBottomSheet(shop),
-                  ),
-                  ElevatedButton(
-                    onPressed: () => isActive ? _deactivateShop(shop.id) : _activateShop(shop.id),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isActive ? Colors.red.shade50 : Colors.green.shade50,
-                      foregroundColor: isActive ? Colors.red.shade700 : Colors.green.shade700,
-                      elevation: 0,
-                      side: BorderSide(color: isActive ? Colors.red.shade200 : Colors.green.shade200),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                    child: Text(
-                      isActive ? 'DEACTIVATE' : 'ACTIVATE',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10, letterSpacing: 0.5),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    tooltip: 'Soft delete shop',
-                    onPressed: () => _deleteShop(shop.id),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
+                      // Analytics Button
+                      TextButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (c) => AdminShopDetailClicksScreen(shop: shop),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.bar_chart, size: 16, color: Colors.blue),
+                        label: const Text(
+                          'लॉग्स / Logs',
+                          style: TextStyle(color: Colors.blue, fontSize: 11.5, fontWeight: FontWeight.bold),
+                        ),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
+                      // Toggle status button
+                      ElevatedButton(
+                        onPressed: () => isActive ? _deactivateShop(shop.id) : _activateShop(shop.id),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isActive ? Colors.red.shade50 : Colors.green.shade50,
+                          foregroundColor: isActive ? Colors.red.shade700 : Colors.green.shade700,
+                          elevation: 0,
+                          side: BorderSide(color: isActive ? Colors.red.shade200 : Colors.green.shade200),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: Text(
+                          isActive ? 'DEACTIVATE' : 'ACTIVATE',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 9.5, letterSpacing: 0.5),
+                        ),
+                      ),
+                      // Delete button
+                      IconButton(
+                        onPressed: () => _deleteShop(shop.id),
+                        icon: const Icon(Icons.delete, size: 18, color: Colors.red),
+                        tooltip: 'Soft delete shop',
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        style: IconButton.styleFrom(
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
