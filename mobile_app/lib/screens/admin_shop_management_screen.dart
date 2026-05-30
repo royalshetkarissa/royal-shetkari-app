@@ -153,7 +153,29 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
 
     final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
     setState(() => _currentPosition = pos);
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('GPS Coordinates Captured successfully!'), backgroundColor: Colors.green));
+    showDialog(
+      context: context,
+      builder: (c) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: const [
+            Icon(Icons.check_circle, color: Colors.green, size: 28),
+            SizedBox(width: 10),
+            Text('Geolocation Successful', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+        content: const Text(
+          'Shop GPS coordinates captured and verified successfully!',
+          style: TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c),
+            child: const Text('OK', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _submitShop() async {
@@ -330,7 +352,29 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
       await _api.addShopApi(formData);
       _clearForm();
       _fetchShops();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Shop Registered Successfully!'), backgroundColor: Colors.green));
+      showDialog(
+        context: context,
+        builder: (c) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: const [
+              Icon(Icons.check_circle, color: Colors.green, size: 28),
+              SizedBox(width: 10),
+              Text('Shop Activation Successful', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ],
+          ),
+          content: const Text(
+            'Shop details saved and activated successfully in the system!',
+            style: TextStyle(fontSize: 14),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(c),
+              child: const Text('OK', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to add shop: $e'), backgroundColor: Colors.red));
     } finally {
@@ -865,12 +909,24 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
                     tooltip: 'Edit Profile',
                     onPressed: () => _openEditShopBottomSheet(shop),
                   ),
-                  if (!isActive)
-                    IconButton(
-                      icon: const Icon(Icons.play_arrow, color: Colors.green),
-                      tooltip: 'Activate shop',
-                      onPressed: () => _activateShop(shop.id),
+                  ElevatedButton(
+                    onPressed: () => isActive ? _deactivateShop(shop.id) : _activateShop(shop.id),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isActive ? Colors.red.shade50 : Colors.green.shade50,
+                      foregroundColor: isActive ? Colors.red.shade700 : Colors.green.shade700,
+                      elevation: 0,
+                      side: BorderSide(color: isActive ? Colors.red.shade200 : Colors.green.shade200),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
+                    child: Text(
+                      isActive ? 'DEACTIVATE' : 'ACTIVATE',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10, letterSpacing: 0.5),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   IconButton(
                     icon: const Icon(Icons.delete, color: Colors.red),
                     tooltip: 'Soft delete shop',
@@ -895,15 +951,80 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
         api: _api,
         onSaved: () {
           _fetchShops();
+          showDialog(
+            context: this.context,
+            builder: (c) => AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Row(
+                children: const [
+                  Icon(Icons.check_circle, color: Colors.green, size: 28),
+                  SizedBox(width: 10),
+                  Text('Shop Activation Successful', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ],
+              ),
+              content: const Text(
+                'Shop details saved and activated successfully in the system!',
+                style: TextStyle(fontSize: 14),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(c),
+                  child: const Text('OK', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+          );
         },
       ),
     );
   }
 
   Future<void> _activateShop(int id) async {
-    await _api.activateShop(id);
-    _fetchShops();
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Shop is now Active!'), backgroundColor: Colors.green));
+    try {
+      await _api.activateShop(id);
+      _fetchShops();
+      showDialog(
+        context: context,
+        builder: (c) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: const [
+              Icon(Icons.check_circle, color: Colors.green, size: 28),
+              SizedBox(width: 10),
+              Text('Shop Activation Successful', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ],
+          ),
+          content: const Text(
+            'Shop has been activated successfully in the system!',
+            style: TextStyle(fontSize: 14),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(c),
+              child: const Text('OK', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to activate shop: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  Future<void> _deactivateShop(int id) async {
+    try {
+      await _api.deactivateShop(id);
+      _fetchShops();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Shop deactivated successfully.'), backgroundColor: Colors.orange),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to deactivate shop: $e'), backgroundColor: Colors.red),
+      );
+    }
   }
 
   Future<void> _deleteShop(int id) async {
@@ -1172,6 +1293,7 @@ class _EditShopBottomSheetState extends State<EditShopBottomSheet> {
   bool _isLoading = false;
   double? _latitude;
   double? _longitude;
+  late String _selectedStatus;
 
   final Map<String, Map<String, String>> _categories = {
     'fertilizers': {'mr': 'खते व बियाणे', 'en': 'Fertilizers & Seeds'},
@@ -1211,6 +1333,7 @@ class _EditShopBottomSheetState extends State<EditShopBottomSheet> {
     };
 
     _existingGalleryImages = List<String>.from(widget.shop.images);
+    _selectedStatus = widget.shop.status;
   }
 
   @override
@@ -1274,7 +1397,29 @@ class _EditShopBottomSheetState extends State<EditShopBottomSheet> {
         _latitude = pos.latitude;
         _longitude = pos.longitude;
       });
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('GPS Coordinates updated successfully!'), backgroundColor: Colors.green));
+      showDialog(
+        context: context,
+        builder: (c) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: const [
+              Icon(Icons.check_circle, color: Colors.green, size: 28),
+              SizedBox(width: 10),
+              Text('Geolocation Successful', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ],
+          ),
+          content: const Text(
+            'Shop GPS coordinates captured and verified successfully!',
+            style: TextStyle(fontSize: 14),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(c),
+              child: const Text('OK', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error getting location: $e'), backgroundColor: Colors.red));
     } finally {
@@ -1385,6 +1530,7 @@ class _EditShopBottomSheetState extends State<EditShopBottomSheet> {
         'discount_percentage': double.tryParse(_discountController.text.trim()) ?? 5.0,
         'categories': jsonEncode(selectedCats),
         'existing_images': jsonEncode(_existingGalleryImages),
+        'status': _selectedStatus,
       };
 
       if (_profileCleared) {
@@ -1681,6 +1827,30 @@ class _EditShopBottomSheetState extends State<EditShopBottomSheet> {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    _buildLabel('दुकानाची स्थिती / Shop Status *'),
+                    DropdownButtonFormField<String>(
+                      value: _selectedStatus,
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'active',
+                          child: Text('सक्रिय / Active', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                        ),
+                        DropdownMenuItem(
+                          value: 'inactive',
+                          child: Text('निष्क्रिय / Inactive', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange)),
+                        ),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) {
+                          setState(() {
+                            _selectedStatus = val;
+                          });
+                        }
+                      },
+                      decoration: _buildInputDecoration('स्थिती निवडा'),
                     ),
                     const SizedBox(height: 16),
 

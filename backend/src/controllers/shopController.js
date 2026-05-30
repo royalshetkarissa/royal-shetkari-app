@@ -108,6 +108,15 @@ exports.activateShop = async (req, res, next) => {
   }
 };
 
+exports.deactivateShop = async (req, res, next) => {
+  try {
+    const shop = await shopService.deactivateShop(req.params.id);
+    res.json({ success: true, shop });
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.deleteShop = async (req, res, next) => {
   try {
     await shopService.deleteShop(req.params.id);

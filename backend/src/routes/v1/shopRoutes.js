@@ -34,6 +34,7 @@ router.put(
   shopController.updateShop
 );
 router.post('/admin/:id/activate', verifyToken, isAdmin, shopController.activateShop);
+router.post('/admin/:id/deactivate', verifyToken, isAdmin, shopController.deactivateShop);
 router.delete('/admin/:id', verifyToken, isAdmin, shopController.deleteShop);
 router.get('/admin/analytics', verifyToken, isAdmin, shopController.getAnalytics);
 router.get('/admin/shop-clicks/:shopId', verifyToken, isAdmin, shopController.getShopClicks);

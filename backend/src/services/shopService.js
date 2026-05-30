@@ -35,6 +35,12 @@ class ShopService {
     return shop;
   }
 
+  async deactivateShop(id) {
+    const shop = await shopRepository.updateStatus(id, 'inactive');
+    await cache.invalidatePattern('shops:list:*');
+    return shop;
+  }
+
   async deleteShop(id) {
     await shopRepository.delete(id);
     await cache.invalidatePattern('shops:list:*');

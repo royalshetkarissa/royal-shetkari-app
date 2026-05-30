@@ -366,6 +366,10 @@ class ApiService {
     await _dio.post('/shops/admin/$id/activate');
   }
 
+  Future<void> deactivateShop(int id) async {
+    await _dio.post('/shops/admin/$id/deactivate');
+  }
+
   Future<void> deleteShopAdmin(int id) async {
     await _dio.delete('/shops/admin/$id');
   }
