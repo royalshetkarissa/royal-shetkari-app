@@ -25,12 +25,13 @@ async function bootstrapAdmin() {
     logger.info('Bootstrapping Super Admin account...');
     const hashedPassword = await bcrypt.hash(PASSWORD, 10);
     await pool.query(
-      "INSERT INTO users (full_name, mobile, email, password, is_admin, role) VALUES ($1, $2, $3, $4, TRUE, 'superuser')",
-      [NAME, MOBILE, EMAIL, hashedPassword]
+      "INSERT INTO users (full_name, mobile, email, password, is_admin, role, village, state, pincode) VALUES ($1, $2, $3, $4, TRUE, 'superuser', $5, $6, $7)",
+      [NAME, MOBILE, EMAIL || null, hashedPassword, 'System Village', 'Maharashtra', '411001']
     );
     logger.info('✅ Super Admin account bootstrapped successfully.');
   } catch (err) {
     logger.error('❌ Failed to bootstrap Super Admin account:', { error: err.message });
+    console.error('❌ Failed to bootstrap Super Admin account details:', err);
     if (env.NODE_ENV === 'production') {
       process.exit(1);
     }
