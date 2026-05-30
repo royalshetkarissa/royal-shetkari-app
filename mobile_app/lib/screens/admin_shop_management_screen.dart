@@ -9,6 +9,7 @@ import 'package:http_parser/http_parser.dart';
 import '../services/api_service.dart';
 import '../models/shop_model.dart';
 import '../widgets/royal_app_bar.dart';
+import '../localization/app_localizations.dart';
 import 'admin_shop_detail_clicks_screen.dart';
 
 MediaType? _getMediaType(String filename) {
