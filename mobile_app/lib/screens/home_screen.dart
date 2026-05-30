@@ -1109,7 +1109,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       const SizedBox(height: 20),
                     ],
 
-                    _buildDynamicRecentSection(),
+                    _buildRecentAnimalPostSection(),
+                    const SizedBox(height: 20),
+                    _buildOrganicBannerSection(),
+                    const SizedBox(height: 20),
+                    _buildNearbyShopsSection(),
                   ],
                 ),
               ),
@@ -1117,445 +1121,473 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildDynamicRecentSection() {
-    if (_recentAnimalPosts.isNotEmpty) {
-      final post = _recentAnimalPosts.first;
+  Widget _buildRecentAnimalPostSection() {
+    if (_recentAnimalPosts.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    final post = _recentAnimalPosts.first;
+    final timeDifference = DateTime.now().difference(post.createdAt);
+    final String timeAgo = timeDifference.inHours > 0
+        ? '${timeDifference.inHours} ${context.translate('hours_ago')}'
+        : '${timeDifference.inMinutes} ${context.translate('mins_ago')}';
 
-      final timeDifference = DateTime.now().difference(post.createdAt);
-      final String timeAgo = timeDifference.inHours > 0
-          ? '${timeDifference.inHours} ${context.translate('hours_ago')}'
-          : '${timeDifference.inMinutes} ${context.translate('mins_ago')}';
-
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(context.translate('recent_animal_post'),
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold)),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                    color: Colors.amber.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.amber.shade200)),
-                child: Row(
-                  children: [
-                    Icon(Icons.pets, size: 12, color: Colors.amber.shade800),
-                    const SizedBox(width: 4),
-                    Text(context.translate('latest_24h'),
-                        style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.amber.shade800)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          GestureDetector(
-            onTap: () async {
-              _logImpressionsSession();
-              await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (c) => PostDetailScreen(post: post)),
-              );
-              _startImpressionsSession('animal_post', post.id.toString());
-            },
-            child: Container(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              context.translate('recent_animal_post'),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.amber.shade100, width: 1.5),
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4))
+                color: Colors.amber.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.pets, size: 12, color: Colors.amber.shade800),
+                  const SizedBox(width: 4),
+                  Text(
+                    context.translate('latest_24h'),
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.amber.shade800,
+                    ),
+                  ),
                 ],
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Row(
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        GestureDetector(
+          onTap: () async {
+            _logImpressionsSession();
+            await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (c) => PostDetailScreen(post: post)),
+            );
+            _startImpressionsSession('animal_post', post.id.toString());
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.amber.shade100, width: 1.5),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                )
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 110,
+                    height: 110,
+                    color: Colors.grey.shade100,
+                    child: post.imageUrl != null && post.imageUrl!.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: post.imageUrl!,
+                            fit: BoxFit.cover,
+                            errorWidget: (c, u, e) => const Icon(Icons.pets, color: Colors.grey),
+                          )
+                        : const Icon(Icons.pets, size: 40, color: Colors.grey),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                post.animalType?.toUpperCase() ?? 'ANIMAL',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.amber.shade900,
+                                ),
+                              ),
+                              Text(timeAgo, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            post.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            post.description,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                              height: 1.3,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          if (post.price != null)
+                            Text(
+                              '₹${post.price.toString()}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: Colors.green,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOrganicBannerSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              context.translate('organic_banners'),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.orange.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.percent, size: 12, color: Colors.orange.shade800),
+                  const SizedBox(width: 4),
+                  Text(
+                    context.translate('off_10'),
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange.shade800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        GestureDetector(
+          onTap: () {
+            _logImpressionsSession();
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (c) => const BookCallScreen()),
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.orange.shade800, Colors.deepOrange.shade900],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 15,
+                  offset: const Offset(0, 6),
+                )
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
-                      width: 110,
-                      height: 110,
-                      color: Colors.grey.shade100,
-                      child: post.imageUrl != null && post.imageUrl!.isNotEmpty
-                          ? CachedNetworkImage(
-                              imageUrl: post.imageUrl!,
-                              fit: BoxFit.cover,
-                              errorWidget: (c, u, e) =>
-                                  const Icon(Icons.pets, color: Colors.grey))
-                          : const Icon(Icons.pets,
-                              size: 40, color: Colors.grey),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        context.translate('recommended_by_royal'),
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.orange.shade900,
+                        ),
+                      ),
                     ),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  post.animalType?.toUpperCase() ?? 'ANIMAL',
-                                  style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.amber.shade900),
-                                ),
-                                Text(timeAgo,
-                                    style: const TextStyle(
-                                        fontSize: 10, color: Colors.grey)),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              post.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                  color: Colors.black87),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              post.description,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade600,
-                                  height: 1.3),
-                            ),
-                            const SizedBox(height: 6),
-                            if (post.price != null)
-                              Text(
-                                '₹${post.price.toString()}',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    color: Colors.green),
-                              ),
-                          ],
+                    const Icon(Icons.verified, color: Colors.white, size: 24),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  context.translate('soil_amrit'),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  context.translate('soil_amrit_desc'),
+                  style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.phone_in_talk, color: Colors.white, size: 18),
+                        const SizedBox(width: 8),
+                        Text(
+                          context.translate('free_expert_consultation'),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.amberAccent,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        context.translate('book_call'),
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                   ],
                 ),
-              ),
+              ],
             ),
           ),
-        ],
-      );
-    } else if (_shops.isNotEmpty) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(context.translate('nearby_shops'),
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold)),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.green.shade200)),
-                child: Row(
-                  children: [
-                    Icon(Icons.stars, size: 12, color: Colors.green.shade800),
-                    const SizedBox(width: 4),
-                    Text(context.translate('active_now'),
-                        style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green.shade800)),
-                  ],
-                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNearbyShopsSection() {
+    if (_shops.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              context.translate('nearby_shops'),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.green.shade200),
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 140,
-            child: PageView.builder(
-              controller: _shopPageController ??=
-                  PageController(initialPage: _activeShopIndex),
-              onPageChanged: (index) {
-                _shopPageController = PageController(initialPage: index);
-                setState(() {
-                  _activeShopIndex = index;
-                });
-                final activeShop = _shops[index];
-                _startImpressionsSession('shop', activeShop['id'].toString());
-              },
-              itemCount: _shops.length,
-              itemBuilder: (context, index) {
-                final shop = _shops[index];
-                return GestureDetector(
-                  onTap: () {
-                    _logImpressionsSession();
-                    widget.onTabChange?.call(2);
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                          colors: [Colors.green.shade800, Colors.teal.shade900],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4))
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.storefront,
-                                color: Colors.white, size: 32),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    shop['name'] ?? 'Fertilizer Shop',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.location_on,
-                                          color: Colors.amber, size: 14),
-                                      const SizedBox(width: 4),
-                                      Expanded(
-                                        child: Text(
-                                          shop['location_name'] ??
-                                              'Nearby location',
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                              color: Colors.white70,
-                                              fontSize: 12),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        const Divider(color: Colors.white24, height: 1),
-                        const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              '${context.translate('market')} #${index + 1} / ${_shops.length}',
-                              style: const TextStyle(
-                                  color: Colors.white54,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            Row(
-                              children: [
-                                Text(context.translate('view_on_map'),
-                                    style: const TextStyle(
-                                        color: Colors.amber,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold)),
-                                const SizedBox(width: 4),
-                                const Icon(Icons.arrow_forward,
-                                    color: Colors.amber, size: 14),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
+              child: Row(
+                children: [
+                  Icon(Icons.stars, size: 12, color: Colors.green.shade800),
+                  const SizedBox(width: 4),
+                  Text(
+                    context.translate('active_now'),
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green.shade800,
                     ),
                   ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(_shops.length, (index) {
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 350),
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                width: _activeShopIndex == index ? 16 : 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: _activeShopIndex == index
-                      ? Colors.green.shade800
-                      : Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              );
-            }),
-          ),
-        ],
-      );
-    } else {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(context.translate('organic_banners'),
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold)),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                    color: Colors.orange.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.orange.shade200)),
-                child: Row(
-                  children: [
-                    Icon(Icons.percent,
-                        size: 12, color: Colors.orange.shade800),
-                    const SizedBox(width: 4),
-                    Text(context.translate('off_10'),
-                        style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.orange.shade800)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          GestureDetector(
-            onTap: () {
-              _logImpressionsSession();
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (c) => const BookCallScreen()),
-              );
-            },
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [
-                  Colors.orange.shade800,
-                  Colors.deepOrange.shade900
-                ], begin: Alignment.topLeft, end: Alignment.bottomRight),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 15,
-                      offset: const Offset(0, 6))
                 ],
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(10)),
-                        child: Text(
-                          context.translate('recommended_by_royal'),
-                          style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.orange.shade900),
-                        ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 140,
+          child: PageView.builder(
+            controller: _shopPageController ??= PageController(initialPage: _activeShopIndex),
+            onPageChanged: (index) {
+              _shopPageController = PageController(initialPage: index);
+              setState(() {
+                _activeShopIndex = index;
+              });
+              final activeShop = _shops[index];
+              _startImpressionsSession('shop', activeShop['id'].toString());
+            },
+            itemCount: _shops.length,
+            itemBuilder: (context, index) {
+              final shop = _shops[index];
+              return GestureDetector(
+                onTap: () {
+                  _logImpressionsSession();
+                  widget.onTabChange?.call(2);
+                },
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.green.shade800, Colors.teal.shade900],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
-                      const Icon(Icons.verified, color: Colors.white, size: 24),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    context.translate('soil_amrit'),
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    context.translate('soil_amrit_desc'),
-                    style: const TextStyle(
-                        color: Colors.white70, fontSize: 13, height: 1.4),
-                  ),
-                  const SizedBox(height: 18),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.phone_in_talk,
-                              color: Colors.white, size: 18),
-                          const SizedBox(width: 8),
-                          Text(
-                            context.translate('free_expert_consultation'),
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold),
+                          const Icon(Icons.storefront, color: Colors.white, size: 32),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  shop['name'] ?? 'Fertilizer Shop',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.location_on, color: Colors.amber, size: 14),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        shop['location_name'] ?? 'Nearby location',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                            color: Colors.amberAccent,
-                            borderRadius: BorderRadius.circular(12)),
-                        child: Text(
-                          context.translate('book_call'),
-                          style: const TextStyle(
-                              color: Colors.black,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold),
-                        ),
+                      const SizedBox(height: 12),
+                      const Divider(color: Colors.white24, height: 1),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '${context.translate('market')} #${index + 1} / ${_shops.length}',
+                            style: const TextStyle(
+                              color: Colors.white54,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              Text(
+                                context.translate('view_on_map'),
+                                style: const TextStyle(
+                                  color: Colors.amber,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(Icons.arrow_forward, color: Colors.amber, size: 14),
+                            ],
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           ),
-        ],
-      );
-    }
+        ),
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(_shops.length, (index) {
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 350),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              width: _activeShopIndex == index ? 16 : 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: _activeShopIndex == index ? Colors.green.shade800 : Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
   }
 
   LinearGradient _getWeatherGradient(int code) {
