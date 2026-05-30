@@ -14,7 +14,7 @@ const SORT_ORDER_BY = {
 };
 
 function buildDistanceSelect(userLat, userLng, radius_km, state) {
-  if (userLat && userLng && radius_km) {
+  if (userLat && userLng) {
     const distanceClause = `, (6371 * acos(cos(radians($${state.paramIndex})) * cos(radians(p.latitude)) * cos(radians(p.longitude) - radians($${state.paramIndex + 1})) + sin(radians($${state.paramIndex})) * sin(radians(p.latitude)))) AS distance`;
     state.params.push(userLat, userLng);
     state.paramIndex += 2;
@@ -161,7 +161,7 @@ class PostRepository {
 
     query = appendFilters(query, filters || {}, state);
 
-    const hasDistance = !!(userLat && userLng && radius_km);
+    const hasDistance = !!(userLat && userLng);
     const orderBy = buildOrderBy(sortBy, hasDistance);
     query += ` ORDER BY ${orderBy}`;
 

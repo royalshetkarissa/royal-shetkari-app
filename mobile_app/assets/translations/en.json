@@ -328,5 +328,15 @@
   "delete_user_confirm": "This will permanently remove the user and all their data.",
   "access_denied_inventory": "Access Denied: Requires \"Inventory & Posts\" permission.",
   "access_denied_analytics": "Access Denied: Requires \"Enterprise Analytics\" permission.",
-  "access_denied_booking": "Access Denied: Requires \"Booking Control\" permission."
+  "access_denied_booking": "Access Denied: Requires \"Booking Control\" permission.",
+  "location_explanation": "Location access helps users discover nearby shops and nearby posts.",
+  "location_required": "Location Permission Required",
+  "grant_permission": "Grant Permission",
+  "location_denied_explanation": "Location permission was denied. You can enable it in settings to see nearby shops & posts.",
+  "open_settings": "Open Settings",
+  "ask_shop_location": "Use your current location as this shop location?",
+  "allow_location": "Allow Location",
+  "shop_location_required": "Shop location is required for nearby discovery.",
+  "ask_post_location": "Use your current location for this post?",
+  "skip": "Skip"
 }

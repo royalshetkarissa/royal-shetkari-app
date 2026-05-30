@@ -148,7 +148,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                           mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(c['full_name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
-                            Text('${c['comment_count']} Comments', style: TextStyle(color: Colors.green[700], fontSize: 10, fontWeight: FontWeight.w900)),
+                            Text('${c['comment_count']} ${context.translate('comments')}', style: TextStyle(color: Colors.green[700], fontSize: 10, fontWeight: FontWeight.w900)),
                           ],
                         ),
                       ),

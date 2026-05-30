@@ -136,7 +136,7 @@ exports.updateUserPreference = async (req, res, next) => {
       return next(new AppError('Please provide a lang field in the request body', 400));
     }
 
-    const result = await translationService.updateUserLanguage(req.user.id, lang);
+    const result = await translationService.updateUserLanguage(req.userId, lang);
     res.json({
       success: true,
       message: 'Language preference updated successfully',

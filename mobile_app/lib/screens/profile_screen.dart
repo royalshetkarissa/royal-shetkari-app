@@ -552,7 +552,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           if (isAdmin)
             _buildActionTile(
                 Icons.admin_panel_settings_rounded,
-                'Owner Control Panel',
+                context.translate('admin_console'),
                 Colors.black,
                 () => Navigator.push(
                     context,

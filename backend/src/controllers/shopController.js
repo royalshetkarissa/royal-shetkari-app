@@ -73,8 +73,17 @@ exports.addShop = async (req, res, next) => {
 
 exports.getNearbyShops = async (req, res, next) => {
   try {
-    const { lat, lng } = req.query;
-    const shops = await shopService.getNearbyShops(parseFloat(lat), parseFloat(lng));
+    const lat = req.query.lat || req.query.latitude;
+    const lng = req.query.lng || req.query.longitude;
+    const radius_km = req.query.radius_km;
+    const sortBy = req.query.sortBy;
+
+    const shops = await shopService.getNearbyShops({
+      lat: lat ? parseFloat(lat) : null,
+      lng: lng ? parseFloat(lng) : null,
+      radius_km: radius_km ? parseFloat(radius_km) : null,
+      sortBy
+    });
     res.json({ success: true, shops });
   } catch (err) {
     next(err);

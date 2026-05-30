@@ -183,7 +183,81 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
       return;
     }
 
+    // Ask for location first
+    bool? allowLocation = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (c) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.location_on, color: Color(0xFF2E7D32)),
+            const SizedBox(width: 8),
+            Text(context.translate('location_required')),
+          ],
+        ),
+        content: Text(context.translate('ask_shop_location')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: Text(context.translate('cancel'), style: TextStyle(color: Colors.grey[700])),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(c, true),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2E7D32)),
+            child: Text(context.translate('allow_location'), style: const TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (allowLocation != true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.translate('shop_location_required')),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Capture location coordinates
+    double shopLat = 19.0760;
+    double shopLng = 72.8777;
     setState(() => _isLoading = true);
+
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        throw 'Location services are disabled.';
+      }
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          throw 'Location permission denied.';
+        }
+      }
+      if (permission == LocationPermission.deniedForever) {
+        throw 'Location permissions are permanently denied.';
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      shopLat = position.latitude;
+      shopLng = position.longitude;
+    } catch (e) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${context.translate('shop_location_required')} ($e)'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     try {
       String getSafeFilename(String name) => name.contains('.') ? name : '$name.jpg';
 
@@ -196,8 +270,8 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
         'services': _servicesController.text.trim(),
         'pincode': _pincodeController.text.trim(),
         'city': _cityController.text.trim(),
-        'latitude': 19.0760,
-        'longitude': 72.8777,
+        'latitude': shopLat,
+        'longitude': shopLng,
         'coins_required': int.tryParse(_coinsController.text.trim()) ?? 50,
         'discount_percentage': double.tryParse(_discountController.text.trim()) ?? 5.0,
         'categories': jsonEncode(selectedCats),

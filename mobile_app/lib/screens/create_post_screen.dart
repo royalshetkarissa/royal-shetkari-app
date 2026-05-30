@@ -76,6 +76,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     }
   }
 
+  double? _latitude;
+  double? _longitude;
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedImages.isEmpty && _selectedImagesBytes.isEmpty) {
@@ -84,27 +87,65 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       return;
     }
 
+    if (_latitude == null || _longitude == null) {
+      String? locationChoice = await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (c) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              const Icon(Icons.location_on, color: Color(0xFF2E7D32)),
+              const SizedBox(width: 8),
+              Text(context.translate('location_required')),
+            ],
+          ),
+          content: Text(context.translate('ask_post_location')),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(c, 'skip'),
+              child: Text(context.translate('skip'), style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.bold)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(c, 'allow'),
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2E7D32)),
+              child: Text(context.translate('allow_location'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      );
+
+      if (locationChoice == null) {
+        return;
+      }
+
+      if (locationChoice == 'allow') {
+        setState(() => _isLoading = true);
+        try {
+          if (await Geolocator.isLocationServiceEnabled()) {
+            LocationPermission perm = await Geolocator.checkPermission();
+            if (perm == LocationPermission.denied) {
+              perm = await Geolocator.requestPermission();
+            }
+            if (perm == LocationPermission.always || perm == LocationPermission.whileInUse) {
+              final position = await Geolocator.getCurrentPosition(
+                  desiredAccuracy: LocationAccuracy.medium);
+              _latitude = position.latitude;
+              _longitude = position.longitude;
+            }
+          }
+        } catch (e) {
+          debugPrint('Location fetching error: $e');
+        }
+        setState(() => _isLoading = false);
+      }
+    }
+
     setState(() => _isLoading = true);
     final postProvider = Provider.of<PostProvider>(context, listen: false);
 
     double? parsedPrice = double.tryParse(_priceController.text);
     double? milkPerDay = double.tryParse(_milkPerDayController.text);
-
-    Position? position;
-    try {
-      if (await Geolocator.isLocationServiceEnabled()) {
-        LocationPermission perm = await Geolocator.checkPermission();
-        if (perm == LocationPermission.denied)
-          perm = await Geolocator.requestPermission();
-        if (perm == LocationPermission.always ||
-            perm == LocationPermission.whileInUse) {
-          position = await Geolocator.getCurrentPosition(
-              desiredAccuracy: LocationAccuracy.low);
-        }
-      }
-    } catch (e) {
-      // Ignore
-    }
 
     final success = await postProvider.createPost(
       category: _selectedCategory,
@@ -116,8 +157,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       imageFiles: _selectedImages,
       imageBytesList: _selectedImagesBytes,
       isWeb: _isWeb,
-      latitude: position?.latitude,
-      longitude: position?.longitude,
+      latitude: _latitude,
+      longitude: _longitude,
       animalType: _selectedCategory == 'animals' ? _animalType : null,
       lactation: _selectedCategory == 'animals' ? _lactation : null,
       milkPerDay: _selectedCategory == 'animals' ? milkPerDay : null,

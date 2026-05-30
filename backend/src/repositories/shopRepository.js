@@ -50,17 +50,39 @@ class ShopRepository {
   }
 
   async findAll(filters) {
-    const { userLat, userLng, status = 'active' } = filters;
+    const { userLat, userLng, radius_km, sortBy, status = 'active' } = filters;
 
-    const query = `
-      SELECT *, 
-      (6371 * acos(cos(radians($1)) * cos(radians(latitude)) * cos(radians(longitude) - radians($2)) + sin(radians($1)) * sin(radians(latitude)))) AS distance
+    let distanceSelect = '';
+    const hasCoordinates = userLat !== undefined && userLat !== null && !isNaN(parseFloat(userLat)) &&
+                           userLng !== undefined && userLng !== null && !isNaN(parseFloat(userLng));
+
+    if (hasCoordinates) {
+      distanceSelect = `, (6371 * acos(cos(radians($1)) * cos(radians(latitude)) * cos(radians(longitude) - radians($2)) + sin(radians($1)) * sin(radians(latitude)))) AS distance`;
+    }
+
+    let query = `
+      SELECT * ${distanceSelect}
       FROM shops
       WHERE status = $3
-      ORDER BY distance ASC
     `;
 
-    const result = await pool.query(query, [userLat || 0, userLng || 0, status]);
+    const params = [userLat || 0, userLng || 0, status];
+    let paramIndex = 4;
+
+    if (hasCoordinates && radius_km && !isNaN(parseFloat(radius_km))) {
+      query += ` AND (6371 * acos(cos(radians($1)) * cos(radians(latitude)) * cos(radians(longitude) - radians($2)) + sin(radians($1)) * sin(radians(latitude)))) <= $${paramIndex}`;
+      params.push(parseFloat(radius_km));
+      paramIndex++;
+    }
+
+    // Sorting: default to distance ASC if coordinates are provided and sortBy is not specified
+    if (sortBy === 'distance' || (!sortBy && hasCoordinates)) {
+      query += ` ORDER BY distance ASC`;
+    } else {
+      query += ` ORDER BY created_at DESC`;
+    }
+
+    const result = await pool.query(query, params);
     result.rows.forEach(row => {
       if (row) row.coins_required = row.redeem_coin_cost;
     });

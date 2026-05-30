@@ -334,9 +334,12 @@ class ApiService {
     return List<Map<String, dynamic>>.from(data['templates']);
   }
 
-  // FERTILIZER SHOPS & MARKET
-  Future<List<Map<String, dynamic>>> getNearbyShops(double lat, double lng) async {
-    final response = await _dio.get('/shops/nearby', queryParameters: {'lat': lat, 'lng': lng});
+  Future<List<Map<String, dynamic>>> getNearbyShops(double lat, double lng, {double? radiusKm}) async {
+    final Map<String, dynamic> queryParams = {'lat': lat, 'lng': lng};
+    if (radiusKm != null) {
+      queryParams['radius_km'] = radiusKm;
+    }
+    final response = await _dio.get('/shops/nearby', queryParameters: queryParams);
     final data = _handleResponse(response);
     return List<Map<String, dynamic>>.from(data['shops']);
   }

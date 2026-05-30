@@ -8,12 +8,19 @@ class ShopService {
     return shop;
   }
 
-  async getNearbyShops(lat, lng) {
-    const cacheKey = `shops:list:${lat}:${lng}`;
+  async getNearbyShops(params) {
+    const { lat, lng, radius_km, sortBy } = params;
+    const cacheKey = `shops:list:${lat}:${lng}:${radius_km}:${sortBy}`;
     const cached = await cache.get(cacheKey);
     if (cached) return cached;
 
-    const shops = await shopRepository.findAll({ userLat: lat, userLng: lng, status: 'active' });
+    const shops = await shopRepository.findAll({
+      userLat: lat,
+      userLng: lng,
+      radius_km,
+      sortBy,
+      status: 'active'
+    });
     await cache.set(cacheKey, shops, 600); // 10 min cache
     return shops;
   }

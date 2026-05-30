@@ -24,6 +24,9 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
   final TextEditingController _cityFilterController = TextEditingController();
   final TextEditingController _pincodeFilterController = TextEditingController();
 
+  int _sliderIndex = 4; // Default to 'All'
+  final List<double?> _radiusValues = [5.0, 10.0, 20.0, 50.0, null];
+
   final List<Map<String, String>> _tabs = [
     {'key': 'fertilizers', 'labelMr': 'खते व औषधे', 'labelEn': 'Fertilizers'},
     {'key': 'crop', 'labelMr': 'पीक बाजार', 'labelEn': 'Crop Market'},
@@ -69,7 +72,8 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
         // Location failed, use fallback coordinates
       }
 
-      final raw = await _api.getNearbyShops(lat, lng);
+      final radius = _radiusValues[_sliderIndex];
+      final raw = await _api.getNearbyShops(lat, lng, radiusKm: radius);
       setState(() {
         _shops = raw.map((j) => ShopModel.fromJson(j)).toList();
         _isLoading = false;
@@ -263,51 +267,131 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
             }).toList(),
           ),
         ),
-      body: _isLoading
-          ? Center(child: ShimmerSkeleton())
-          : TabBarView(
-              controller: _tabController,
-              children: _tabs.map((tab) {
-                final categoryShops = _getShopsForCategory(tab['key']!);
-                final isOrganic = tab['key'] == 'organic_farming';
+      body: Column(
+        children: [
+          _buildRadiusSliderBar(),
+          Expanded(
+            child: _isLoading
+                ? Center(child: ShimmerSkeleton())
+                : TabBarView(
+                    controller: _tabController,
+                    children: _tabs.map((tab) {
+                      final categoryShops = _getShopsForCategory(tab['key']!);
+                      final isOrganic = tab['key'] == 'organic_farming';
 
-                return RefreshIndicator(
-                  onRefresh: _loadShops,
-                  color: const Color(0xFF1B5E20),
-                  child: ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    children: [
-                      _buildFilterRow(),
-                      const SizedBox(height: 16),
-                      if (isOrganic) ...[
-                        _buildOrganicTipsHeader(),
-                        const SizedBox(height: 16),
-                      ],
-                      if (categoryShops.isEmpty)
-                        Container(
-                          height: 300,
-                          alignment: Alignment.center,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Icon(Icons.storefront, size: 64, color: Colors.grey),
-                              SizedBox(height: 16),
-                              Text(
-                                'या विभागात सध्या दुकाने उपलब्ध नाहीत.\nNo shops available in this category.',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(color: Colors.grey, fontSize: 13),
-                              ),
+                      return RefreshIndicator(
+                        onRefresh: _loadShops,
+                        color: const Color(0xFF1B5E20),
+                        child: ListView(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [
+                            _buildFilterRow(),
+                            const SizedBox(height: 16),
+                            if (isOrganic) ...[
+                              _buildOrganicTipsHeader(),
+                              const SizedBox(height: 16),
                             ],
-                          ),
-                        )
-                      else
-                        ...categoryShops.map((shop) => _buildShopCard(shop, tab['key']!)),
-                    ],
+                            if (categoryShops.isEmpty)
+                              Container(
+                                height: 300,
+                                alignment: Alignment.center,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: const [
+                                    Icon(Icons.storefront, size: 64, color: Colors.grey),
+                                    SizedBox(height: 16),
+                                    Text(
+                                      'या विभागात सध्या दुकाने उपलब्ध नाहीत.\nNo shops available in this category.',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(color: Colors.grey, fontSize: 13),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            else
+                              ...categoryShops.map((shop) => _buildShopCard(shop, tab['key']!)),
+                          ],
+                        ),
+                      );
+                    }).toList(),
                   ),
-                );
-              }).toList(),
+          ),
+        ],
+      ),
+      ),
+    );
+  }
+
+  Widget _buildRadiusSliderBar() {
+    final radiusLabel = _radiusValues[_sliderIndex] != null
+        ? '${_radiusValues[_sliderIndex]!.toInt()} km'
+        : context.translate('all', defaultValue: 'All');
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                context.translate('search_radius', defaultValue: 'Search Radius'),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1B5E20)),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1B5E20).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  radiusLabel,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1B5E20)),
+                ),
+              ),
+            ],
+          ),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: const Color(0xFF1B5E20),
+              inactiveTrackColor: Colors.grey[200],
+              trackHeight: 4.0,
+              thumbColor: const Color(0xFFFF9800),
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10.0),
+              overlayColor: const Color(0xFFFF9800).withAlpha(32),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 20.0),
+              tickMarkShape: const RoundSliderTickMarkShape(),
+              activeTickMarkColor: const Color(0xFF1B5E20),
+              inactiveTickMarkColor: Colors.grey[400],
             ),
+            child: Slider(
+              value: _sliderIndex.toDouble(),
+              min: 0,
+              max: 4,
+              divisions: 4,
+              onChanged: (val) {
+                setState(() {
+                  _sliderIndex = val.toInt();
+                });
+              },
+              onChangeEnd: (val) {
+                _loadShops();
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -443,7 +527,7 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          shop.formattedDistance.isNotEmpty ? shop.formattedDistance : 'Proximity active',
+                          shop.formattedDistance.isNotEmpty ? shop.formattedDistance : 'Location N/A',
                           style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                         ),
                       ),

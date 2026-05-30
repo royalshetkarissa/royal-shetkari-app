@@ -21,6 +21,7 @@ import 'dart:async';
 import '../models/post_model.dart';
 import 'post_detail_screen.dart';
 import 'package:intl/intl.dart';
+import '../core/utils/location_permission_helper.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -169,6 +170,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      LocationPermissionHelper.checkAndRequestStartupLocation(context);
+    });
     _fetchData();
   }
 
