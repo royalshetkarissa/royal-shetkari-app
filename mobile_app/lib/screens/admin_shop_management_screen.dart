@@ -183,79 +183,84 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
       return;
     }
 
-    // Ask for location first
-    bool? allowLocation = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (c) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            const Icon(Icons.location_on, color: Color(0xFF2E7D32)),
-            const SizedBox(width: 8),
-            Text(context.translate('location_required')),
-          ],
-        ),
-        content: Text(context.translate('ask_shop_location')),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(c, false),
-            child: Text(context.translate('cancel'), style: TextStyle(color: Colors.grey[700])),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(c, true),
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2E7D32)),
-            child: Text(context.translate('allow_location'), style: const TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-
-    if (allowLocation != true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.translate('shop_location_required')),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    // Capture location coordinates
     double shopLat = 19.0760;
     double shopLng = 72.8777;
-    setState(() => _isLoading = true);
 
-    try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        throw 'Location services are disabled.';
-      }
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          throw 'Location permission denied.';
-        }
-      }
-      if (permission == LocationPermission.deniedForever) {
-        throw 'Location permissions are permanently denied.';
-      }
-
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-      shopLat = position.latitude;
-      shopLng = position.longitude;
-    } catch (e) {
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${context.translate('shop_location_required')} ($e)'),
-          backgroundColor: Colors.red,
+    if (_currentPosition != null) {
+      shopLat = _currentPosition!.latitude;
+      shopLng = _currentPosition!.longitude;
+    } else {
+      // Ask for location first
+      bool? allowLocation = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (c) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              const Icon(Icons.location_on, color: Color(0xFF2E7D32)),
+              const SizedBox(width: 8),
+              Text(context.translate('location_required')),
+            ],
+          ),
+          content: Text(context.translate('ask_shop_location')),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(c, false),
+              child: Text(context.translate('cancel'), style: TextStyle(color: Colors.grey[700])),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(c, true),
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2E7D32)),
+              child: Text(context.translate('allow_location'), style: const TextStyle(color: Colors.white)),
+            ),
+          ],
         ),
       );
-      return;
+
+      if (allowLocation != true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.translate('shop_location_required')),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      setState(() => _isLoading = true);
+
+      try {
+        bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        if (!serviceEnabled) {
+          throw 'Location services are disabled.';
+        }
+        LocationPermission permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
+          if (permission == LocationPermission.denied) {
+            throw 'Location permission denied.';
+          }
+        }
+        if (permission == LocationPermission.deniedForever) {
+          throw 'Location permissions are permanently denied.';
+        }
+
+        Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+        );
+        shopLat = position.latitude;
+        shopLng = position.longitude;
+      } catch (e) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${context.translate('shop_location_required')} ($e)'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
     }
 
     try {
@@ -675,6 +680,51 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
                   side: const BorderSide(color: Color(0xFF1B5E20), width: 1.5),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            _buildLabel('दुकानाचे लोकेशन / Shop Location'),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.location_on, color: Color(0xFF1B5E20)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _currentPosition != null
+                              ? 'Coordinates: ${_currentPosition!.latitude.toStringAsFixed(4)}, ${_currentPosition!.longitude.toStringAsFixed(4)}'
+                              : 'Location not captured yet',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _currentPosition != null
+                              ? 'लोकेशन सेट आहे / Location is set'
+                              : 'कृपया लोकेशन मिळवा / Please fetch location',
+                          style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: _getCurrentLocation,
+                    icon: const Icon(Icons.my_location, size: 16, color: Color(0xFF1B5E20)),
+                    label: const Text(
+                      'मिळवा / Fetch',
+                      style: TextStyle(color: Color(0xFF1B5E20), fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 24),
@@ -1119,6 +1169,8 @@ class _EditShopBottomSheetState extends State<EditShopBottomSheet> {
   List<XFile> _newGalleryImages = [];
   List<String> _existingGalleryImages = [];
   bool _isLoading = false;
+  double? _latitude;
+  double? _longitude;
 
   final Map<String, Map<String, String>> _categories = {
     'fertilizers': {'mr': 'खते व बियाणे', 'en': 'Fertilizers & Seeds'},
@@ -1134,6 +1186,8 @@ class _EditShopBottomSheetState extends State<EditShopBottomSheet> {
   @override
   void initState() {
     super.initState();
+    _latitude = widget.shop.latitude;
+    _longitude = widget.shop.longitude;
     _nameController = TextEditingController(text: widget.shop.name);
     _ownerNameController = TextEditingController(text: widget.shop.ownerName ?? '');
     _addressController = TextEditingController(text: widget.shop.address);
@@ -1194,6 +1248,39 @@ class _EditShopBottomSheetState extends State<EditShopBottomSheet> {
     }
   }
 
+  Future<void> _updateLocation() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enable GPS Location services')));
+      return;
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) return;
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Location permission is permanently denied.')));
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
+      setState(() {
+        _latitude = pos.latitude;
+        _longitude = pos.longitude;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('GPS Coordinates updated successfully!'), backgroundColor: Colors.green));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error getting location: $e'), backgroundColor: Colors.red));
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
   Future<void> _saveShop() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -1207,6 +1294,74 @@ class _EditShopBottomSheetState extends State<EditShopBottomSheet> {
         const SnackBar(content: Text('Please select at least one category'), backgroundColor: Colors.red),
       );
       return;
+    }
+
+    if (_latitude == null || _longitude == null) {
+      bool? allowLocation = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (c) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              const Icon(Icons.location_on, color: Color(0xFF2E7D32)),
+              const SizedBox(width: 8),
+              Text(context.translate('location_required')),
+            ],
+          ),
+          content: Text(context.translate('ask_shop_location')),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(c, false),
+              child: Text(context.translate('cancel'), style: TextStyle(color: Colors.grey[700])),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(c, true),
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2E7D32)),
+              child: Text(context.translate('allow_location'), style: const TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      );
+
+      if (allowLocation != true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.translate('shop_location_required')),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      setState(() => _isLoading = true);
+      try {
+        bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        if (!serviceEnabled) {
+          throw 'Location services are disabled.';
+        }
+        LocationPermission permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
+          if (permission == LocationPermission.denied) {
+            throw 'Location permission denied.';
+          }
+        }
+        Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.medium,
+        );
+        _latitude = position.latitude;
+        _longitude = position.longitude;
+      } catch (e) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${context.translate('shop_location_required')} ($e)'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
     }
 
     setState(() => _isLoading = true);
@@ -1223,8 +1378,8 @@ class _EditShopBottomSheetState extends State<EditShopBottomSheet> {
         'services': _servicesController.text.trim(),
         'pincode': _pincodeController.text.trim(),
         'city': _cityController.text.trim(),
-        'latitude': 19.0760,
-        'longitude': 72.8777,
+        'latitude': _latitude ?? 19.0760,
+        'longitude': _longitude ?? 72.8777,
         'coins_required': int.tryParse(_coinsController.text.trim()) ?? 50,
         'discount_percentage': double.tryParse(_discountController.text.trim()) ?? 5.0,
         'categories': jsonEncode(selectedCats),
@@ -1559,6 +1714,52 @@ class _EditShopBottomSheetState extends State<EditShopBottomSheet> {
                             contentPadding: EdgeInsets.zero,
                           );
                         }).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    _buildLabel('दुकानाचे लोकेशन / Shop Location'),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.location_on, color: Color(0xFF1B5E20)),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _latitude != null && _longitude != null
+                                      ? 'Coordinates: ${_latitude!.toStringAsFixed(4)}, ${_longitude!.toStringAsFixed(4)}'
+                                      : 'Location not captured yet',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _latitude != null && _longitude != null
+                                      ? 'लोकेशन सेट आहे / Location is set'
+                                      : 'कृपया लोकेशन मिळवा / Please fetch location',
+                                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                                ),
+                              ],
+                            ),
+                          ),
+                          TextButton.icon(
+                            onPressed: _updateLocation,
+                            icon: const Icon(Icons.my_location, size: 16, color: Color(0xFF1B5E20)),
+                            label: const Text(
+                              'मिळवा / Fetch',
+                              style: TextStyle(color: Color(0xFF1B5E20), fontWeight: FontWeight.bold, fontSize: 12),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 24),
