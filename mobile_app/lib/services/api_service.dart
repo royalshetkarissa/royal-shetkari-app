@@ -91,7 +91,9 @@ class ApiService {
     if (userLat != null && userLng != null) {
       query['userLat'] = userLat.toString();
       query['userLng'] = userLng.toString();
-      query['radius_km'] = (radiusKm ?? 50.0).toString();
+      if (radiusKm != null) {
+        query['radius_km'] = radiusKm.toString();
+      }
     }
     if (search != null && search.isNotEmpty) query['search'] = search;
     if (sortBy != null) query['sortBy'] = sortBy;

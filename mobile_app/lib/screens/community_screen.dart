@@ -52,11 +52,33 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final postProvider = Provider.of<PostProvider>(context, listen: false);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
+    double? userLat;
+    double? userLng;
+
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.always || permission == LocationPermission.whileInUse) {
+        final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.low);
+        userLat = pos.latitude;
+        userLng = pos.longitude;
+      }
+    } catch (_) {}
+
+    if (userLat == null && authProvider.user != null) {
+      final u = authProvider.user!;
+      if (u['latitude'] != null && u['longitude'] != null) {
+        userLat = double.tryParse(u['latitude'].toString());
+        userLng = double.tryParse(u['longitude'].toString());
+      }
+    }
+
     await postProvider.fetchPosts(
       category: _selectedCategory,
       animalType: _selectedCategory == 'animals' ? _animalType : null,
       minPrice: _minPrice,
       maxPrice: _maxPrice,
+      userLat: userLat,
+      userLng: userLng,
       radiusKm: _radiusKm,
       search: _searchQuery,
       sortBy: _sortBy,
