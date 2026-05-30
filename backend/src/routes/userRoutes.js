@@ -17,9 +17,9 @@ router.get('/', async (req, res, next) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    res.json({
-      status: 'success',
-      message: 'Users API is functional (Database is currently offline or unreachable)!',
+    res.status(503).json({
+      status: 'fail',
+      message: 'Users API is currently degraded (Database is offline or unreachable)!',
       timestamp: new Date().toISOString(),
     });
   }

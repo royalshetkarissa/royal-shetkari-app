@@ -9,6 +9,14 @@ const crypto = require('crypto');
 // Dynamic fallback for SUPER_ADMIN_PASSWORD in production to prevent startup crash if missing
 if (process.env.NODE_ENV === 'production' && !process.env.SUPER_ADMIN_PASSWORD) {
   process.env.SUPER_ADMIN_PASSWORD = crypto.randomBytes(32).toString('hex');
+  console.warn(`
+========================================================================
+⚠️  WARNING: SUPER_ADMIN_PASSWORD environment variable is missing!
+A temporary password has been randomly generated for this session:
+👉 SUPER_ADMIN_PASSWORD: ${process.env.SUPER_ADMIN_PASSWORD}
+Please configure SUPER_ADMIN_PASSWORD in production environment variables.
+========================================================================
+  `);
 }
 
 /**
@@ -62,6 +70,30 @@ const envSchema = z
     {
       message: 'SUPER_ADMIN_PASSWORD is required in production environment',
       path: ['SUPER_ADMIN_PASSWORD'],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.NODE_ENV === 'production' && data.SUPER_USER_MOBILE === '8605889356') {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: 'SUPER_USER_MOBILE cannot be the default debug value in production',
+      path: ['SUPER_USER_MOBILE'],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.NODE_ENV === 'production' && data.SUPER_ADMIN_MOBILE === '8605889356') {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: 'SUPER_ADMIN_MOBILE cannot be the default debug value in production',
+      path: ['SUPER_ADMIN_MOBILE'],
     }
   );
 

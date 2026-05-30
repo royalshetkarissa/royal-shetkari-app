@@ -338,5 +338,20 @@
   "allow_location": "Allow Location",
   "shop_location_required": "Shop location is required for nearby discovery.",
   "ask_post_location": "Use your current location for this post?",
-  "skip": "Skip"
+  "skip": "Skip",
+  "err_stream_server_down": "Live stream is down right now. Please try again.",
+  "err_stream_not_started": "The live stream has not started yet. Please wait.",
+  "err_stream_ended": "The host has ended this live stream. Thank you.",
+  "err_stream_slow_connection": "Your internet is slow. We are adjusting the quality.",
+  "err_stream_no_internet": "No internet connection. Please check your network status.",
+  "err_stream_quality_failed": "Could not change quality. Please try again.",
+  "err_stream_chat_failed": "Message could not be sent. Please try again.",
+  "err_stream_recording_failed": "Could not record live stream. Storage is currently full.",
+  "err_stream_limit_reached": "The live stream has reached its viewer limit. Try later.",
+  "err_stream_session_expired": "Your session has expired. Please login again.",
+  "btn_retry": "RETRY",
+  "btn_check": "CHECK",
+  "btn_back": "GO BACK",
+  "btn_low": "LOW",
+  "btn_login": "LOGIN"
 }
