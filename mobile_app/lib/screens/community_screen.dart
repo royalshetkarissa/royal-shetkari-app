@@ -10,6 +10,7 @@ import 'post_detail_screen.dart';
 import '../services/api_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../localization/app_localizations.dart';
+import 'package:geolocator/geolocator.dart';
 
 class CommunityScreen extends StatefulWidget {
   final VoidCallback? onBackToHome;
