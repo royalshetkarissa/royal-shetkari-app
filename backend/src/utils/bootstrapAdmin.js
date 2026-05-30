@@ -16,9 +16,12 @@ async function bootstrapAdmin() {
   }
 
   try {
-    const check = await pool.query('SELECT id FROM users WHERE mobile = $1', [MOBILE]);
+    const check = await pool.query(
+      'SELECT id FROM users WHERE mobile = $1 OR (email IS NOT NULL AND email = $2)',
+      [MOBILE, EMAIL || '']
+    );
     if (check.rows.length > 0) {
-      logger.info('Super Admin account already exists. Skipping bootstrap.');
+      logger.info('Super Admin account already exists (by mobile or email). Skipping bootstrap.');
       return;
     }
 
