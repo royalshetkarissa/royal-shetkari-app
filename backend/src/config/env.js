@@ -19,6 +19,30 @@ Please configure SUPER_ADMIN_PASSWORD in production environment variables.
   `);
 }
 
+// Dynamic fallback for SUPER_USER_MOBILE in production to prevent startup crash if missing
+if (process.env.NODE_ENV === 'production' && !process.env.SUPER_USER_MOBILE) {
+  process.env.SUPER_USER_MOBILE = '9999999999';
+  console.warn(`
+========================================================================
+⚠️  WARNING: SUPER_USER_MOBILE environment variable is missing in production!
+A temporary safe placeholder has been assigned: 9999999999
+Please configure a unique SUPER_USER_MOBILE in production environment variables.
+========================================================================
+  `);
+}
+
+// Dynamic fallback for SUPER_ADMIN_MOBILE in production to prevent startup crash if missing
+if (process.env.NODE_ENV === 'production' && !process.env.SUPER_ADMIN_MOBILE) {
+  process.env.SUPER_ADMIN_MOBILE = '9999999998';
+  console.warn(`
+========================================================================
+⚠️  WARNING: SUPER_ADMIN_MOBILE environment variable is missing in production!
+A temporary safe placeholder has been assigned: 9999999998
+Please configure a unique SUPER_ADMIN_MOBILE in production environment variables.
+========================================================================
+  `);
+}
+
 /**
  * Validate environment variables at startup.
  */
