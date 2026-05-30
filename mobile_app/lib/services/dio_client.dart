@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_config.dart';
 
 class DioClient {
@@ -27,8 +26,7 @@ class DioClient {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          final prefs = await SharedPreferences.getInstance();
-          String? token = await _storage.read(key: 'accessToken') ?? prefs.getString('token');
+          String? token = await _storage.read(key: 'accessToken');
           
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
@@ -88,19 +86,30 @@ class DioClient {
 
   Future<bool> _refreshToken() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final refreshToken = await _storage.read(key: 'refreshToken') ?? prefs.getString('refreshToken');
+      final refreshToken = await _storage.read(key: 'refreshToken');
       if (refreshToken == null) return false;
 
-      final response = await dio.post('/auth/refresh-token', data: {'refreshToken': refreshToken});
+      // Use a dedicated, clean Dio instance without auth interceptors to prevent infinite 401 recursion loops
+      final refreshDio = Dio(
+        BaseOptions(
+          baseUrl: AppConfig.baseUrl,
+          connectTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 10),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        ),
+      );
+
+      final response = await refreshDio.post('/auth/refresh-token', data: {'refreshToken': refreshToken});
       if (response.statusCode == 200) {
         final newAccessToken = response.data['accessToken'];
         await _storage.write(key: 'accessToken', value: newAccessToken);
-        await prefs.setString('token', newAccessToken);
         return true;
       }
     } catch (e) {
-      print('❌ Refresh token failed: $e');
+      debugPrint('❌ Refresh token failed: $e');
     }
     return false;
   }

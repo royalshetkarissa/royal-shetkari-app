@@ -40,4 +40,5 @@ exports.resendOtpSchema = z.object({
 exports.resetPasswordSchema = z.object({
   mobile: z.string().min(10).max(15),
   newPassword: z.string().min(6),
+  otp: z.string().length(6),
 });

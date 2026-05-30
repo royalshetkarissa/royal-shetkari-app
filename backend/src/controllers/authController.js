@@ -187,15 +187,20 @@ exports.resendOtp = async (req, res, next) => {
 
 exports.resetPassword = async (req, res, next) => {
   try {
-    const { mobile, newPassword } = req.body;
+    const { mobile, newPassword, otp } = req.body;
 
-    if (!mobile || !newPassword) {
-      return next(new AppError('Mobile number and new password are required', 400));
+    if (!mobile || !newPassword || !otp) {
+      return next(new AppError('Mobile number, new password, and OTP are required', 400));
     }
 
     const user = await authService.findUserByMobile(mobile);
     if (!user) {
       return next(new AppError('Mobile number not registered', 404));
+    }
+
+    const otpRecord = await authService.verifyOTP(mobile, otp);
+    if (!otpRecord) {
+      return next(new AppError('Invalid or expired OTP', 400));
     }
 
     let updatedUser;

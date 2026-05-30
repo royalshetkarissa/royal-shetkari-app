@@ -21,10 +21,12 @@ const redisConfig = {
   maxRetriesPerRequest: null, // Required by BullMQ
   enableOfflineQueue: true, // Allow queueing commands while offline to prevent immediate crashes
   retryStrategy: (times) => {
-    // Exponential backoff cap to prevent CPU-spinning infinite reconnect loop
-    const maxDelay = 10000; // 10 seconds max delay
-    const delay = Math.min(times * 100, maxDelay);
-    logger.warn(`Redis connection retry attempt #${times}. Next retry in ${delay}ms`);
+    // Start delay at 1s, back off progressively, cap at 30s
+    const delay = Math.min(times * 1000, 30000);
+    // Suppress logs spam: log first 5 times, then every 10th time
+    if (times <= 5 || times % 10 === 0) {
+      logger.warn(`Redis connection retry attempt #${times}. Next retry in ${delay}ms`);
+    }
     return delay;
   },
   reconnectOnError: (err) => {

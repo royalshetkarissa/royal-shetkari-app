@@ -29,9 +29,7 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> initialize() async {
     final prefs = await SharedPreferences.getInstance();
-    // Dual-read for reliability
-    _token =
-        await _storage.read(key: 'accessToken') ?? prefs.getString('token');
+    _token = await _storage.read(key: 'accessToken');
 
     final userJson = prefs.getString('user');
     if (userJson != null) {
@@ -126,13 +124,11 @@ class AuthProvider extends ChangeNotifier {
       // Persist Token Securely
       await _storage.write(key: 'accessToken', value: _token!);
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('token', _token!);
       await prefs.setString('user', jsonEncode(_user!));
 
       if (response['refreshToken'] != null) {
         await _storage.write(
             key: 'refreshToken', value: response['refreshToken']);
-        await prefs.setString('refreshToken', response['refreshToken']);
       }
 
       // Sync active language preference with backend on login
@@ -236,8 +232,6 @@ class AuthProvider extends ChangeNotifier {
     await _storage.delete(key: 'accessToken');
     await _storage.delete(key: 'refreshToken');
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('token');
-    await prefs.remove('refreshToken');
     await prefs.remove('user');
     _token = null;
     _user = null;
@@ -256,14 +250,31 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> sendResetOtp(String mobile) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      final response = await _api.resendOtp(mobile: mobile);
+      _devOtp = response['devOtp'];
+      return true;
+    } catch (e) {
+      _error = _formatError(e);
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<bool> resetPassword(
-      {required String mobile, required String newPassword}) async {
+      {required String mobile, required String newPassword, required String otp}) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      await _api.resetPassword(mobile: mobile, newPassword: newPassword);
+      await _api.resetPassword(mobile: mobile, newPassword: newPassword, otp: otp);
       return true;
     } catch (e) {
       _error = _formatError(e);

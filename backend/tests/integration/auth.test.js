@@ -53,10 +53,12 @@ describe('Auth Integration Tests', () => {
 
   describe('POST /api/v1/auth/reset-password', () => {
     it('should reset password successfully for registered user', async () => {
-      // First ensure the user is registered
-      await request(app)
+      // First ensure the user is registered cleanly by clearing any old records
+      await pool.query('DELETE FROM users WHERE mobile = $1', [testUser.mobile]);
+      const regRes = await request(app)
         .post('/api/v1/register')
         .send(testUser);
+      const otp = regRes.body.devOtp;
 
       // Now reset the password
       const res = await request(app)
@@ -64,6 +66,7 @@ describe('Auth Integration Tests', () => {
         .send({
           mobile: testUser.mobile,
           newPassword: 'newsecurepassword123',
+          otp: otp,
         });
 
       expect(res.statusCode).toEqual(200);
@@ -79,6 +82,7 @@ describe('Auth Integration Tests', () => {
         .send({
           mobile: '9999999991',
           newPassword: 'somepassword123',
+          otp: '123456',
         });
 
       console.log('--- 404 test res.body:', res.body);
@@ -93,6 +97,7 @@ describe('Auth Integration Tests', () => {
         .send({
           mobile: testUser.mobile,
           newPassword: '123',
+          otp: '123456',
         });
 
       expect(res.statusCode).toEqual(400);

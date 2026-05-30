@@ -2,9 +2,9 @@ const jwt = require('jsonwebtoken');
 const env = require('../config/env');
 
 const verifyToken = (req, res, next) => {
-  let token = req.query.token;
   const authHeader = req.headers.authorization;
-  if (authHeader) {
+  let token;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
     token = authHeader.split(' ')[1];
   }
 

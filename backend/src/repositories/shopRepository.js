@@ -169,9 +169,9 @@ class ShopRepository {
     try {
       await client.query('BEGIN');
 
-      // Fetch dynamic coin offer and discount settings for this shop
+      // Fetch dynamic coin offer and discount settings for this shop and lock the row to prevent concurrent modifications
       const shopRes = await client.query(
-        'SELECT redeem_coin_cost, discount_percentage FROM shops WHERE id = $1',
+        'SELECT redeem_coin_cost, discount_percentage FROM shops WHERE id = $1 FOR UPDATE',
         [shopId]
       );
       if (shopRes.rows.length === 0) {
@@ -180,14 +180,24 @@ class ShopRepository {
       const coinsRequired = shopRes.rows[0].redeem_coin_cost || 50;
       const discountPercentage = parseFloat(shopRes.rows[0].discount_percentage) || 5.0;
 
+      // Fetch and lock user row to prevent concurrency race conditions
+      const userRes = await client.query(
+        'SELECT coins FROM users WHERE id = $1 FOR UPDATE',
+        [userId]
+      );
+      if (userRes.rows.length === 0) {
+        throw new Error('User not found');
+      }
+      const userCoins = userRes.rows[0].coins || 0;
+      if (userCoins < coinsRequired) {
+        throw new Error(`Insufficient coins. Minimum ${coinsRequired} coins required for redemption.`);
+      }
+
       // 1. Deduct coins from user
       const updateResult = await client.query(
         `UPDATE users SET coins = coins - $1 WHERE id = $2 RETURNING coins`,
         [coinsRequired, userId]
       );
-      if (updateResult.rows.length === 0) {
-        throw new Error('User not found');
-      }
       const newCoins = updateResult.rows[0].coins;
 
       // 2. Generate claim code

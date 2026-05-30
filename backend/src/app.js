@@ -29,6 +29,7 @@ const requestId = require('./middleware/requestId');
 const errorMiddleware = require('./middleware/errorMiddleware');
 
 const app = express();
+app.set('trust proxy', 1);
 app.disable('x-powered-by');
 
 // 1. Global Middlewares

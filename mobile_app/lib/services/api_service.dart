@@ -46,8 +46,8 @@ class ApiService {
     return Map<String, dynamic>.from(_handleResponse(response));
   }
 
-  Future<Map<String, dynamic>> resetPassword({required String mobile, required String newPassword}) async {
-    final response = await _dio.post('/auth/reset-password', data: {'mobile': mobile, 'newPassword': newPassword});
+  Future<Map<String, dynamic>> resetPassword({required String mobile, required String newPassword, required String otp}) async {
+    final response = await _dio.post('/auth/reset-password', data: {'mobile': mobile, 'newPassword': newPassword, 'otp': otp});
     return Map<String, dynamic>.from(_handleResponse(response));
   }
 

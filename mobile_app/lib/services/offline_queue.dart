@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import 'api_service.dart';
+import 'package:dio/dio.dart';
+import './dio_client.dart';
 
 class OfflineQueueService {
   static Database? _database;
-  final ApiService _api = ApiService();
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -56,17 +56,37 @@ class OfflineQueueService {
 
     print('🔄 Syncing ${maps.length} offline requests...');
 
+    final dio = DioClient().instance;
+
     for (var item in maps) {
       try {
-        // This is a simplified sync logic. In a real app, you'd handle
-        // specific endpoints and methods via your ApiService.
-        // await _api.performRequest(item['endpoint'], item['method'], jsonDecode(item['body']));
-        
-        // Remove from queue after success
-        await db.delete('queue', where: 'id = ?', whereArgs: [item['id']]);
+        final endpoint = item['endpoint'] as String;
+        final method = item['method'] as String;
+        final bodyJson = item['body'] as String;
+        final body = jsonDecode(bodyJson);
+
+        Response response;
+        if (method.toUpperCase() == 'POST') {
+          response = await dio.post(endpoint, data: body);
+        } else if (method.toUpperCase() == 'PUT') {
+          response = await dio.put(endpoint, data: body);
+        } else if (method.toUpperCase() == 'DELETE') {
+          response = await dio.delete(endpoint, data: body);
+        } else {
+          response = await dio.get(endpoint, queryParameters: body);
+        }
+
+        if (response.statusCode! >= 200 && response.statusCode! < 300) {
+          // Remove from queue after success
+          await db.delete('queue', where: 'id = ?', whereArgs: [item['id']]);
+          print('✅ Sync success for $endpoint');
+        } else {
+          print('⚠️ Sync returned non-2xx code for $endpoint: ${response.statusCode}');
+          break; // Stop syncing to preserve order
+        }
       } catch (e) {
         print('❌ Sync failed for ${item['endpoint']}: $e');
-        // Keep in queue for next retry
+        break; // Keep in queue for next retry, stop sync to maintain order of operations
       }
     }
   }

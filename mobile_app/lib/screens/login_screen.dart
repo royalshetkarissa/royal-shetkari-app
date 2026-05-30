@@ -26,7 +26,28 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _showResetPasswordBottomSheet(BuildContext context, String mobile) {
+  void _showResetPasswordBottomSheet(BuildContext context, String mobile) async {
+    final auth = context.read<AuthProvider>();
+    
+    // Show a loading indicator while requesting OTP
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
+      ),
+    );
+    
+    final sent = await auth.sendResetOtp(mobile);
+    if (!context.mounted) return;
+    Navigator.pop(context); // Dismiss loading dialog
+    
+    if (!sent) {
+      _showSnackBar(auth.error ?? 'Failed to send OTP for password reset');
+      return;
+    }
+
+    final otpController = TextEditingController();
     final newPasswordController = TextEditingController();
     final confirmPasswordController = TextEditingController();
     bool obscureNew = true;
@@ -70,10 +91,41 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Enter and confirm your new password for mobile number $mobile.',
+                'Verify OTP and enter your new password for mobile number $mobile.',
                 style: TextStyle(color: Colors.grey[600], fontSize: 13),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
+              if (auth.devOtp != null) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: BorderSide(color: Colors.amber.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline, color: Colors.amber, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        'DEV OTP: ${auth.devOtp}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.amber),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              CustomTextField(
+                controller: otpController,
+                label: 'OTP Code',
+                hint: 'Enter 6-digit verification code',
+                icon: Icons.sms_outlined,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                isRequired: true,
+              ),
+              const SizedBox(height: 16),
               CustomTextField(
                 controller: newPasswordController,
                 label: 'New Password',
@@ -118,9 +170,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: isSheetLoading
                       ? null
                       : () async {
+                          final otp = otpController.text.trim();
                           final pass = newPasswordController.text;
                           final conf = confirmPasswordController.text;
 
+                          if (otp.length != 6) {
+                            setSheetState(() => sheetError = 'OTP must be a 6-digit number');
+                            return;
+                          }
                           if (pass.length < 6) {
                             setSheetState(() => sheetError = 'Password must be at least 6 characters');
                             return;
@@ -138,8 +195,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           final localContext = this.context;
                           final navigator = Navigator.of(context);
                           try {
-                            final auth = context.read<AuthProvider>();
-                            final success = await auth.resetPassword(mobile: mobile, newPassword: pass);
+                            final success = await auth.resetPassword(mobile: mobile, newPassword: pass, otp: otp);
 
                             if (!localContext.mounted) return;
 
@@ -163,7 +219,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ],
                                   ),
                                   content: Text(
-                                    'The password for mobile number $mobile has been successfully reset! It has been logged in user change history.',
+                                    'The password for mobile number $mobile has been successfully reset! You can now log in.',
                                     style: const TextStyle(fontSize: 14, height: 1.4),
                                   ),
                                   actions: [
