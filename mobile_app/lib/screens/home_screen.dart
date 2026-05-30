@@ -171,7 +171,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      LocationPermissionHelper.checkAndRequestStartupLocation(context);
+      LocationPermissionHelper.checkAndRequestStartupLocation(
+        context,
+        onPermissionGranted: () {
+          _fetchData();
+        },
+      );
     });
     _fetchData();
   }
