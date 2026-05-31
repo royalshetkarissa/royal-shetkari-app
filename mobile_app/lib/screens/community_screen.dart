@@ -509,6 +509,14 @@ class _CommunityScreenState extends State<CommunityScreen> {
               ),
               if (isOwnPost) ...[
                 ListTile(
+                  leading: const Icon(Icons.share_outlined, color: Color(0xFF2E7D32)),
+                  title: const Text('Share Post', style: TextStyle(fontWeight: FontWeight.bold)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _sharePost(post);
+                  },
+                ),
+                ListTile(
                   leading: const Icon(Icons.delete_outline, color: Colors.red),
                   title: const Text('Delete Post', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
                   onTap: () {
@@ -789,6 +797,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   IconButton(
                     icon: const Icon(Icons.mode_comment_outlined), 
                     onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (c) => PostDetailScreen(post: post)))
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.share_outlined, color: Colors.black87), 
+                    onPressed: () => _sharePost(post),
                   ),
                   const Spacer(),
                   _buildSaveButton(post),

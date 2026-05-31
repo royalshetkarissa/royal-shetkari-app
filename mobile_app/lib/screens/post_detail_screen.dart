@@ -89,6 +89,16 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           SliverAppBar(
             expandedHeight: 400,
             pinned: true,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.share, color: Colors.white),
+                onPressed: () {
+                  final Uri whatsappUrl = Uri.parse(
+                      "https://wa.me/?text=Check out this post: '${widget.post.title}' on Royal Shetkari app! Price: ₹${widget.post.price}. Contact: ${widget.post.contactMobile}");
+                  launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
+                },
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: SwipeableImageSlider(
                 imageUrls: widget.post.images.isNotEmpty
