@@ -3,6 +3,8 @@ import 'package:dio/dio.dart';
 import 'package:http_parser/http_parser.dart';
 import './dio_client.dart';
 import '../config/app_config.dart';
+import 'dart:io';
+import './image_compression.dart';
 
 class ApiService {
   final Dio _dio = DioClient().instance;
@@ -58,8 +60,16 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> updateProfilePhoto(String imagePath) async {
+    final file = File(imagePath);
+    final compressedFile = await ImageCompressionService.compressImage(file);
+    final finalFile = compressedFile ?? file;
+    final filename = finalFile.path.split('/').last;
+
     FormData formData = FormData.fromMap({
-      'photo': await MultipartFile.fromFile(imagePath),
+      'photo': await MultipartFile.fromFile(
+        finalFile.path,
+        filename: filename.contains('.') ? filename : '$filename.jpg',
+      ),
     });
     final response = await _dio.post('/auth/user/profile/photo', data: formData);
     return Map<String, dynamic>.from(_handleResponse(response));
@@ -150,9 +160,17 @@ class ApiService {
       }
     } else if (imagePaths != null && imagePaths.isNotEmpty) {
       for (var path in imagePaths) {
+        final file = File(path);
+        final compressedFile = await ImageCompressionService.compressImage(file);
+        final finalFile = compressedFile ?? file;
+        final filename = finalFile.path.split('/').last;
+
         formData.files.add(MapEntry(
           'images',
-          await MultipartFile.fromFile(path, filename: path.split('/').last),
+          await MultipartFile.fromFile(
+            finalFile.path,
+            filename: filename.contains('.') ? filename : '$filename.jpg',
+          ),
         ));
       }
     }
@@ -161,9 +179,17 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> uploadB2Image({required String imagePath, required String caption}) async {
+    final file = File(imagePath);
+    final compressedFile = await ImageCompressionService.compressImage(file);
+    final finalFile = compressedFile ?? file;
+    final filename = finalFile.path.split('/').last;
+
     FormData formData = FormData.fromMap({
       'caption': caption,
-      'image': await MultipartFile.fromFile(imagePath),
+      'image': await MultipartFile.fromFile(
+        finalFile.path,
+        filename: filename.contains('.') ? filename : '$filename.jpg',
+      ),
     });
     final response = await _dio.post('/upload', data: formData);
     return Map<String, dynamic>.from(_handleResponse(response));
@@ -302,8 +328,16 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> scanCropDisease(String imagePath) async {
+    final file = File(imagePath);
+    final compressedFile = await ImageCompressionService.compressImage(file);
+    final finalFile = compressedFile ?? file;
+    final filename = finalFile.path.split('/').last;
+
     FormData formData = FormData.fromMap({
-      'image': await MultipartFile.fromFile(imagePath),
+      'image': await MultipartFile.fromFile(
+        finalFile.path,
+        filename: filename.contains('.') ? filename : '$filename.jpg',
+      ),
     });
     final response = await _dio.post('/disease/scan', data: formData);
     return Map<String, dynamic>.from(_handleResponse(response)['data']);

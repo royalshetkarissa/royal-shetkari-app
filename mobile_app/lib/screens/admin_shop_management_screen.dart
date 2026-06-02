@@ -11,6 +11,7 @@ import '../models/shop_model.dart';
 import '../widgets/royal_app_bar.dart';
 import '../localization/app_localizations.dart';
 import 'admin_shop_detail_clicks_screen.dart';
+import '../services/image_compression.dart';
 
 MediaType? _getMediaType(String filename) {
   final ext = filename.split('.').last.toLowerCase();
@@ -330,20 +331,28 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
           ));
         }
       } else {
+        final compressedProfile = await ImageCompressionService.compressImage(File(_profilePhoto!.path));
+        final profileFile = compressedProfile ?? File(_profilePhoto!.path);
+        final profileFilename = profileFile.path.split('/').last;
+
         formData.files.add(MapEntry(
           'profile_photo',
           await MultipartFile.fromFile(
-            _profilePhoto!.path,
-            filename: _profilePhoto!.name.split('/').last,
+            profileFile.path,
+            filename: profileFilename.contains('.') ? profileFilename : '$profileFilename.jpg',
           ),
         ));
 
         for (var file in _shopImages) {
+          final compressedImg = await ImageCompressionService.compressImage(File(file.path));
+          final imgFile = compressedImg ?? File(file.path);
+          final imgFilename = imgFile.path.split('/').last;
+
           formData.files.add(MapEntry(
             'images',
             await MultipartFile.fromFile(
-              file.path,
-              filename: file.name.split('/').last,
+              imgFile.path,
+              filename: imgFilename.contains('.') ? imgFilename : '$imgFilename.jpg',
             ),
           ));
         }
@@ -1621,21 +1630,29 @@ class _EditShopBottomSheetState extends State<EditShopBottomSheet> {
         }
       } else {
         if (_newProfilePhoto != null) {
+          final compressedProfile = await ImageCompressionService.compressImage(File(_newProfilePhoto!.path));
+          final profileFile = compressedProfile ?? File(_newProfilePhoto!.path);
+          final profileFilename = profileFile.path.split('/').last;
+
           formData.files.add(MapEntry(
             'profile_photo',
             await MultipartFile.fromFile(
-              _newProfilePhoto!.path,
-              filename: _newProfilePhoto!.name.split('/').last,
+              profileFile.path,
+              filename: profileFilename.contains('.') ? profileFilename : '$profileFilename.jpg',
             ),
           ));
         }
 
         for (var file in _newGalleryImages) {
+          final compressedImg = await ImageCompressionService.compressImage(File(file.path));
+          final imgFile = compressedImg ?? File(file.path);
+          final imgFilename = imgFile.path.split('/').last;
+
           formData.files.add(MapEntry(
             'images',
             await MultipartFile.fromFile(
-              file.path,
-              filename: file.name.split('/').last,
+              imgFile.path,
+              filename: imgFilename.contains('.') ? imgFilename : '$imgFilename.jpg',
             ),
           ));
         }
