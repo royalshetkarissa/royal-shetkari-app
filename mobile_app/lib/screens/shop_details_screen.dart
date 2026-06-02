@@ -290,9 +290,14 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
                     _buildMerchantCard(context),
                     const SizedBox(height: 20),
 
-                    // Coin redemption panel
-                    _buildCoinRedemptionCard(context, isLoggedIn, userCoins, authProvider),
-                    const SizedBox(height: 24),
+                    // Coin redemption panel (hidden for seeds and fertilizers)
+                    if (!widget.shop.categories.any((cat) {
+                      final c = cat.toLowerCase();
+                      return c.contains('seed') || c.contains('fertilizer');
+                    })) ...[
+                      _buildCoinRedemptionCard(context, isLoggedIn, userCoins, authProvider),
+                      const SizedBox(height: 24),
+                    ],
                     
                     // Services Section
                     _buildSectionHeader(context.translate('services_info')),
