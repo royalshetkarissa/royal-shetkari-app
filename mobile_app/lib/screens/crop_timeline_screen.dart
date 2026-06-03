@@ -48,8 +48,8 @@ class _CropTimelineScreenState extends State<CropTimelineScreen> {
 
     setState(() => _isProcessing = true);
     try {
-      bool success = await _service.completeTask(task.id);
-      if (success) {
+      String? errorMessage = await _service.completeTask(task.id);
+      if (errorMessage == null) {
         setState(() {
           int index = _tasks.indexWhere((t) => t.id == task.id);
           _tasks[index] = CropTask(
@@ -69,6 +69,12 @@ class _CropTimelineScreenState extends State<CropTimelineScreen> {
         if (mounted) {
           Provider.of<AuthProvider>(context, listen: false).refreshUser();
           _showCreativeStatusDialog(status: 'today', task: task);
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
+          );
         }
       }
     } catch (e) {

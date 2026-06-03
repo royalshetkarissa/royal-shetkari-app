@@ -57,11 +57,21 @@ class TimetableService {
   }
 
   async completeTask(userId, taskId) {
-    const task = await timetableRepository.updateTaskCompletion(taskId, userId);
-    if (!task) {
-      throw new AppError('Task already completed or not found.', 400);
+    const result = await timetableRepository.updateTaskCompletion(taskId, userId);
+    if (!result.success) {
+      if (result.error === 'TASK_NOT_FOUND') {
+        throw new AppError('Task not found.', 404);
+      }
+      if (result.error === 'NOT_OWNER') {
+        throw new AppError('This task does not belong to your crop timeline.', 403);
+      }
+      if (result.error === 'ALREADY_COMPLETED') {
+        throw new AppError('Task is already completed.', 400);
+      }
+      throw new AppError('Failed to complete task.', 400);
     }
 
+    const task = result.task;
     await logger.logActivity(userId, 'COMPLETE_CROP_TASK', 'crop_task', taskId, {
       taskName: task.task_name,
     });

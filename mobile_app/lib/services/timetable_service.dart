@@ -45,12 +45,18 @@ class TimetableService {
     }
   }
 
-  Future<bool> completeTask(int taskId) async {
+  Future<String?> completeTask(int taskId) async {
     try {
       final response = await _dio.patch('/timetable/tasks/$taskId/complete');
-      return response.data['success'];
+      if (response.data['success']) {
+        return null; // No error
+      }
+      return response.data['message'] ?? 'Failed to complete task';
+    } on DioException catch (e) {
+      final serverMessage = e.response?.data?['message'];
+      return serverMessage ?? e.message ?? 'Unknown error occurred';
     } catch (e) {
-      return false;
+      return e.toString();
     }
   }
 

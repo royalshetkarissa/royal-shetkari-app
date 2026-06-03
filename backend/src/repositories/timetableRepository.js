@@ -70,25 +70,46 @@ class TimetableRepository {
     try {
       await client.query('BEGIN');
 
-      // 1. Mark task as completed if not already
+      // 1. Fetch task and check if it exists and who it belongs to
+      const taskCheck = await client.query(
+        `SELECT uct.*, ucj.user_id 
+         FROM user_crop_tasks uct
+         JOIN user_crop_journeys ucj ON uct.user_crop_id = ucj.id
+         WHERE uct.id = $1`,
+        [taskId]
+      );
+
+      if (taskCheck.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return { success: false, error: 'TASK_NOT_FOUND' };
+      }
+
+      const task = taskCheck.rows[0];
+
+      if (task.user_id !== parseInt(userId)) {
+        await client.query('ROLLBACK');
+        return { success: false, error: 'NOT_OWNER' };
+      }
+
+      if (task.is_completed) {
+        await client.query('ROLLBACK');
+        return { success: false, error: 'ALREADY_COMPLETED' };
+      }
+
+      // 2. Mark task as completed
       const taskResult = await client.query(
         `UPDATE user_crop_tasks 
          SET is_completed = TRUE, completed_at = NOW(), coin_awarded = TRUE 
-         WHERE id = $1 AND is_completed = FALSE 
+         WHERE id = $1 
          RETURNING *`,
         [taskId]
       );
 
-      if (taskResult.rows.length === 0) {
-        await client.query('ROLLBACK');
-        return null; // Already completed or not found
-      }
-
-      // 2. Award coin to user
+      // 3. Award coin to user
       await client.query(`UPDATE users SET coins = COALESCE(coins, 0) + 1 WHERE id = $1`, [userId]);
 
       await client.query('COMMIT');
-      return taskResult.rows[0];
+      return { success: true, task: taskResult.rows[0] };
     } catch (err) {
       await client.query('ROLLBACK');
       throw err;
