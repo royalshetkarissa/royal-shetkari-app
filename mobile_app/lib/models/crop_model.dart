@@ -107,3 +107,47 @@ class CropTask {
     );
   }
 }
+
+class CropDisease {
+  final int id;
+  final int cropId;
+  final String name;
+  final String nameMarathi;
+  final String stage;
+  final String stageMarathi;
+  final String symptoms;
+  final String symptomsMarathi;
+  final String organicPrevention;
+  final String organicPreventionMarathi;
+  final String severity;
+
+  CropDisease({
+    required this.id,
+    required this.cropId,
+    required this.name,
+    required this.nameMarathi,
+    required this.stage,
+    required this.stageMarathi,
+    required this.symptoms,
+    required this.symptomsMarathi,
+    required this.organicPrevention,
+    required this.organicPreventionMarathi,
+    required this.severity,
+  });
+
+  factory CropDisease.fromJson(Map<String, dynamic> json) {
+    return CropDisease(
+      id: json['id'],
+      cropId: json['crop_id'],
+      name: json['name'],
+      nameMarathi: json['name_marathi'],
+      stage: json['stage'],
+      stageMarathi: json['stage_marathi'],
+      symptoms: json['symptoms'],
+      symptomsMarathi: json['symptoms_marathi'],
+      organicPrevention: json['organic_prevention'],
+      organicPreventionMarathi: json['organic_prevention_marathi'],
+      severity: json['severity'] ?? 'Medium',
+    );
+  }
+}

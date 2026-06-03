@@ -1,11 +1,12 @@
 const diseaseService = require('../services/diseaseService');
 const AppError = require('../utils/AppError');
+const { uploadToB2IfNeeded } = require('../utils/b2Uploader');
 
 exports.scanDisease = async (req, res, next) => {
   try {
     let imageUrl = null;
     if (req.file) {
-      imageUrl = `/uploads/${req.file.filename}`;
+      imageUrl = await uploadToB2IfNeeded(req.file, 'disease');
     } else {
       return next(new AppError('Image is required for scanning', 400));
     }

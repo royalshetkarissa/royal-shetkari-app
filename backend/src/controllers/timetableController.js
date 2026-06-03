@@ -52,3 +52,25 @@ exports.deleteJourney = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.getDailyTasks = async (req, res, next) => {
+  try {
+    const tasks = await timetableService.getDailyTasks(req.userId, req.language);
+    res.json({ success: true, tasks });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getCropDiseases = async (req, res, next) => {
+  try {
+    const { cropId } = req.params;
+    if (!cropId) {
+      return next(new AppError('Crop ID is required', 400));
+    }
+    const diseases = await timetableService.getCropDiseases(cropId);
+    res.json({ success: true, diseases });
+  } catch (error) {
+    next(error);
+  }
+};

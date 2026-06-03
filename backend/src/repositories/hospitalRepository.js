@@ -43,7 +43,7 @@ class HospitalRepository {
 
       // 1. Deduct 50 coins
       const updateResult = await client.query(
-        `UPDATE users SET coins = coins - 50 WHERE id = $1 RETURNING coins`,
+        `UPDATE users SET coins = COALESCE(coins, 0) - 50 WHERE id = $1 RETURNING coins`,
         [userId]
       );
       const newCoins = updateResult.rows[0].coins;

@@ -35,6 +35,7 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
     {'key': 'organic_farming', 'labelMr': 'सेंद्रिय शेती', 'labelEn': 'Organic'},
     {'key': 'animal_doctor', 'labelMr': 'पशुवैद्यकीय डॉक्टर', 'labelEn': 'Animal Doctor'},
     {'key': 'produce_buyer', 'labelMr': 'शेतमाल खरेदीदार', 'labelEn': 'Produce Buyers'},
+    {'key': 'medical', 'labelMr': 'वैद्यकीय सेवा (Medical)', 'labelEn': 'Medical'},
   ];
 
   @override
@@ -257,10 +258,11 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
             labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
             tabs: _tabs.map((tab) {
               final key = tab['key'] == 'crop' ? 'crop_market' : tab['key']!;
+              final defaultLabel = Localizations.localeOf(context).languageCode == 'mr' ? tab['labelMr']! : tab['labelEn']!;
               return Tab(
                 key: Key('tab_item_${tab['key']}'),
                 child: Text(
-                  context.translate(key),
+                  context.translate(key, defaultValue: defaultLabel),
                   style: const TextStyle(fontSize: 12),
                 ),
               );

@@ -19,11 +19,13 @@ class _CropTimelineScreenState extends State<CropTimelineScreen> {
   final TimetableService _service = TimetableService();
   bool _isProcessing = false;
   late List<CropTask> _tasks;
+  Future<List<CropDisease>>? _diseasesFuture;
 
   @override
   void initState() {
     super.initState();
     _tasks = List.from(widget.journey.tasks);
+    _diseasesFuture = _service.getCropDiseases(widget.journey.cropId);
   }
 
   Future<void> _toggleTask(CropTask task) async {
@@ -92,40 +94,250 @@ class _CropTimelineScreenState extends State<CropTimelineScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: Text(
-            context.translate(widget.journey.cropName.toLowerCase(),
-                defaultValue: widget.journey.cropMarathi),
-            style: const TextStyle(
-                color: Colors.black, fontWeight: FontWeight.bold)),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
         backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+        appBar: AppBar(
+          title: Text(
+              context.translate(widget.journey.cropName.toLowerCase(),
+                  defaultValue: widget.journey.cropMarathi),
+              style: const TextStyle(
+                  color: Colors.black, fontWeight: FontWeight.bold)),
+          backgroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: true,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: Column(
+          children: [
+            _buildHeader(),
+            _buildTabBar(),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  _buildTimelineTab(),
+                  _buildDiseasesTab(),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
-      body: Column(
-        children: [
-          _buildHeader(),
-          Expanded(
-            child: _tasks.isEmpty
-                ? Center(child: Text(context.translate('no_tasks_scheduled')))
-                : ListView.builder(
-                    padding: const EdgeInsets.all(20),
-                    itemCount: _tasks.length,
-                    itemBuilder: (context, index) {
-                      final task = _tasks[index];
-                      final isLast = index == _tasks.length - 1;
-                      return _buildTimelineItem(task, isLast);
-                    },
-                  ),
-          ),
+    );
+  }
+
+  Widget _buildTabBar() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      height: 48,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: TabBar(
+        indicator: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: const Color(0xFF2E7D32),
+        ),
+        labelColor: Colors.white,
+        unselectedLabelColor: Colors.grey.shade600,
+        labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+        tabs: [
+          Tab(text: context.translate('timetable_tasks', defaultValue: 'Growth Schedule')),
+          Tab(text: context.translate('diseases_prevention', defaultValue: 'Diseases & Prevention')),
         ],
       ),
+    );
+  }
+
+  Widget _buildTimelineTab() {
+    return _tasks.isEmpty
+        ? Center(child: Text(context.translate('no_tasks_scheduled')))
+        : ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            itemCount: _tasks.length,
+            itemBuilder: (context, index) {
+              final task = _tasks[index];
+              final isLast = index == _tasks.length - 1;
+              return _buildTimelineItem(task, isLast);
+            },
+          );
+  }
+
+  Widget _buildDiseasesTab() {
+    return FutureBuilder<List<CropDisease>>(
+      future: _diseasesFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32)));
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text('${context.translate('error', defaultValue: 'Error')}: ${snapshot.error}'));
+        }
+        final diseases = snapshot.data ?? [];
+        if (diseases.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.shield_outlined, size: 70, color: Colors.grey.shade400),
+                const SizedBox(height: 16),
+                Text(
+                  context.translate('no_diseases_data', defaultValue: 'No disease prevention data available.'),
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 15, fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final isMarathi = Localizations.localeOf(context).languageCode == 'mr';
+
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          itemCount: diseases.length,
+          itemBuilder: (context, index) {
+            final disease = diseases[index];
+            final severityColor = disease.severity.toLowerCase() == 'high'
+                ? Colors.red
+                : (disease.severity.toLowerCase() == 'medium' ? Colors.orange : Colors.amber);
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.grey.shade100),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      color: const Color(0xFFF1F8E9),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  isMarathi ? disease.nameMarathi : disease.name,
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1B5E20)),
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.history_toggle_off, size: 14, color: Colors.grey),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        '${context.translate('stage', defaultValue: 'Stage')}: ${isMarathi ? disease.stageMarathi : disease.stage}',
+                                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey.shade700),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: severityColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: severityColor.withOpacity(0.4)),
+                            ),
+                            child: Text(
+                              isMarathi
+                                  ? (disease.severity.toLowerCase() == 'high' ? 'अति तीव्र' : 'मध्यम')
+                                  : disease.severity,
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: severityColor),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    // Body / Info
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Cause / Symptoms
+                          Row(
+                            children: [
+                              Icon(Icons.report_problem_outlined, color: Colors.amber.shade800, size: 18),
+                              const SizedBox(width: 8),
+                              Text(
+                                context.translate('why_it_comes', defaultValue: 'Why it comes / Cause'),
+                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.amber.shade900),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            isMarathi ? disease.symptomsMarathi : disease.symptoms,
+                            style: const TextStyle(fontSize: 14, color: Colors.black87, height: 1.4),
+                          ),
+                          
+                          const SizedBox(height: 16),
+                          const Divider(height: 1),
+                          const SizedBox(height: 16),
+                          
+                          // Organic Solution
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE8F5E9),
+                              borderRadius: BorderRadius.circular(15),
+                              border: Border.all(color: const Color(0xFFC8E6C9)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.shield_outlined, color: Color(0xFF2E7D32), size: 18),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      context.translate('organic_control', defaultValue: 'Organic Control (ICRISAT)'),
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1B5E20)),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  isMarathi ? disease.organicPreventionMarathi : disease.organicPrevention,
+                                  style: const TextStyle(fontSize: 14, color: Colors.black87, height: 1.45),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

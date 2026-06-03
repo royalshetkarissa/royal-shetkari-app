@@ -27,7 +27,8 @@ const CATEGORIES = {
   hardware: { mr: 'कृषी हार्डवेअर', en: 'Hardware Shop' },
   organic_farming: { mr: 'सेंद्रिय शेती साहित्य', en: 'Organic Farming' },
   animal_doctor: { mr: 'पशुवैद्यकीय डॉक्टर', en: 'Animal Doctor / Vet' },
-  produce_buyer: { mr: 'शेतमाल खरेदीदार', en: 'Agricultural Produce Buyer' }
+  produce_buyer: { mr: 'शेतमाल खरेदीदार', en: 'Agricultural Produce Buyer' },
+  medical: { mr: 'वैद्यकीय सेवा', en: 'Medical Shop / Services' }
 };
 
 // Document Elements

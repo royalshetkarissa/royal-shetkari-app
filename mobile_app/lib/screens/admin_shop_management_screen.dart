@@ -58,7 +58,7 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
   bool _isLoading = false;
   Position? _currentPosition;
   
-  // The 7 Core Categories
+  // The 8 Core Categories
   final Map<String, Map<String, String>> _categories = {
     'fertilizers': {'mr': 'खते व बियाणे', 'en': 'Fertilizers & Seeds'},
     'crop': {'mr': 'धान्य व पीक बाजार', 'en': 'Crop Market'},
@@ -67,6 +67,7 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
     'organic_farming': {'mr': 'सेंद्रिय शेती साहित्य', 'en': 'Organic Farming'},
     'animal_doctor': {'mr': 'पशुवैद्यकीय डॉक्टर', 'en': 'Animal Doctor / Vet'},
     'produce_buyer': {'mr': 'शेतमाल खरेदीदार', 'en': 'Agricultural Produce Buyer'},
+    'medical': {'mr': 'वैद्यकीय सेवा', 'en': 'Medical Shop / Services'},
   };
 
   final Map<String, bool> _selectedCategories = {
@@ -77,6 +78,7 @@ class _AdminShopManagementScreenState extends State<AdminShopManagementScreen> {
     'organic_farming': false,
     'animal_doctor': false,
     'produce_buyer': false,
+    'medical': false,
   };
 
   List<ShopModel> _shops = [];
@@ -1366,6 +1368,7 @@ class _EditShopBottomSheetState extends State<EditShopBottomSheet> {
     'organic_farming': {'mr': 'सेंद्रिय शेती साहित्य', 'en': 'Organic Farming'},
     'animal_doctor': {'mr': 'पशुवैद्यकीय डॉक्टर', 'en': 'Animal Doctor / Vet'},
     'produce_buyer': {'mr': 'शेतमाल खरेदीदार', 'en': 'Agricultural Produce Buyer'},
+    'medical': {'mr': 'वैद्यकीय सेवा', 'en': 'Medical Shop / Services'},
   };
   late Map<String, bool> _selectedCategories;
 
@@ -1393,6 +1396,7 @@ class _EditShopBottomSheetState extends State<EditShopBottomSheet> {
       'organic_farming': widget.shop.categories.contains('organic_farming'),
       'animal_doctor': widget.shop.categories.contains('animal_doctor'),
       'produce_buyer': widget.shop.categories.contains('produce_buyer'),
+      'medical': widget.shop.categories.contains('medical'),
     };
 
     _existingGalleryImages = List<String>.from(widget.shop.images);

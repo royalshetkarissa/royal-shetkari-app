@@ -195,7 +195,7 @@ class ShopRepository {
 
       // 1. Deduct coins from user
       const updateResult = await client.query(
-        `UPDATE users SET coins = coins - $1 WHERE id = $2 RETURNING coins`,
+        `UPDATE users SET coins = COALESCE(coins, 0) - $1 WHERE id = $2 RETURNING coins`,
         [coinsRequired, userId]
       );
       const newCoins = updateResult.rows[0].coins;

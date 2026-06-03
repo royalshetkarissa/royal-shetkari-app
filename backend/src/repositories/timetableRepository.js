@@ -85,7 +85,7 @@ class TimetableRepository {
       }
 
       // 2. Award coin to user
-      await client.query(`UPDATE users SET coins = coins + 1 WHERE id = $1`, [userId]);
+      await client.query(`UPDATE users SET coins = COALESCE(coins, 0) + 1 WHERE id = $1`, [userId]);
 
       await client.query('COMMIT');
       return taskResult.rows[0];
@@ -102,6 +102,38 @@ class TimetableRepository {
       `UPDATE user_crop_journeys SET status = 'deleted' WHERE id = $1 AND user_id = $2`,
       [journeyId, userId]
     );
+  }
+
+  async getDailyTasks(userId) {
+    const result = await pool.queryWithRetry(
+      `SELECT 
+        uct.id,
+        uct.task_name,
+        uct.task_marathi,
+        uct.organic_details,
+        uct.due_date,
+        ucj.planting_date,
+        c.name as crop_name,
+        c.marathi_name as crop_marathi
+       FROM user_crop_tasks uct
+       JOIN user_crop_journeys ucj ON uct.user_crop_id = ucj.id
+       JOIN crops c ON ucj.crop_id = c.id
+       WHERE ucj.user_id = $1 
+         AND ucj.status = 'active'
+         AND uct.due_date = CURRENT_DATE
+         AND uct.is_completed = FALSE
+       ORDER BY c.name ASC, uct.id ASC`,
+      [userId]
+    );
+    return result.rows;
+  }
+
+  async getCropDiseases(cropId) {
+    const result = await pool.queryWithRetry(
+      `SELECT * FROM crop_diseases WHERE crop_id = $1 ORDER BY id ASC`,
+      [cropId]
+    );
+    return result.rows;
   }
 }
 

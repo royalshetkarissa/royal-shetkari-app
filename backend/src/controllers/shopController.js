@@ -1,5 +1,6 @@
 const shopService = require('../services/shopService');
 const { logActivity } = require('../utils/logger');
+const { uploadToB2IfNeeded } = require('../utils/b2Uploader');
 
 const safeParseJson = (value) => {
   if (typeof value === 'string') {
@@ -38,10 +39,16 @@ exports.addShop = async (req, res, next) => {
 
     if (req.files) {
       if (req.files['profile_photo']) {
-        profilePhoto = `/uploads/${req.files['profile_photo'][0].filename}`;
+        profilePhoto = await uploadToB2IfNeeded(req.files['profile_photo'][0], 'shops');
       }
       if (req.files['images']) {
-        images = req.files['images'].map((f) => `/uploads/${f.filename}`);
+        images = [];
+        for (const file of req.files['images']) {
+          const imageUrl = await uploadToB2IfNeeded(file, 'shops');
+          if (imageUrl) {
+            images.push(imageUrl);
+          }
+        }
       }
     }
 
@@ -234,7 +241,7 @@ exports.updateShop = async (req, res, next) => {
 
     let profilePhoto = existingShop.profile_photo;
     if (req.files && req.files['profile_photo']) {
-      profilePhoto = `/uploads/${req.files['profile_photo'][0].filename}`;
+      profilePhoto = await uploadToB2IfNeeded(req.files['profile_photo'][0], 'shops');
     } else if (req.body.profile_photo === '') {
       profilePhoto = null;
     }
@@ -244,7 +251,13 @@ exports.updateShop = async (req, res, next) => {
       images = safeParseJson(req.body.existing_images);
     }
     if (req.files && req.files['images']) {
-      const newImages = req.files['images'].map((f) => `/uploads/${f.filename}`);
+      const newImages = [];
+      for (const file of req.files['images']) {
+        const imageUrl = await uploadToB2IfNeeded(file, 'shops');
+        if (imageUrl) {
+          newImages.push(imageUrl);
+        }
+      }
       images = [...images, ...newImages];
     }
 

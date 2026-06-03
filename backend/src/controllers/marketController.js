@@ -1,5 +1,6 @@
 const marketService = require('../services/marketService');
 const AppError = require('../utils/AppError');
+const { uploadToB2IfNeeded } = require('../utils/b2Uploader');
 
 exports.addShop = async (req, res, next) => {
   try {
@@ -14,7 +15,7 @@ exports.addProduct = async (req, res, next) => {
   try {
     let imageUrl = null;
     if (req.file) {
-      imageUrl = `/uploads/${req.file.filename}`;
+      imageUrl = await uploadToB2IfNeeded(req.file, 'products');
     }
 
     const productData = {

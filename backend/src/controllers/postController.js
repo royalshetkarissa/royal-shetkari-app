@@ -2,10 +2,7 @@ const postService = require('../services/postService');
 const { logActivity } = require('../utils/logger');
 const AppError = require('../utils/AppError');
 const { addPostJob } = require('../jobs/postQueue');
-
-const fs = require('fs').promises;
-const { PutObjectCommand } = require('@aws-sdk/client-s3');
-const s3Client = require('../config/b2');
+const { uploadToB2IfNeeded } = require('../utils/b2Uploader');
 
 exports.createPost = async (req, res, next) => {
   try {
@@ -26,31 +23,9 @@ exports.createPost = async (req, res, next) => {
 
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
-        try {
-          // If Backblaze credentials are configured, upload there
-          if (process.env.B2_KEY_ID && process.env.B2_KEY_ID !== 'YOUR_KEY_ID') {
-            const fileKey = `posts/${Date.now()}-${Math.random().toString(36).substring(2, 10)}-${file.filename}`;
-            const fileBuffer = await fs.readFile(file.path);
-
-            const uploadCommand = new PutObjectCommand({
-              Bucket: process.env.B2_BUCKET || 'rsitapp-images',
-              Key: fileKey,
-              Body: fileBuffer,
-              ContentType: file.mimetype,
-            });
-            await s3Client.send(uploadCommand);
-
-            // Reference the secure proxy image URL
-            imageUrls.push(`/api/image/${fileKey}`);
-
-            // Delete local file to free up space
-            await fs.unlink(file.path);
-          } else {
-            imageUrls.push(`/uploads/${file.filename}`);
-          }
-        } catch (uploadError) {
-          console.error('Failed to upload image to B2, falling back to local:', uploadError);
-          imageUrls.push(`/uploads/${file.filename}`);
+        const imageUrl = await uploadToB2IfNeeded(file, 'posts');
+        if (imageUrl) {
+          imageUrls.push(imageUrl);
         }
       }
     }

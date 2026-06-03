@@ -32,6 +32,8 @@ class _ShopDetailsScreenState extends State<ShopDetailsScreen> {
         return context.translate('whatsapp_msg_hardware');
       case 'organic_farming':
         return context.translate('whatsapp_msg_organic');
+      case 'medical':
+        return context.translate('whatsapp_msg_medical', defaultValue: 'Hello, I am interested in your medical services / products.');
       default:
         return context.translate('whatsapp_msg_default');
     }

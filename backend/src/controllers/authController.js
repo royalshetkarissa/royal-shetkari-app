@@ -2,6 +2,7 @@ const authService = require('../services/authService');
 const logger = require('../utils/logger');
 const { logActivity } = logger;
 const AppError = require('../utils/AppError');
+const { uploadToB2IfNeeded } = require('../utils/b2Uploader');
 
 exports.register = async (req, res, next) => {
   try {
@@ -136,7 +137,7 @@ exports.updateProfilePhoto = async (req, res, next) => {
   try {
     if (!req.file) return next(new AppError('No photo provided', 400));
 
-    const photoUrl = `/uploads/${req.file.filename}`;
+    const photoUrl = await uploadToB2IfNeeded(req.file, 'profiles');
     await authService.updateProfilePhoto(req.userId, photoUrl);
     await logActivity(
       req.userId,

@@ -62,4 +62,18 @@ class TimetableService {
       return false;
     }
   }
+
+  Future<List<CropDisease>> getCropDiseases(int cropId) async {
+    try {
+      final response = await _dio.get('/timetable/crops/$cropId/diseases');
+      if (response.data['success']) {
+        return (response.data['diseases'] as List)
+            .map((d) => CropDisease.fromJson(d))
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
 }
