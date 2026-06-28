@@ -9,24 +9,25 @@ exports.register = async (req, res, next) => {
     const { fullName, mobile, email, password, village, state, pincode } = req.body;
 
     const existingUser = await authService.findUserByMobile(mobile);
-    if (existingUser) {
-      return next(new AppError('Mobile number already registered', 400));
+    let devOtp;
+    if (!existingUser) {
+      await authService.createUser({ fullName, mobile, email, password, village, state, pincode });
+      devOtp = await authService.createOTP(mobile);
     }
 
-    await authService.createUser({ fullName, mobile, email, password, village, state, pincode });
-    const devOtp = await authService.createOTP(mobile);
-
-    if (process.env.NODE_ENV !== 'production') {
+    const isDevOrTest = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
+    if (isDevOrTest && devOtp) {
       const sanitizedMobile = String(mobile).replace(/[\r\n]/g, '_');
       logger.info('Development OTP generated', {
         mobile: sanitizedMobile,
         requestId: req.id,
       });
     }
+    
     res.status(201).json({
       success: true,
-      message: 'OTP sent successfully',
-      ...(process.env.NODE_ENV !== 'production' && { devOtp }),
+      message: 'If the details are valid, an OTP has been sent.',
+      ...(isDevOrTest && devOtp && { devOtp }),
       mobile,
       requestId: req.id,
     });
@@ -40,18 +41,24 @@ exports.login = async (req, res, next) => {
     const { mobile, password } = req.body;
 
     const user = await authService.findUserByMobile(mobile);
-    if (!user) {
-      return next(new AppError('Mobile number not found', 401));
+    let devOtp;
+    const isDevOrTest = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
+    const genericMessage = 'If the mobile number is registered and password is correct, an OTP has been sent.';
+
+    if (!user || !(await authService.comparePassword(password, user.password))) {
+      // Simulate delay to prevent timing attacks
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return res.json({
+        success: true,
+        message: genericMessage,
+        mobile,
+        requestId: req.id,
+      });
     }
 
-    const isMatch = await authService.comparePassword(password, user.password);
-    if (!isMatch) {
-      return next(new AppError('Invalid password', 401));
-    }
+    devOtp = await authService.createOTP(mobile);
 
-    const devOtp = await authService.createOTP(mobile);
-
-    if (process.env.NODE_ENV !== 'production') {
+    if (isDevOrTest) {
       const sanitizedMobile = String(mobile).replace(/[\r\n]/g, '_');
       logger.info('Development OTP generated', {
         mobile: sanitizedMobile,
@@ -60,8 +67,8 @@ exports.login = async (req, res, next) => {
     }
     res.json({
       success: true,
-      message: 'OTP sent',
-      ...(process.env.NODE_ENV !== 'production' && { devOtp }),
+      message: genericMessage,
+      ...(isDevOrTest && { devOtp }),
       mobile,
       requestId: req.id,
     });
@@ -167,8 +174,9 @@ exports.resendOtp = async (req, res, next) => {
   try {
     const { mobile } = req.body;
     const devOtp = await authService.createOTP(mobile);
+    const isDevOrTest = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
 
-    if (process.env.NODE_ENV !== 'production') {
+    if (isDevOrTest) {
       const sanitizedMobile = String(mobile).replace(/[\r\n]/g, '_');
       logger.info('Development OTP generated', {
         mobile: sanitizedMobile,
@@ -178,7 +186,7 @@ exports.resendOtp = async (req, res, next) => {
     res.json({
       success: true,
       message: 'OTP sent',
-      ...(process.env.NODE_ENV !== 'production' && { devOtp }),
+      ...(isDevOrTest && { devOtp }),
       requestId: req.id,
     });
   } catch (error) {

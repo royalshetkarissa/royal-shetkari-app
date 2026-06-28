@@ -79,12 +79,16 @@ class UserRepository {
     ]);
   }
 
-  async findValidOTP(mobile, otp) {
+  async getLatestOTP(mobile) {
     const result = await pool.query(
-      'SELECT * FROM otps WHERE mobile = $1 AND otp = $2 AND expires_at > NOW() AND is_used = false',
-      [mobile, otp]
+      'SELECT * FROM otps WHERE mobile = $1 AND expires_at > NOW() AND is_used = false ORDER BY created_at DESC LIMIT 1',
+      [mobile]
     );
     return result.rows[0];
+  }
+
+  async incrementOTPAttempts(otpId) {
+    await pool.query('UPDATE otps SET attempts = attempts + 1 WHERE id = $1', [otpId]);
   }
 
   async useOTP(otpId) {

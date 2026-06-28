@@ -29,6 +29,13 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> initialize() async {
     final prefs = await SharedPreferences.getInstance();
+    // Token Migration: gracefully move token from SharedPreferences to secure storage
+    final legacyToken = prefs.getString('token');
+    if (legacyToken != null) {
+      await _storage.write(key: 'accessToken', value: legacyToken);
+      await prefs.remove('token');
+    }
+
     _token = await _storage.read(key: 'accessToken');
 
     final userJson = prefs.getString('user');

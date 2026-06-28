@@ -339,8 +339,35 @@ class ApiService {
         filename: filename.contains('.') ? filename : '$filename.jpg',
       ),
     });
+    
     final response = await _dio.post('/disease/scan', data: formData);
-    return Map<String, dynamic>.from(_handleResponse(response)['data']);
+    final data = _handleResponse(response);
+    
+    if (data['jobId'] != null) {
+      final String jobId = data['jobId'].toString();
+      int maxRetries = 20; // 20 retries * 3 seconds = 60s timeout
+      
+      while (maxRetries > 0) {
+        await Future.delayed(const Duration(seconds: 3));
+        final statusResponse = await _dio.get('/disease/scan/$jobId');
+        final statusData = _handleResponse(statusResponse);
+        
+        final String state = statusData['state'] ?? 'unknown';
+        if (state == 'completed') {
+          return Map<String, dynamic>.from(statusData['result']);
+        } else if (state == 'failed') {
+          throw Exception('Disease scan failed: ${statusData['failedReason'] ?? 'Unknown error'}');
+        }
+        
+        maxRetries--;
+      }
+      throw Exception('Scan timed out. The result will appear in your history soon.');
+    } else if (data['data'] != null) {
+      // Fallback for synchronous response (if queue not used)
+      return Map<String, dynamic>.from(data['data']);
+    }
+    
+    throw Exception('Failed to start disease scan.');
   }
 
   Future<List<Map<String, dynamic>>> getDiseaseHistory() async {

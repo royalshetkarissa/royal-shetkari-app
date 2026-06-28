@@ -82,4 +82,5 @@ connection.on('error', (err) => {
 module.exports = {
   connection,
   redisConfig,
+  isRedisConfigured: isValidUrl(rawRedisUrl) || (process.env.REDIS_HOST && process.env.REDIS_HOST !== '/' && process.env.REDIS_HOST !== 'localhost' && process.env.REDIS_HOST !== '127.0.0.1'),
 };

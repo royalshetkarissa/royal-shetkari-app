@@ -73,6 +73,8 @@ const envSchema = z
     SUPER_ADMIN_MOBILE: z.string().default('8605889356'),
     SUPER_ADMIN_EMAIL: z.string().default('admin@royalshetkari.com'),
     SUPER_ADMIN_PASSWORD: z.string().optional(),
+    META_WHATSAPP_TOKEN: z.string().optional(),
+    META_PHONE_ID: z.string().optional(),
   })
   .refine(
     (data) =>
@@ -94,6 +96,18 @@ const envSchema = z
     {
       message: 'SUPER_ADMIN_PASSWORD is required in production environment',
       path: ['SUPER_ADMIN_PASSWORD'],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.NODE_ENV === 'production' && (!data.META_WHATSAPP_TOKEN || !data.META_PHONE_ID)) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: 'META_WHATSAPP_TOKEN and META_PHONE_ID are required in production for OTP delivery',
+      path: ['META_WHATSAPP_TOKEN'],
     }
   )
   .refine(
@@ -154,5 +168,9 @@ module.exports = {
     MOBILE: env.SUPER_ADMIN_MOBILE,
     EMAIL: env.SUPER_ADMIN_EMAIL,
     PASSWORD: env.SUPER_ADMIN_PASSWORD,
+  },
+  META_WHATSAPP: {
+    TOKEN: env.META_WHATSAPP_TOKEN,
+    PHONE_ID: env.META_PHONE_ID,
   },
 };

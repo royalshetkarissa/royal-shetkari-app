@@ -2,6 +2,8 @@ const bcrypt = require('bcrypt');
 const userRepository = require('../repositories/userRepository');
 const jwtHelper = require('../utils/jwtHelper');
 const generateOtp = require('../utils/generateOtp');
+const whatsappHelper = require('../utils/whatsappHelper');
+const AppError = require('../utils/AppError');
 
 class AuthService {
   async findUserByMobile(mobile) {
@@ -27,15 +29,27 @@ class AuthService {
   async createOTP(mobile) {
     const otp = generateOtp();
     const expiry = new Date();
-    expiry.setMinutes(expiry.getMinutes() + 10);
+    expiry.setMinutes(expiry.getMinutes() + 5);
 
     await userRepository.createOTP(mobile, otp, expiry);
+    await whatsappHelper.sendWhatsAppOtp(mobile, otp);
     return otp;
   }
 
   async verifyOTP(mobile, otp) {
-    const otpRecord = await userRepository.findValidOTP(mobile, otp);
-    if (!otpRecord) return null;
+    const otpRecord = await userRepository.getLatestOTP(mobile);
+    if (!otpRecord) {
+      throw new AppError('Invalid or expired OTP', 400);
+    }
+
+    if (otpRecord.attempts >= 5) {
+      throw new AppError('Too many failed attempts. Please request a new OTP.', 400);
+    }
+
+    if (otpRecord.otp !== otp) {
+      await userRepository.incrementOTPAttempts(otpRecord.id);
+      throw new AppError('Invalid OTP', 400);
+    }
 
     await userRepository.useOTP(otpRecord.id);
     await userRepository.verifyUser(mobile);

@@ -9,6 +9,7 @@ const PORT = env.PORT || 5000;
 
 // Start Background Worker
 require('./jobs/postWorker');
+require('./workers/diseaseWorker');
 
 const server = app.listen(PORT, async () => {
   logger.info(`🚀 Production Server running on port ${PORT}`);

@@ -24,6 +24,16 @@ class _OtpScreenState extends State<OtpScreen> {
   void initState() {
     super.initState();
     _startTimer();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final auth = context.read<AuthProvider>();
+      if (auth.devOtp != null && auth.devOtp!.length == 6) {
+        for (int i = 0; i < 6; i++) {
+          _otpControllers[i].text = auth.devOtp![i];
+        }
+        _verifyOtp();
+      }
+    });
   }
 
   void _startTimer() {
@@ -139,6 +149,34 @@ class _OtpScreenState extends State<OtpScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            if (auth.devOtp != null) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2E7D32).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF2E7D32).withOpacity(0.3)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.developer_mode, color: Color(0xFF2E7D32), size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Auto-filled OTP: ${auth.devOtp}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF2E7D32),
+                        letterSpacing: 1.2,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 40),
+            ],
             const Icon(Icons.message, size: 60, color: Color(0xFF25D366)),
             const SizedBox(height: 24),
             const Text(
@@ -151,20 +189,6 @@ class _OtpScreenState extends State<OtpScreen> {
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey[600]),
             ),
-            if (auth.devOtp != null) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.orange[100],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'DEV OTP: ${auth.devOtp}',
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orange),
-                ),
-              ),
-            ],
             const SizedBox(height: 40),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,

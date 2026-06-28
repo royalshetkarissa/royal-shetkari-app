@@ -37,9 +37,9 @@ describe('Auth Integration Tests', () => {
       .post('/api/v1/register')
       .send(testUser);
 
-    expect(res.statusCode).toEqual(400);
+    expect(res.statusCode).toEqual(201);
     expect(res.body).toHaveProperty('message');
-    expect(res.body.message).toContain('already registered');
+    expect(res.body.message).toContain('If the details are valid, an OTP has been sent.');
   });
 
   it('should validate missing fields', async () => {
@@ -88,7 +88,7 @@ describe('Auth Integration Tests', () => {
       console.log('--- 404 test res.body:', res.body);
       expect(res.statusCode).toEqual(404);
       expect(res.body.status).toBe('fail');
-      expect(res.body.message).toContain('not registered');
+      expect(res.body.message).toContain('Mobile number not registered');
     });
 
     it('should return 400 when validation fails (password too short)', async () => {

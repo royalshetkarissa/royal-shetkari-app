@@ -47,8 +47,6 @@ app.use(
       const isAllowed =
         allowedOrigins.includes(origin) ||
         allowedOrigins.includes('*') ||
-        origin.endsWith('.railway.app') ||
-        /\.railway\.app$/.test(origin) ||
         /^https?:\/\/localhost(:\d+)?$/.test(origin) ||
         /^https?:\/\/127\.0\.0\.1(:\d+)?$/.test(origin) ||
         /^https?:\/\/192\.168\.\d+\.\d+(:\d+)?$/.test(origin);
@@ -77,6 +75,9 @@ app.use(localizationMiddleware);
 
 // 2. Static Files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads', (req, res) => {
+  res.redirect('https://placehold.co/600x400/eeeeee/999999?text=Image+Unavailable');
+});
 app.use('/admin-dashboard', express.static(path.join(__dirname, '../public/admin')));
 
 // 3. Health Routes

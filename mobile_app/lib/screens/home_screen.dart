@@ -454,13 +454,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final pickedFile = await picker.pickImage(source: ImageSource.camera);
 
     if (pickedFile != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('${context.translate('scan_crop_disease')}...')));
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext c) => AlertDialog(
+          content: Row(
+            children: [
+              const CircularProgressIndicator(color: Colors.green),
+              const SizedBox(width: 20),
+              Expanded(child: Text('${context.translate('scan_crop_disease')}...')),
+            ],
+          ),
+        ),
+      );
+
       try {
         final result = await _api.scanCropDisease(pickedFile.path);
+        if (mounted) Navigator.pop(context); // Close loading dialog
         _showDiseaseResult(result);
         _fetchData();
       } catch (e) {
+        if (mounted) Navigator.pop(context); // Close loading dialog
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('Error: $e')));
       }

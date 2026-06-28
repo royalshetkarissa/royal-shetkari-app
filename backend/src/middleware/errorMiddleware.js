@@ -30,7 +30,7 @@ const errorMiddleware = (err, req, res, next) => {
     method: req.method,
   });
 
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
     res.status(err.statusCode).json({
       status: err.status,
       requestId: req.id,

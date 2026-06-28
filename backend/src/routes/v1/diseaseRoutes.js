@@ -5,6 +5,7 @@ const { verifyToken } = require('../../middleware/auth');
 const upload = require('../../middleware/upload');
 
 router.post('/scan', verifyToken, upload.single('image'), diseaseController.scanDisease);
+router.get('/scan/:jobId', verifyToken, diseaseController.getScanStatus);
 router.get('/history', verifyToken, diseaseController.getHistory);
 router.delete('/history/:id', verifyToken, diseaseController.deleteHistory);
 

@@ -1,6 +1,17 @@
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const RedisStore = require('rate-limit-redis').default;
+const { connection: redisClient, isRedisConfigured } = require('../config/redis');
 const env = require('../config/env');
+const logger = require('../utils/logger');
+
+// Check if we should use Redis or fall back to memory
+const useRedis = isRedisConfigured && env.NODE_ENV !== 'test';
+if (!useRedis) {
+  logger.warn('⚠️ Rate limiter is running in MEMORY mode (Redis not configured or test environment). This will not work across multiple instances.');
+}
+
+const getStore = () => useRedis ? new RedisStore({ sendCommand: (...args) => redisClient.call(...args) }) : undefined;
 
 /**
  * Configure Helmet security headers.
@@ -37,6 +48,7 @@ exports.securityHeaders = helmet({
  * General API Rate Limiter.
  */
 exports.apiLimiter = rateLimit({
+  store: getStore(),
   windowMs: 1 * 60 * 1000,
   max: 100,
   message: { status: 'fail', message: 'Too many requests. Please try again after a minute.' },
@@ -49,6 +61,7 @@ exports.apiLimiter = rateLimit({
  * Authenticated Rate Limiter.
  */
 exports.authenticatedLimiter = rateLimit({
+  store: getStore(),
   windowMs: 1 * 60 * 1000,
   max: 1000,
   keyGenerator: (req) => req.userId || req.ip,
@@ -65,6 +78,7 @@ exports.authenticatedLimiter = rateLimit({
  * Strict Auth Rate Limiter.
  */
 exports.authLimiter = rateLimit({
+  store: getStore(),
   windowMs: 60 * 60 * 1000,
   max: 10,
   message: { status: 'fail', message: 'Too many login attempts. Please try again after an hour.' },

@@ -122,12 +122,18 @@ class _NotificationScreenState extends State<NotificationScreen>
 
     setState(() => _isLoading = true);
     try {
-      bool success = await _timetableService.completeTask(task.id);
-      if (success) {
+      String? errorMessage = await _timetableService.completeTask(task.id);
+      if (errorMessage == null) {
         if (mounted) {
           Provider.of<AuthProvider>(context, listen: false).refreshUser();
           _showCoinAnimationDialog('today', task);
           await _loadNotifications();
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed: $errorMessage'), backgroundColor: Colors.red),
+          );
         }
       }
     } catch (e) {

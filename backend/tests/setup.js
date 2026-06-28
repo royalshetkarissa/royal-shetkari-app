@@ -29,6 +29,12 @@ jest.mock('ioredis', () => {
     async quit() { return 'OK'; }
     async disconnect() {}
     async ping() { return 'PONG'; }
+    async call(command, ...args) {
+      if (command.toLowerCase() === 'evalsha' || command.toLowerCase() === 'eval') {
+        return [0, 0, 0]; // Mock return for rate limiter scripts
+      }
+      return 'OK';
+    }
   }
   return MockRedis;
 });
