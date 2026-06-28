@@ -69,24 +69,51 @@ class _TimetableScreenState extends State<TimetableScreen> {
               onRefresh: _fetchJourneys,
               child: _journeys.isEmpty
                   ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.agriculture, size: 80, color: Colors.grey.shade300),
-                          const SizedBox(height: 16),
-                          Text(context.translate('no_active_schedules'), style: const TextStyle(fontSize: 18, color: Colors.grey, fontWeight: FontWeight.w500)),
-                          const SizedBox(height: 16),
-                          ElevatedButton.icon(
-                            onPressed: () => _navigateToSelection(),
-                            icon: const Icon(Icons.add, color: Colors.white),
-                            label: Text(context.translate('start_new_journey'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2E7D32),
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 30),
+                        padding: const EdgeInsets.all(30),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(30),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 10))
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(color: Colors.green.shade50, shape: BoxShape.circle),
+                              child: Icon(Icons.psychology_alt_outlined, size: 70, color: Colors.green.shade600),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 24),
+                            Text(context.translate('no_active_schedules'), 
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(fontSize: 18, color: Colors.black87, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 12),
+                            Text(context.translate('start_new_journey', defaultValue: 'Start a new crop journey to get expert guidance'), 
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 14, color: Colors.grey.shade600, fontWeight: FontWeight.w500)),
+                            const SizedBox(height: 24),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 50,
+                              child: ElevatedButton.icon(
+                                onPressed: () => _navigateToSelection(),
+                                icon: const Icon(Icons.add, color: Colors.white),
+                                label: Text(context.translate('start_new_journey'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF2E7D32),
+                                  elevation: 5,
+                                  shadowColor: Colors.green.shade700,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     )
                   : ListView.builder(
@@ -94,73 +121,130 @@ class _TimetableScreenState extends State<TimetableScreen> {
                       itemCount: _journeys.length,
                       itemBuilder: (context, index) {
                         final j = _journeys[index];
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 8)),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: Dismissible(
-                              key: Key(j.id.toString()),
-                              direction: DismissDirection.endToStart,
-                              background: Container(
-                                alignment: Alignment.centerRight,
-                                padding: const EdgeInsets.only(right: 20),
-                                color: Colors.red.shade400,
-                                child: const Icon(Icons.delete_sweep, color: Colors.white, size: 28),
+                        return GestureDetector(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => CropTimelineScreen(journey: j)),
+                          ).then((_) => _fetchJourneys()),
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 20),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF2E7D32), Color(0xFF4CAF50)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ),
-                              confirmDismiss: (dir) => _confirmDelete(j),
-                              onDismissed: (dir) => _performDelete(index, j.id),
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.all(16),
-                                leading: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFE8F5E9),
-                                    borderRadius: BorderRadius.circular(15),
-                                  ),
-                                  child: Icon(_getIconData(j.iconName), color: const Color(0xFF2E7D32), size: 28),
+                              borderRadius: BorderRadius.circular(24),
+                              boxShadow: [
+                                BoxShadow(color: Colors.green.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 6)),
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(24),
+                              child: Dismissible(
+                                key: Key(j.id.toString()),
+                                direction: DismissDirection.endToStart,
+                                background: Container(
+                                  alignment: Alignment.centerRight,
+                                  padding: const EdgeInsets.only(right: 24),
+                                  color: Colors.red.shade500,
+                                  child: const Icon(Icons.delete_sweep, color: Colors.white, size: 32),
                                 ),
-                                title: Text(j.cropMarathi, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                confirmDismiss: (dir) => _confirmDelete(j),
+                                onDismissed: (dir) => _performDelete(index, j.id),
+                                child: Stack(
                                   children: [
-                                    Text(j.cropName, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        Icon(Icons.calendar_today, size: 12, color: Colors.blueGrey.shade300),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          '${context.translate('planted')}: ${DateFormat('dd MMM yyyy').format(j.plantingDate)}',
-                                          style: TextStyle(fontSize: 12, color: Colors.blueGrey.shade400, fontWeight: FontWeight.w500),
-                                        ),
-                                      ],
+                                    // Decorative Background Icon
+                                    Positioned(
+                                      right: -20,
+                                      bottom: -20,
+                                      child: Icon(_getIconData(j.iconName), size: 120, color: Colors.white.withOpacity(0.1)),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.all(20),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Container(
+                                                    padding: const EdgeInsets.all(10),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.white.withOpacity(0.2),
+                                                      borderRadius: BorderRadius.circular(12),
+                                                    ),
+                                                    child: Icon(_getIconData(j.iconName), color: Colors.white, size: 24),
+                                                  ),
+                                                  const SizedBox(width: 12),
+                                                  Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(j.cropMarathi, style: const TextStyle(fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold)),
+                                                      Text(j.cropName, style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13, fontWeight: FontWeight.w500)),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                              IconButton(
+                                                icon: const Icon(Icons.delete_outline, color: Colors.white70),
+                                                onPressed: () async {
+                                                  if (await _confirmDelete(j) == true) {
+                                                    _performDelete(index, j.id);
+                                                  }
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 16),
+                                          Container(
+                                            padding: const EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius: BorderRadius.circular(16),
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              children: [
+                                                Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(context.translate('planted'), style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.bold)),
+                                                    const SizedBox(height: 2),
+                                                    Row(
+                                                      children: [
+                                                        const Icon(Icons.calendar_today, size: 14, color: Color(0xFF2E7D32)),
+                                                        const SizedBox(width: 4),
+                                                        Text(DateFormat('dd MMM yy').format(j.plantingDate), style: const TextStyle(fontSize: 13, color: Colors.black87, fontWeight: FontWeight.bold)),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                                Container(width: 1, height: 30, color: Colors.grey.shade200),
+                                                Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(context.translate('harvest_est'), style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.bold)),
+                                                    const SizedBox(height: 2),
+                                                    Row(
+                                                      children: [
+                                                        const Icon(Icons.eco, size: 14, color: Colors.amber),
+                                                        const SizedBox(width: 4),
+                                                        Text(DateFormat('dd MMM yy').format(j.plantingDate.add(Duration(days: j.harvestDaysMin ?? 60))), style: const TextStyle(fontSize: 13, color: Colors.black87, fontWeight: FontWeight.bold)),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ],
                                 ),
-                                trailing: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 22),
-                                      onPressed: () async {
-                                        if (await _confirmDelete(j) == true) {
-                                          _performDelete(index, j.id);
-                                        }
-                                      },
-                                    ),
-                                  ],
-                                ),
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => CropTimelineScreen(journey: j)),
-                                ).then((_) => _fetchJourneys()),
                               ),
                             ),
                           ),

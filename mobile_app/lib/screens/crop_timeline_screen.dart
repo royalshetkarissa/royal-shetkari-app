@@ -369,7 +369,7 @@ class _CropTimelineScreenState extends State<CropTimelineScreen> {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
+          colors: [Color(0xFF1B5E20), Color(0xFF388E3C)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -378,8 +378,9 @@ class _CropTimelineScreenState extends State<CropTimelineScreen> {
         boxShadow: [
           BoxShadow(
               color: Colors.green.withOpacity(0.3),
-              blurRadius: 15,
-              offset: const Offset(0, 10))
+              blurRadius: 20,
+              spreadRadius: 2,
+              offset: const Offset(0, 8))
         ],
       ),
       child: Column(
@@ -394,58 +395,97 @@ class _CropTimelineScreenState extends State<CropTimelineScreen> {
                   Text(context.translate('growth_progress'),
                       style: const TextStyle(
                           color: Colors.white70,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500)),
-                  const SizedBox(height: 4),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5)),
+                  const SizedBox(height: 6),
                   Text(
-                    '${context.translate('day')} $daysSincePlanting ($completedTasks/$totalTasks ${context.translate('tasks')})',
+                    '${context.translate('day')} $daysSincePlanting',
                     style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 22,
+                        fontSize: 28,
                         fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '$completedTasks / $totalTasks ${context.translate('tasks')} ${context.translate('completed')}',
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600),
+                    ),
                   ),
                 ],
               ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(20)),
-                child: Text(
-                  '${(displayProgress * 100).toInt()}%',
-                  style: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold),
-                ),
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox(
+                    width: 75,
+                    height: 75,
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween<double>(begin: 0.0, end: displayProgress),
+                      duration: const Duration(milliseconds: 1500),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, value, _) => CircularProgressIndicator(
+                        value: value,
+                        backgroundColor: Colors.white.withOpacity(0.15),
+                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.amber),
+                        strokeWidth: 8,
+                        strokeCap: StrokeCap.round,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${(displayProgress * 100).toInt()}%',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18),
+                  ),
+                ],
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: LinearProgressIndicator(
-              value: displayProgress,
-              backgroundColor: Colors.white.withOpacity(0.2),
-              valueColor: const AlwaysStoppedAnimation<Color>(Colors.amber),
-              minHeight: 10,
-            ),
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           Row(
             children: [
-              const Icon(Icons.timer_outlined, color: Colors.white70, size: 16),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), shape: BoxShape.circle),
+                child: const Icon(Icons.timer_outlined, color: Colors.white, size: 16),
+              ),
               const SizedBox(width: 8),
               Text(
                 '${context.translate('cycle')}: $minDays-$maxDays ${context.translate('days')}',
-                style: const TextStyle(color: Colors.white70, fontSize: 13),
+                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
               ),
               const Spacer(),
-              Text(
-                '${context.translate('harvest_est')}: ${DateFormat('dd MMM').format(widget.journey.plantingDate.add(Duration(days: minDays)))}',
-                style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(20)
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.eco, color: Colors.amber, size: 14),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${context.translate('harvest_est')}: ${DateFormat('dd MMM').format(widget.journey.plantingDate.add(Duration(days: minDays)))}',
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -471,33 +511,46 @@ class _CropTimelineScreenState extends State<CropTimelineScreen> {
           Column(
             children: [
               Container(
-                width: 32,
-                height: 32,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: task.isCompleted
                       ? Colors.green
-                      : (isToday ? Colors.blue : Colors.grey.shade300),
+                      : (isToday ? Colors.amber : Colors.grey.shade300),
                   boxShadow: [
                     if (isToday)
                       BoxShadow(
-                          color: Colors.blue.withOpacity(0.3),
-                          blurRadius: 8,
+                          color: Colors.amber.withOpacity(0.4),
+                          blurRadius: 10,
                           spreadRadius: 2)
+                    else if (task.isCompleted)
+                      BoxShadow(
+                          color: Colors.green.withOpacity(0.3),
+                          blurRadius: 8,
+                          spreadRadius: 1)
                   ],
+                  border: Border.all(
+                      color: Colors.white,
+                      width: 2.5),
                 ),
                 child: Icon(
-                  task.isCompleted ? Icons.check : Icons.agriculture,
-                  size: 16,
+                  task.isCompleted ? Icons.check : (isToday ? Icons.stars : Icons.agriculture),
+                  size: 18,
                   color: Colors.white,
                 ),
               ),
               if (!isLast)
                 Expanded(
                   child: Container(
-                    width: 2,
+                    width: 3,
                     margin: const EdgeInsets.symmetric(vertical: 4),
-                    color: Colors.grey.shade200,
+                    decoration: BoxDecoration(
+                      gradient: task.isCompleted
+                          ? const LinearGradient(colors: [Colors.green, Colors.greenAccent])
+                          : LinearGradient(colors: [Colors.grey.shade300, Colors.grey.shade200]),
+                      borderRadius: BorderRadius.circular(1.5),
+                    ),
                   ),
                 ),
             ],
@@ -512,12 +565,15 @@ class _CropTimelineScreenState extends State<CropTimelineScreen> {
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                       color: isToday
-                          ? Colors.blue.shade100
-                          : Colors.grey.shade100),
+                          ? Colors.amber.shade300
+                          : (task.isCompleted ? Colors.green.shade100 : Colors.grey.shade100),
+                      width: isToday ? 1.5 : 1.0,
+                  ),
                   boxShadow: [
                     BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
-                        blurRadius: 10,
+                        color: isToday ? Colors.amber.withOpacity(0.12) : Colors.black.withOpacity(0.04),
+                        blurRadius: isToday ? 15 : 10,
+                        spreadRadius: isToday ? 2 : 0,
                         offset: const Offset(0, 4))
                   ],
                 ),
