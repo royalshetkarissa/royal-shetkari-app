@@ -19,29 +19,7 @@ Please configure SUPER_ADMIN_PASSWORD in production environment variables.
   `);
 }
 
-// Dynamic fallback for SUPER_USER_MOBILE in production to prevent startup crash if missing
-if (process.env.NODE_ENV === 'production' && !process.env.SUPER_USER_MOBILE) {
-  process.env.SUPER_USER_MOBILE = '9999999999';
-  console.warn(`
-========================================================================
-⚠️  WARNING: SUPER_USER_MOBILE environment variable is missing in production!
-A temporary safe placeholder has been assigned: 9999999999
-Please configure a unique SUPER_USER_MOBILE in production environment variables.
-========================================================================
-  `);
-}
 
-// Dynamic fallback for SUPER_ADMIN_MOBILE in production to prevent startup crash if missing
-if (process.env.NODE_ENV === 'production' && !process.env.SUPER_ADMIN_MOBILE) {
-  process.env.SUPER_ADMIN_MOBILE = '9999999998';
-  console.warn(`
-========================================================================
-⚠️  WARNING: SUPER_ADMIN_MOBILE environment variable is missing in production!
-A temporary safe placeholder has been assigned: 9999999998
-Please configure a unique SUPER_ADMIN_MOBILE in production environment variables.
-========================================================================
-  `);
-}
 
 // Warning for missing WhatsApp credentials
 if (process.env.NODE_ENV === 'production' && (!process.env.META_WHATSAPP_TOKEN || !process.env.META_PHONE_ID)) {
@@ -109,30 +87,7 @@ const envSchema = z
     }
   )
 
-  .refine(
-    (data) => {
-      if (data.NODE_ENV === 'production' && data.SUPER_USER_MOBILE === '8605889356') {
-        return false;
-      }
-      return true;
-    },
-    {
-      message: 'SUPER_USER_MOBILE cannot be the default debug value in production',
-      path: ['SUPER_USER_MOBILE'],
-    }
-  )
-  .refine(
-    (data) => {
-      if (data.NODE_ENV === 'production' && data.SUPER_ADMIN_MOBILE === '8605889356') {
-        return false;
-      }
-      return true;
-    },
-    {
-      message: 'SUPER_ADMIN_MOBILE cannot be the default debug value in production',
-      path: ['SUPER_ADMIN_MOBILE'],
-    }
-  );
+
 
 const envParsed = envSchema.safeParse(process.env);
 

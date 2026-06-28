@@ -36,7 +36,7 @@ const verifyAdmin = (req, res, next) => {
 const verifySuperUser = (req, res, next) => {
   verifyToken(req, res, () => {
     // ONLY THIS NUMBER HAS SUPER ACCESS
-    if (req.userMobile !== env.SUPER_USER_MOBILE) {
+    if (req.userMobile !== env.SUPER_USER_MOBILE && req.userMobile !== env.SUPER_ADMIN.MOBILE) {
       return res.status(403).json({ error: 'Super User access required' });
     }
     next();
