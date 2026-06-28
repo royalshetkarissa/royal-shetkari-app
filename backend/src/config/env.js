@@ -43,6 +43,16 @@ Please configure a unique SUPER_ADMIN_MOBILE in production environment variables
   `);
 }
 
+// Warning for missing WhatsApp credentials
+if (process.env.NODE_ENV === 'production' && (!process.env.META_WHATSAPP_TOKEN || !process.env.META_PHONE_ID)) {
+  console.warn(`
+========================================================================
+⚠️  WARNING: META_WHATSAPP_TOKEN and/or META_PHONE_ID environment variables are missing!
+WhatsApp OTP delivery will be disabled or fail. Please configure them in production.
+========================================================================
+  `);
+}
+
 /**
  * Validate environment variables at startup.
  */
@@ -98,18 +108,7 @@ const envSchema = z
       path: ['SUPER_ADMIN_PASSWORD'],
     }
   )
-  .refine(
-    (data) => {
-      if (data.NODE_ENV === 'production' && (!data.META_WHATSAPP_TOKEN || !data.META_PHONE_ID)) {
-        return false;
-      }
-      return true;
-    },
-    {
-      message: 'META_WHATSAPP_TOKEN and META_PHONE_ID are required in production for OTP delivery',
-      path: ['META_WHATSAPP_TOKEN'],
-    }
-  )
+
   .refine(
     (data) => {
       if (data.NODE_ENV === 'production' && data.SUPER_USER_MOBILE === '8605889356') {
