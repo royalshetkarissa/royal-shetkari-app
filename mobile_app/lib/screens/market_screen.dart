@@ -503,6 +503,7 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
                         if (loadingProgress == null) return child;
                         return Container(
                           height: 160,
+                          width: double.infinity,
                           color: Colors.green.shade50,
                           alignment: Alignment.center,
                           child: CircularProgressIndicator(
@@ -515,7 +516,9 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
                       },
                       errorBuilder: (c, e, s) => Container(
                         height: 160,
+                        width: double.infinity,
                         color: Colors.green.shade50,
+                        alignment: Alignment.center,
                         child: const Icon(Icons.store, size: 60, color: Color(0xFF1B5E20)),
                       ),
                     ),
